@@ -142,9 +142,20 @@ namespace 破片压缩器 {
                     else if (adjust_crf > 63) adjust_crf = 63;
                 }
 
+                string cmd = $" -pix_fmt yuv420p10le -c:v libsvtav1 -crf {adjust_crf}  -preset {preset} -svtav1-params tune=1:lp=1";//:pin=1 
+
+                str多线程编码库 = $" -pix_fmt yuv420p10le -c:v libsvtav1 -crf {adjust_crf}  -preset {preset} -svtav1-params tune=0";
+
+                /*
+                 * --tune Specifies whether to use PSNR or VQ as the tuning metric [0 = VQ, 1 = PSNR, 2 = SSIM]
+                 * SVT-AV1 Tune PSNR（默认）在高动态场景下的画质得分最好，但综合上不高
+                 * 无论画面类型，只要静态画面偏多，Tune VQ 就相比 Tune PSNR 有优势，否则 Tune PSNR 最好
+                https://iavoe.github.io/av1-web-tutorial/HTML/index.html 测试结论
+
                 string cmd = $" -pix_fmt yuv420p10le -c:v libsvtav1 -crf {adjust_crf}  -preset {preset} -svtav1-params tune=0:lp=1:pin=1";
                 str多线程编码库 = $" -pix_fmt yuv420p10le -c:v libsvtav1 -crf {adjust_crf}  -preset {preset} -svtav1-params tune=0";
                 /*
+
 --lp                         Target (best effort) number of logical cores to be used. 0 means all. Refer to Appendix A.1 of the user guide, default is 0 [0, core count of the machine]
 --pin                        Pin the execution to the first --lp cores. Overwritten to 1 when `--ss` is set. Refer to Appendix A.1 of the user guide, default is 0 [0-1]
 --ss                         Specifies which socket to run on, assumes a max of two sockets. Refer to Appendix A.1 of the user guide, default is -1 [-1, 0, -1]

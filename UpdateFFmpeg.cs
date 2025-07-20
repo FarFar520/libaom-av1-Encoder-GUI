@@ -77,7 +77,7 @@ namespace 破片压缩器 {
 
                 if (bError) try { File.Delete(filePath); } catch { }
                 else {
-                    
+
                 }
             }
         }

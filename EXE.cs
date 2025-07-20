@@ -71,8 +71,6 @@ namespace 破片压缩器 {
             exe = mkvextract;
             return try_mkvmerge程序可运行(exe, "mkvextract");
         }
-
-
         static bool try_ffmpeg程序可运行(string exe, string 开头) {
             using (Process process = new Process( )) {
                 process.StartInfo.FileName = exe;

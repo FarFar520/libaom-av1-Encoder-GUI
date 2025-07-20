@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
+
 
 namespace 破片压缩器 {
     internal class Video_Roadmap {
@@ -395,8 +395,23 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 try { File.WriteAllText(str检测镜头完整路径_2, str汇流数据); } catch { }
                 try { File.WriteAllText(str检测镜头完整路径_3, str筛选后数据); } catch { }
                 try { File.WriteAllText(str检测镜头完整路径_4, str筛选后数据); } catch { }//检测场景需要解码一遍视频，（硬件解码分析效果不理想，只能软解码），较为耗时，多保存几个副本，防止误删。
-                //return b解析场景所有切片数据(logs);
+
+
+                //b解析场景大于GOP切片数据(logs);
+
+                Scene scene = new Scene( );
+                scene.Add_TypeI(logs);
+                List<float> scene_pts = scene.Get_List_TypeI_pts_time( );
+
+                if (list_typeI_pts_time.Count < scene_pts.Count)
+                    list_typeI_pts_time = scene.Get_List_TypeI_pts_time( );
+
+                //fx按场景切片控制到快进秒以内( );
+
+                //return list_typeI_pts_time.Count > 0;//至少能切2段;
+
                 return b解析场景大于GOP切片数据(logs);
+
             }
             return false;
         }
@@ -714,7 +729,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                                     if (VideoInfo.regexAudio.IsMatch(arr[j]))
                                         str音频摘要 = '.' + VideoInfo.regexAudio.Match(arr[j]).Groups[1].Value;
                                     b有音轨 = true; break;
-                                };
+                                }
+                                ;
                             }
                             if (b有音轨) {
                                 bSuccess |= b移动带音轨切片合并视频(fi连接后视频);
@@ -759,7 +775,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             if (!b文件夹下还有切片) Form破片压缩.autoReset合并.Set( );
         }
 
-
         void fx扫描黑边(float ss, float t, ref uint count_Crop, ref Dictionary<string, int> dicCropdetect, ref StringBuilder builder) {
             string commamd = $"-ss {ss} -i \"{fi输入视频.Name}\" -t {t} -vf cropdetect=round=2 -f null -an /dev/null";
             if (!转码队列.b允许入队) commamd = ffmpeg单线程 + " " + commamd;//CPU资源被占满后，以单线程运行减少损耗。
@@ -794,6 +809,11 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 scene.Add_TypeI(arr);
                 list_typeI_pts_time.Clear( );
                 list_typeI_pts_time = scene.Get_List_TypeI_pts_time( );
+
+
+                //fx按场景切片控制到快进秒以内( );//外部读取时触发，或者调试用
+
+
                 /*
                 for (int i = 0; i < arr.Length; i++) {
                     if (arr[i].StartsWith("[Parsed_showinfo") && arr[i].Contains("type:I")) {
@@ -802,6 +822,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     }
                 }
                 */
+
                 return list_typeI_pts_time.Count > 0;//至少能切2段;
 
             }
@@ -855,6 +876,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return list_typeI_pts_time.Count > 3;//至少能切3段，片头、片中、片尾。
         }
+
         void fx删除数字名称视频切片( ) {
             string[] arrFile = Directory.GetFiles(str切片路径, "*.mkv");
             for (int i = 0; i < arrFile.Length; i++) {

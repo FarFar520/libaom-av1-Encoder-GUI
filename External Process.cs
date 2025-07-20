@@ -35,8 +35,7 @@ namespace 破片压缩器 {
 
         public bool b已结束 = false, b安全退出 = false, b编码后删除切片 = false, b补齐时间戳 = false, b单线程 = true;
 
-        public StringBuilder sb输出数据流;
-
+        public StringBuilder sb输出数据流 = new StringBuilder( );//全局变量有调用，直接初始化。
 
         Regex regex时长 = new Regex(@"Duration:\s*((?:\d{2}:){2,}\d{2}(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//视频时长
         Regex regex帧时长 = new Regex(@"time=\s*((?:\d{2}:){2,}\d{2}(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -165,6 +164,20 @@ namespace 破片压缩器 {
                         ths[i].ProcessorAffinity = 转码队列.arr_单核指针[core];
                 } catch (Exception err) { listError.Add(err.Message); }
             }
+        }
+
+
+        public bool Get_StanderOutput(out List<string> StanderOutput) {
+            StanderOutput = new List<string>( );
+            try {
+                process.Start( );
+                while (!process.StandardOutput.EndOfStream) {
+                    string line = process.StandardOutput.ReadLine( );
+                    StanderOutput.Add(line);
+                    sb输出数据流.AppendLine(line);
+                }
+            } catch { return false; }
+            return StanderOutput.Count > 0;
         }
 
         public bool Get_StandardError(out List<string> StandardError) {
@@ -399,6 +412,8 @@ namespace 破片压缩器 {
         void OutputData(object sendProcess, DataReceivedEventArgs output) {
             if (output.Data != null) {
                 listOutput.Add(output.Data);
+                sb输出数据流.AppendLine(output.Data);
+
             }
         }
         void ErrorData(object sendProcess, DataReceivedEventArgs output) {//标准输出、错误输出似乎共用缓冲区，只读其中一个，输出缓冲区可能会满，卡死
@@ -456,18 +471,17 @@ namespace 破片压缩器 {
 
         void read_StandardOutput( ) {
             while (!process.StandardOutput.EndOfStream) {
-                StandardOutput = process.StandardOutput.ReadLine( ).TrimStart( );
-                if (!string.IsNullOrEmpty(StandardOutput)) {
-                    listOutput.Add(StandardOutput);
-                }
+
+                StandardOutput = process.StandardOutput.ReadLine( );
+                listOutput.Add(StandardOutput);
+                sb输出数据流.AppendLine(StandardOutput);
+
             }
         }
         void read_StandardError( ) {
             while (!process.StandardError.EndOfStream) {
-                StandardError = process.StandardError.ReadLine( ).TrimStart( );
-                if (!string.IsNullOrEmpty(StandardError)) {
-                    listError.Add(StandardError);
-                }
+                StandardError = process.StandardError.ReadLine( );
+                listError.Add(StandardError);
             }
         }
 

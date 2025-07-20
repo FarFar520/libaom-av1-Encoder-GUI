@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-
 namespace 破片压缩器 {
     public class Scene {
         public const int gop = 5;
@@ -14,12 +13,6 @@ namespace 破片压缩器 {
         public TimeSpan Duration = TimeSpan.Zero;
         public double f平均秒 = 5;//程序默认5秒一个GOP
 
-        public void Add(Info info) {
-            if (info.hasNum >= 5) {
-                info.fx场景差异(list_All);
-                list_All.Add(info);
-            }
-        }
         public void Add_TypeI(Info info) {
             if (info.pts_time > 0) {//有时间就行
                 if (info.fx场景有差异(list_TypeI)) {

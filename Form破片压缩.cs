@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
+
 
 namespace 破片压缩器 {
     public partial class Form破片压缩: Form {
@@ -16,7 +14,9 @@ namespace 破片压缩器 {
 
         int i切片间隔秒 = 60;
         decimal d检测镜头精度 = new decimal(0.1);
-        bool  b更改过文件夹 = true, b需要重扫 = false, b最小化 = false;
+
+        bool b更改过文件夹 = true, b需要重扫 = false, b最小化 = false;
+
         int NumberOfProcessors = 0, NumberOfCores = 0, NumberOfLogicalProcessors = 0;
         float f保底缓存切片 = 8;
         string str最后一条信息 = string.Empty;
@@ -247,7 +247,9 @@ namespace 破片压缩器 {
                     }
                 }
 
-                if (!b需要重扫  && list_等待合并队列.Count == 0 && !转码队列.b有任务) {
+
+                if (!b需要重扫 && list_等待合并队列.Count == 0 && !转码队列.b有任务) {
+
                     timer刷新编码输出.Stop( );
                     转码队列.Has汇总输出信息(out string str编码信息);
                     txt日志($"{str编码信息}\r\n\r\n目录下视频已完成，增加新视频点击刷新按钮\r\n\r\n{sb合并.ToString( )}");
@@ -263,7 +265,8 @@ namespace 破片压缩器 {
                     textBox日志.SelectionStart = textBox日志.TextLength - 1;
                     textBox日志.ScrollToCaret( );
                 }));
-                Thread.Sleep(3333);
+                Thread.Sleep(9999);
+
             }
         }
 
@@ -384,18 +387,6 @@ namespace 破片压缩器 {
             comboBox_Workers.SelectedIndex = 0;
         }
 
-        void fx盘符信息( ) {
-            for (char drive = 'C'; drive < 'Z'; drive++) {
-                string driveName = $"{drive}:\\";
-                if (Directory.Exists(driveName)) {
-                    Get_DriveType.DriveType dt = Get_DriveType.GetDriveType(driveName);
-                    if (dt.ToString( ).ToUpper( ) == "SSD") {
-                        long space = new DriveInfo(driveName).TotalFreeSpace / 1024 / 1024 / 1024;
-                        add日志(string.Format("盘符：{0}  类型：{1} \t\t剩余{2}GB", drive, dt, space));
-                    }
-                }
-            }
-        }
 
         bool fx文件夹( ) {
             string txt = textBox等待转码视频文件夹.Text.Trim( );
@@ -802,7 +793,6 @@ namespace 破片压缩器 {
         }
         private void Form破片压缩_Load(object sender, EventArgs e) {
             CPUNum( );
-            fx盘符信息( );
             comboBox切片模式.SelectedIndex = 4;
             comboBox_Crop.SelectedIndex = 0;
             comboBox_lib.SelectedIndex = 0;
