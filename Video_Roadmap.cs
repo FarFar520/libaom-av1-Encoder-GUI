@@ -398,14 +398,14 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
 
                 //b解析场景大于GOP切片数据(logs);
-
+                /*场景类按百分比取舍
                 Scene scene = new Scene( );
                 scene.Add_TypeI(logs);
                 List<float> scene_pts = scene.Get_List_TypeI_pts_time( );
 
                 if (list_typeI_pts_time.Count < scene_pts.Count)
                     list_typeI_pts_time = scene.Get_List_TypeI_pts_time( );
-
+                */
                 //fx按场景切片控制到快进秒以内( );
 
                 //return list_typeI_pts_time.Count > 0;//至少能切2段;

@@ -167,7 +167,7 @@
             this.listBox日志.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.listBox日志.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.listBox日志.FormattingEnabled = true;
-            this.listBox日志.ItemHeight = 18;
+            this.listBox日志.ItemHeight = 12;
             this.listBox日志.Location = new System.Drawing.Point(0, 718);
             this.listBox日志.Name = "listBox日志";
             this.listBox日志.Size = new System.Drawing.Size(1159, 220);
@@ -211,7 +211,7 @@
             "libaomav1多线程"});
             this.comboBox_lib.Location = new System.Drawing.Point(0, 0);
             this.comboBox_lib.Name = "comboBox_lib";
-            this.comboBox_lib.Size = new System.Drawing.Size(146, 47);
+            this.comboBox_lib.Size = new System.Drawing.Size(179, 35);
             this.comboBox_lib.TabIndex = 3;
             this.comboBox_lib.SelectedIndexChanged += new System.EventHandler(this.comboBox_lib_SelectedIndexChanged);
             // 
@@ -220,9 +220,9 @@
             this.label_Workers.AutoSize = true;
             this.label_Workers.Dock = System.Windows.Forms.DockStyle.Right;
             this.label_Workers.Font = new System.Drawing.Font("微软雅黑", 18F);
-            this.label_Workers.Location = new System.Drawing.Point(146, 0);
+            this.label_Workers.Location = new System.Drawing.Point(179, 0);
             this.label_Workers.Name = "label_Workers";
-            this.label_Workers.Size = new System.Drawing.Size(47, 46);
+            this.label_Workers.Size = new System.Drawing.Size(32, 31);
             this.label_Workers.TabIndex = 2;
             this.label_Workers.Text = "×";
             // 
@@ -231,9 +231,9 @@
             this.comboBox_Workers.Dock = System.Windows.Forms.DockStyle.Right;
             this.comboBox_Workers.Font = new System.Drawing.Font("微软雅黑", 15F);
             this.comboBox_Workers.FormattingEnabled = true;
-            this.comboBox_Workers.Location = new System.Drawing.Point(193, 0);
+            this.comboBox_Workers.Location = new System.Drawing.Point(211, 0);
             this.comboBox_Workers.Name = "comboBox_Workers";
-            this.comboBox_Workers.Size = new System.Drawing.Size(71, 47);
+            this.comboBox_Workers.Size = new System.Drawing.Size(71, 35);
             this.comboBox_Workers.TabIndex = 1;
             // 
             // label_个
@@ -241,9 +241,9 @@
             this.label_个.AutoSize = true;
             this.label_个.Dock = System.Windows.Forms.DockStyle.Right;
             this.label_个.Font = new System.Drawing.Font("微软雅黑", 18F);
-            this.label_个.Location = new System.Drawing.Point(264, 0);
+            this.label_个.Location = new System.Drawing.Point(282, 0);
             this.label_个.Name = "label_个";
-            this.label_个.Size = new System.Drawing.Size(56, 46);
+            this.label_个.Size = new System.Drawing.Size(38, 31);
             this.label_个.TabIndex = 4;
             this.label_个.Text = "开";
             // 
@@ -265,7 +265,7 @@
             this.panel2.Controls.Add(this.panel5);
             this.panel2.Controls.Add(this.panel_Speed);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panel2.Location = new System.Drawing.Point(0, 175);
+            this.panel2.Location = new System.Drawing.Point(0, 168);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(320, 563);
             this.panel2.TabIndex = 4;
@@ -273,9 +273,9 @@
             // textBox_lavfi
             // 
             this.textBox_lavfi.Dock = System.Windows.Forms.DockStyle.Top;
-            this.textBox_lavfi.Location = new System.Drawing.Point(0, 429);
+            this.textBox_lavfi.Location = new System.Drawing.Point(0, 356);
             this.textBox_lavfi.Name = "textBox_lavfi";
-            this.textBox_lavfi.Size = new System.Drawing.Size(320, 31);
+            this.textBox_lavfi.Size = new System.Drawing.Size(320, 23);
             this.textBox_lavfi.TabIndex = 18;
             this.textBox_lavfi.Text = "nlmeans,unsharp=5:5:-0.01:5:5:0.0";
             this.textBox_lavfi.Visible = false;
@@ -284,9 +284,9 @@
             // 
             this.checkBox_lavfi.AutoSize = true;
             this.checkBox_lavfi.Dock = System.Windows.Forms.DockStyle.Top;
-            this.checkBox_lavfi.Location = new System.Drawing.Point(0, 401);
+            this.checkBox_lavfi.Location = new System.Drawing.Point(0, 335);
             this.checkBox_lavfi.Name = "checkBox_lavfi";
-            this.checkBox_lavfi.Size = new System.Drawing.Size(320, 28);
+            this.checkBox_lavfi.Size = new System.Drawing.Size(320, 21);
             this.checkBox_lavfi.TabIndex = 17;
             this.checkBox_lavfi.Text = "自定义ffmpeg复合滤镜";
             this.checkBox_lavfi.UseVisualStyleBackColor = true;
@@ -296,9 +296,9 @@
             // 
             this.checkBox_drawtext.AutoSize = true;
             this.checkBox_drawtext.Dock = System.Windows.Forms.DockStyle.Top;
-            this.checkBox_drawtext.Location = new System.Drawing.Point(0, 373);
+            this.checkBox_drawtext.Location = new System.Drawing.Point(0, 314);
             this.checkBox_drawtext.Name = "checkBox_drawtext";
-            this.checkBox_drawtext.Size = new System.Drawing.Size(320, 28);
+            this.checkBox_drawtext.Size = new System.Drawing.Size(320, 21);
             this.checkBox_drawtext.TabIndex = 19;
             this.checkBox_drawtext.Text = "画面右上角 文件名-切片序列号 水印";
             this.checkBox_drawtext.UseVisualStyleBackColor = true;
@@ -309,9 +309,9 @@
             this.checkBox_VFR.Checked = true;
             this.checkBox_VFR.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox_VFR.Dock = System.Windows.Forms.DockStyle.Top;
-            this.checkBox_VFR.Location = new System.Drawing.Point(0, 345);
+            this.checkBox_VFR.Location = new System.Drawing.Point(0, 293);
             this.checkBox_VFR.Name = "checkBox_VFR";
-            this.checkBox_VFR.Size = new System.Drawing.Size(320, 28);
+            this.checkBox_VFR.Size = new System.Drawing.Size(320, 21);
             this.checkBox_VFR.TabIndex = 12;
             this.checkBox_VFR.Text = "去掉重复帧，转为可变帧率（VFR）";
             this.checkBox_VFR.UseVisualStyleBackColor = true;
@@ -320,10 +320,10 @@
             // 
             this.trackBar_降噪量.Dock = System.Windows.Forms.DockStyle.Top;
             this.trackBar_降噪量.LargeChange = 2;
-            this.trackBar_降噪量.Location = new System.Drawing.Point(0, 276);
+            this.trackBar_降噪量.Location = new System.Drawing.Point(0, 248);
             this.trackBar_降噪量.Maximum = 50;
             this.trackBar_降噪量.Name = "trackBar_降噪量";
-            this.trackBar_降噪量.Size = new System.Drawing.Size(320, 69);
+            this.trackBar_降噪量.Size = new System.Drawing.Size(320, 45);
             this.trackBar_降噪量.TabIndex = 20;
             this.trackBar_降噪量.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
             this.trackBar_降噪量.Visible = false;
@@ -333,9 +333,9 @@
             // 
             this.checkBox_磨皮.AutoSize = true;
             this.checkBox_磨皮.Dock = System.Windows.Forms.DockStyle.Top;
-            this.checkBox_磨皮.Location = new System.Drawing.Point(0, 248);
+            this.checkBox_磨皮.Location = new System.Drawing.Point(0, 227);
             this.checkBox_磨皮.Name = "checkBox_磨皮";
-            this.checkBox_磨皮.Size = new System.Drawing.Size(320, 28);
+            this.checkBox_磨皮.Size = new System.Drawing.Size(320, 21);
             this.checkBox_磨皮.TabIndex = 8;
             this.checkBox_磨皮.Text = "磨皮降噪，会大幅降低速度";
             this.checkBox_磨皮.UseVisualStyleBackColor = true;
@@ -346,9 +346,9 @@
             this.labelSplitAudio.AutoSize = true;
             this.labelSplitAudio.Dock = System.Windows.Forms.DockStyle.Top;
             this.labelSplitAudio.ForeColor = System.Drawing.Color.Red;
-            this.labelSplitAudio.Location = new System.Drawing.Point(0, 224);
+            this.labelSplitAudio.Location = new System.Drawing.Point(0, 210);
             this.labelSplitAudio.Name = "labelSplitAudio";
-            this.labelSplitAudio.Size = new System.Drawing.Size(406, 24);
+            this.labelSplitAudio.Size = new System.Drawing.Size(272, 17);
             this.labelSplitAudio.TabIndex = 16;
             this.labelSplitAudio.Text = "切片音帧无法与视帧完美同步，最终时长差异几秒";
             this.labelSplitAudio.Visible = false;
@@ -357,9 +357,9 @@
             // 
             this.checkBoxSplitAudio.AutoSize = true;
             this.checkBoxSplitAudio.Dock = System.Windows.Forms.DockStyle.Top;
-            this.checkBoxSplitAudio.Location = new System.Drawing.Point(0, 196);
+            this.checkBoxSplitAudio.Location = new System.Drawing.Point(0, 189);
             this.checkBoxSplitAudio.Name = "checkBoxSplitAudio";
-            this.checkBoxSplitAudio.Size = new System.Drawing.Size(320, 28);
+            this.checkBoxSplitAudio.Size = new System.Drawing.Size(320, 21);
             this.checkBoxSplitAudio.TabIndex = 15;
             this.checkBoxSplitAudio.Text = "音频和视频同时切片转码";
             this.checkBoxSplitAudio.UseVisualStyleBackColor = true;
@@ -384,23 +384,23 @@
             this.panel_Top.Controls.Add(this.label_Top);
             this.panel_Top.Dock = System.Windows.Forms.DockStyle.Left;
             this.panel_Top.Font = new System.Drawing.Font("微软雅黑", 11F);
-            this.panel_Top.Location = new System.Drawing.Point(231, 53);
+            this.panel_Top.Location = new System.Drawing.Point(231, 38);
             this.panel_Top.Name = "panel_Top";
-            this.panel_Top.Size = new System.Drawing.Size(77, 33);
+            this.panel_Top.Size = new System.Drawing.Size(77, 48);
             this.panel_Top.TabIndex = 3;
             this.panel_Top.Visible = false;
             // 
             // numericUpDown_Top
             // 
             this.numericUpDown_Top.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.numericUpDown_Top.Location = new System.Drawing.Point(0, 30);
+            this.numericUpDown_Top.Location = new System.Drawing.Point(0, 20);
             this.numericUpDown_Top.Maximum = new decimal(new int[] {
             16380,
             0,
             0,
             0});
             this.numericUpDown_Top.Name = "numericUpDown_Top";
-            this.numericUpDown_Top.Size = new System.Drawing.Size(77, 37);
+            this.numericUpDown_Top.Size = new System.Drawing.Size(77, 27);
             this.numericUpDown_Top.TabIndex = 6;
             // 
             // label_Top
@@ -409,7 +409,7 @@
             this.label_Top.Dock = System.Windows.Forms.DockStyle.Top;
             this.label_Top.Location = new System.Drawing.Point(0, 0);
             this.label_Top.Name = "label_Top";
-            this.label_Top.Size = new System.Drawing.Size(79, 30);
+            this.label_Top.Size = new System.Drawing.Size(54, 20);
             this.label_Top.TabIndex = 7;
             this.label_Top.Text = "上剪裁";
             // 
@@ -419,23 +419,23 @@
             this.panel_Left.Controls.Add(this.label_Left);
             this.panel_Left.Dock = System.Windows.Forms.DockStyle.Left;
             this.panel_Left.Font = new System.Drawing.Font("微软雅黑", 11F);
-            this.panel_Left.Location = new System.Drawing.Point(154, 53);
+            this.panel_Left.Location = new System.Drawing.Point(154, 38);
             this.panel_Left.Name = "panel_Left";
-            this.panel_Left.Size = new System.Drawing.Size(77, 33);
+            this.panel_Left.Size = new System.Drawing.Size(77, 48);
             this.panel_Left.TabIndex = 2;
             this.panel_Left.Visible = false;
             // 
             // numericUpDown_Left
             // 
             this.numericUpDown_Left.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.numericUpDown_Left.Location = new System.Drawing.Point(0, 30);
+            this.numericUpDown_Left.Location = new System.Drawing.Point(0, 20);
             this.numericUpDown_Left.Maximum = new decimal(new int[] {
             16380,
             0,
             0,
             0});
             this.numericUpDown_Left.Name = "numericUpDown_Left";
-            this.numericUpDown_Left.Size = new System.Drawing.Size(77, 37);
+            this.numericUpDown_Left.Size = new System.Drawing.Size(77, 27);
             this.numericUpDown_Left.TabIndex = 6;
             // 
             // label_Left
@@ -444,7 +444,7 @@
             this.label_Left.Dock = System.Windows.Forms.DockStyle.Top;
             this.label_Left.Location = new System.Drawing.Point(0, 0);
             this.label_Left.Name = "label_Left";
-            this.label_Left.Size = new System.Drawing.Size(79, 30);
+            this.label_Left.Size = new System.Drawing.Size(54, 20);
             this.label_Left.TabIndex = 7;
             this.label_Left.Text = "左剪裁";
             // 
@@ -454,16 +454,16 @@
             this.panel_Height.Controls.Add(this.label_Height);
             this.panel_Height.Dock = System.Windows.Forms.DockStyle.Left;
             this.panel_Height.Font = new System.Drawing.Font("微软雅黑", 11F);
-            this.panel_Height.Location = new System.Drawing.Point(77, 53);
+            this.panel_Height.Location = new System.Drawing.Point(77, 38);
             this.panel_Height.Name = "panel_Height";
-            this.panel_Height.Size = new System.Drawing.Size(77, 33);
+            this.panel_Height.Size = new System.Drawing.Size(77, 48);
             this.panel_Height.TabIndex = 1;
             this.panel_Height.Visible = false;
             // 
             // numericUpDown_Height
             // 
             this.numericUpDown_Height.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.numericUpDown_Height.Location = new System.Drawing.Point(0, 30);
+            this.numericUpDown_Height.Location = new System.Drawing.Point(0, 20);
             this.numericUpDown_Height.Maximum = new decimal(new int[] {
             16384,
             0,
@@ -475,7 +475,7 @@
             0,
             0});
             this.numericUpDown_Height.Name = "numericUpDown_Height";
-            this.numericUpDown_Height.Size = new System.Drawing.Size(77, 37);
+            this.numericUpDown_Height.Size = new System.Drawing.Size(77, 27);
             this.numericUpDown_Height.TabIndex = 6;
             this.numericUpDown_Height.Value = new decimal(new int[] {
             64,
@@ -489,7 +489,7 @@
             this.label_Height.Dock = System.Windows.Forms.DockStyle.Top;
             this.label_Height.Location = new System.Drawing.Point(0, 0);
             this.label_Height.Name = "label_Height";
-            this.label_Height.Size = new System.Drawing.Size(101, 30);
+            this.label_Height.Size = new System.Drawing.Size(69, 20);
             this.label_Height.TabIndex = 7;
             this.label_Height.Text = "剩余高度";
             // 
@@ -499,9 +499,9 @@
             this.panel_Width.Controls.Add(this.label_Width);
             this.panel_Width.Dock = System.Windows.Forms.DockStyle.Left;
             this.panel_Width.Font = new System.Drawing.Font("微软雅黑", 11F);
-            this.panel_Width.Location = new System.Drawing.Point(0, 53);
+            this.panel_Width.Location = new System.Drawing.Point(0, 38);
             this.panel_Width.Name = "panel_Width";
-            this.panel_Width.Size = new System.Drawing.Size(77, 33);
+            this.panel_Width.Size = new System.Drawing.Size(77, 48);
             this.panel_Width.TabIndex = 0;
             this.panel_Width.Visible = false;
             // 
@@ -513,7 +513,7 @@
             0,
             0,
             0});
-            this.numericUpDown_Width.Location = new System.Drawing.Point(0, 30);
+            this.numericUpDown_Width.Location = new System.Drawing.Point(0, 20);
             this.numericUpDown_Width.Maximum = new decimal(new int[] {
             16384,
             0,
@@ -525,7 +525,7 @@
             0,
             0});
             this.numericUpDown_Width.Name = "numericUpDown_Width";
-            this.numericUpDown_Width.Size = new System.Drawing.Size(77, 37);
+            this.numericUpDown_Width.Size = new System.Drawing.Size(77, 27);
             this.numericUpDown_Width.TabIndex = 6;
             this.numericUpDown_Width.Value = new decimal(new int[] {
             64,
@@ -540,7 +540,7 @@
             this.label_Width.ForeColor = System.Drawing.SystemColors.ControlText;
             this.label_Width.Location = new System.Drawing.Point(0, 0);
             this.label_Width.Name = "label_Width";
-            this.label_Width.Size = new System.Drawing.Size(101, 30);
+            this.label_Width.Size = new System.Drawing.Size(69, 20);
             this.label_Width.TabIndex = 7;
             this.label_Width.Text = "剩余宽度";
             // 
@@ -560,7 +560,7 @@
             "4K电影→3840×2072"});
             this.comboBox_Crop.Location = new System.Drawing.Point(0, 0);
             this.comboBox_Crop.Name = "comboBox_Crop";
-            this.comboBox_Crop.Size = new System.Drawing.Size(320, 53);
+            this.comboBox_Crop.Size = new System.Drawing.Size(320, 38);
             this.comboBox_Crop.TabIndex = 8;
             this.comboBox_Crop.Text = "不剪裁";
             this.comboBox_Crop.SelectedIndexChanged += new System.EventHandler(this.comboBox_Crop_SelectedIndexChanged);
@@ -591,9 +591,9 @@
             "2560",
             "3840",
             "不缩放"});
-            this.comboBox_Scale.Location = new System.Drawing.Point(154, 24);
+            this.comboBox_Scale.Location = new System.Drawing.Point(154, 17);
             this.comboBox_Scale.Name = "comboBox_Scale";
-            this.comboBox_Scale.Size = new System.Drawing.Size(166, 38);
+            this.comboBox_Scale.Size = new System.Drawing.Size(166, 28);
             this.comboBox_Scale.TabIndex = 9;
             this.comboBox_Scale.Text = "不缩放+dar比例修正";
             this.comboBox_Scale.SelectedIndexChanged += new System.EventHandler(this.comboBox_Scale_SelectedIndexChanged);
@@ -604,7 +604,7 @@
             this.label_Scale.Dock = System.Windows.Forms.DockStyle.Top;
             this.label_Scale.Location = new System.Drawing.Point(154, 0);
             this.label_Scale.Name = "label_Scale";
-            this.label_Scale.Size = new System.Drawing.Size(136, 24);
+            this.label_Scale.Size = new System.Drawing.Size(92, 17);
             this.label_Scale.TabIndex = 0;
             this.label_Scale.Text = "先剪裁，再缩放";
             // 
@@ -627,14 +627,14 @@
             0,
             0,
             0});
-            this.numericUpDown_ScaleH.Location = new System.Drawing.Point(0, 30);
+            this.numericUpDown_ScaleH.Location = new System.Drawing.Point(0, 20);
             this.numericUpDown_ScaleH.Maximum = new decimal(new int[] {
             99999,
             0,
             0,
             0});
             this.numericUpDown_ScaleH.Name = "numericUpDown_ScaleH";
-            this.numericUpDown_ScaleH.Size = new System.Drawing.Size(77, 37);
+            this.numericUpDown_ScaleH.Size = new System.Drawing.Size(77, 27);
             this.numericUpDown_ScaleH.TabIndex = 6;
             // 
             // label_ScaleH
@@ -643,7 +643,7 @@
             this.label_ScaleH.Dock = System.Windows.Forms.DockStyle.Top;
             this.label_ScaleH.Location = new System.Drawing.Point(0, 0);
             this.label_ScaleH.Name = "label_ScaleH";
-            this.label_ScaleH.Size = new System.Drawing.Size(101, 30);
+            this.label_ScaleH.Size = new System.Drawing.Size(69, 20);
             this.label_ScaleH.TabIndex = 7;
             this.label_ScaleH.Text = "输出高度";
             // 
@@ -666,14 +666,14 @@
             0,
             0,
             0});
-            this.numericUpDown_ScaleW.Location = new System.Drawing.Point(0, 30);
+            this.numericUpDown_ScaleW.Location = new System.Drawing.Point(0, 20);
             this.numericUpDown_ScaleW.Maximum = new decimal(new int[] {
             99999,
             0,
             0,
             0});
             this.numericUpDown_ScaleW.Name = "numericUpDown_ScaleW";
-            this.numericUpDown_ScaleW.Size = new System.Drawing.Size(77, 37);
+            this.numericUpDown_ScaleW.Size = new System.Drawing.Size(77, 27);
             this.numericUpDown_ScaleW.TabIndex = 6;
             // 
             // label_ScaleW
@@ -683,7 +683,7 @@
             this.label_ScaleW.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
             this.label_ScaleW.Location = new System.Drawing.Point(0, 0);
             this.label_ScaleW.Name = "label_ScaleW";
-            this.label_ScaleW.Size = new System.Drawing.Size(101, 30);
+            this.label_ScaleW.Size = new System.Drawing.Size(69, 20);
             this.label_ScaleW.TabIndex = 7;
             this.label_ScaleW.Text = "输出宽度";
             this.label_ScaleW.MouseClick += new System.Windows.Forms.MouseEventHandler(this.label_ScaleW_MouseClick);
@@ -694,7 +694,7 @@
             this.checkBoxOpus.Dock = System.Windows.Forms.DockStyle.Top;
             this.checkBoxOpus.Location = new System.Drawing.Point(0, 168);
             this.checkBoxOpus.Name = "checkBoxOpus";
-            this.checkBoxOpus.Size = new System.Drawing.Size(320, 28);
+            this.checkBoxOpus.Size = new System.Drawing.Size(320, 21);
             this.checkBoxOpus.TabIndex = 14;
             this.checkBoxOpus.Text = "音频转码为OPUS";
             this.checkBoxOpus.UseVisualStyleBackColor = true;
@@ -720,7 +720,7 @@
             0,
             0,
             0});
-            this.numericUpDown_AB.Location = new System.Drawing.Point(151, 0);
+            this.numericUpDown_AB.Location = new System.Drawing.Point(103, 0);
             this.numericUpDown_AB.Maximum = new decimal(new int[] {
             1024,
             0,
@@ -732,7 +732,7 @@
             0,
             0});
             this.numericUpDown_AB.Name = "numericUpDown_AB";
-            this.numericUpDown_AB.Size = new System.Drawing.Size(169, 52);
+            this.numericUpDown_AB.Size = new System.Drawing.Size(217, 37);
             this.numericUpDown_AB.TabIndex = 4;
             this.numericUpDown_AB.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numericUpDown_AB.Value = new decimal(new int[] {
@@ -749,7 +749,7 @@
             this.label_AR.ForeColor = System.Drawing.Color.Green;
             this.label_AR.Location = new System.Drawing.Point(0, 0);
             this.label_AR.Name = "label_AR";
-            this.label_AR.Size = new System.Drawing.Size(151, 34);
+            this.label_AR.Size = new System.Drawing.Size(103, 23);
             this.label_AR.TabIndex = 3;
             this.label_AR.Text = "立体声 K";
             this.label_AR.MouseClick += new System.Windows.Forms.MouseEventHandler(this.label_AR_MouseClick);
@@ -775,7 +775,7 @@
             0,
             0,
             0});
-            this.numericUpDown_CRF.Location = new System.Drawing.Point(151, 0);
+            this.numericUpDown_CRF.Location = new System.Drawing.Point(104, 0);
             this.numericUpDown_CRF.Maximum = new decimal(new int[] {
             63,
             0,
@@ -787,7 +787,7 @@
             0,
             0});
             this.numericUpDown_CRF.Name = "numericUpDown_CRF";
-            this.numericUpDown_CRF.Size = new System.Drawing.Size(169, 52);
+            this.numericUpDown_CRF.Size = new System.Drawing.Size(216, 37);
             this.numericUpDown_CRF.TabIndex = 4;
             this.numericUpDown_CRF.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numericUpDown_CRF.Value = new decimal(new int[] {
@@ -803,7 +803,7 @@
             this.label_CRF.Font = new System.Drawing.Font("宋体", 17F);
             this.label_CRF.Location = new System.Drawing.Point(0, 0);
             this.label_CRF.Name = "label_CRF";
-            this.label_CRF.Size = new System.Drawing.Size(151, 34);
+            this.label_CRF.Size = new System.Drawing.Size(104, 23);
             this.label_CRF.TabIndex = 3;
             this.label_CRF.Text = "画质 crf";
             // 
@@ -813,9 +813,9 @@
             this.checkBox_DriftCRF.Checked = true;
             this.checkBox_DriftCRF.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox_DriftCRF.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.checkBox_DriftCRF.Location = new System.Drawing.Point(0, 29);
+            this.checkBox_DriftCRF.Location = new System.Drawing.Point(0, 36);
             this.checkBox_DriftCRF.Name = "checkBox_DriftCRF";
-            this.checkBox_DriftCRF.Size = new System.Drawing.Size(320, 28);
+            this.checkBox_DriftCRF.Size = new System.Drawing.Size(320, 21);
             this.checkBox_DriftCRF.TabIndex = 5;
             this.checkBox_DriftCRF.Text = "根据帧率自动强化CRF (30帧+1,60帧+5,120帧+7…)";
             this.checkBox_DriftCRF.UseVisualStyleBackColor = true;
@@ -840,7 +840,7 @@
             0,
             0,
             0});
-            this.numericUpDown_GOP.Location = new System.Drawing.Point(151, 0);
+            this.numericUpDown_GOP.Location = new System.Drawing.Point(104, 0);
             this.numericUpDown_GOP.Maximum = new decimal(new int[] {
             60,
             0,
@@ -852,7 +852,7 @@
             0,
             0});
             this.numericUpDown_GOP.Name = "numericUpDown_GOP";
-            this.numericUpDown_GOP.Size = new System.Drawing.Size(169, 52);
+            this.numericUpDown_GOP.Size = new System.Drawing.Size(216, 37);
             this.numericUpDown_GOP.TabIndex = 4;
             this.numericUpDown_GOP.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numericUpDown_GOP.Value = new decimal(new int[] {
@@ -868,7 +868,7 @@
             this.label_GOP.Font = new System.Drawing.Font("宋体", 17F);
             this.label_GOP.Location = new System.Drawing.Point(0, 0);
             this.label_GOP.Name = "label_GOP";
-            this.label_GOP.Size = new System.Drawing.Size(151, 34);
+            this.label_GOP.Size = new System.Drawing.Size(104, 23);
             this.label_GOP.TabIndex = 3;
             this.label_GOP.Text = "跃秒 gop";
             // 
@@ -898,9 +898,9 @@
             "6.快+",
             "7.特快",
             "x.最快"});
-            this.comboBoxSpeed.Location = new System.Drawing.Point(151, 0);
+            this.comboBoxSpeed.Location = new System.Drawing.Point(102, 0);
             this.comboBoxSpeed.Name = "comboBoxSpeed";
-            this.comboBoxSpeed.Size = new System.Drawing.Size(169, 47);
+            this.comboBoxSpeed.Size = new System.Drawing.Size(218, 35);
             this.comboBoxSpeed.TabIndex = 1;
             // 
             // labelSpeed
@@ -910,7 +910,7 @@
             this.labelSpeed.Font = new System.Drawing.Font("宋体", 17F);
             this.labelSpeed.Location = new System.Drawing.Point(0, 0);
             this.labelSpeed.Name = "labelSpeed";
-            this.labelSpeed.Size = new System.Drawing.Size(151, 34);
+            this.labelSpeed.Size = new System.Drawing.Size(102, 23);
             this.labelSpeed.TabIndex = 2;
             this.labelSpeed.Text = "压缩等级";
             // 
@@ -919,7 +919,7 @@
             this.panel1.Controls.Add(this.textBox等待转码视频文件夹);
             this.panel1.Controls.Add(this.linkLabel输出文件夹);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panel1.Location = new System.Drawing.Point(0, 55);
+            this.panel1.Location = new System.Drawing.Point(0, 48);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(320, 120);
             this.panel1.TabIndex = 2;
@@ -927,10 +927,10 @@
             // textBox等待转码视频文件夹
             // 
             this.textBox等待转码视频文件夹.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBox等待转码视频文件夹.Location = new System.Drawing.Point(0, 48);
+            this.textBox等待转码视频文件夹.Location = new System.Drawing.Point(0, 34);
             this.textBox等待转码视频文件夹.Multiline = true;
             this.textBox等待转码视频文件夹.Name = "textBox等待转码视频文件夹";
-            this.textBox等待转码视频文件夹.Size = new System.Drawing.Size(320, 72);
+            this.textBox等待转码视频文件夹.Size = new System.Drawing.Size(320, 86);
             this.textBox等待转码视频文件夹.TabIndex = 0;
             this.textBox等待转码视频文件夹.Text = "E:\\Videos";
             // 
@@ -940,7 +940,7 @@
             this.linkLabel输出文件夹.Dock = System.Windows.Forms.DockStyle.Top;
             this.linkLabel输出文件夹.Location = new System.Drawing.Point(0, 0);
             this.linkLabel输出文件夹.Name = "linkLabel输出文件夹";
-            this.linkLabel输出文件夹.Size = new System.Drawing.Size(244, 48);
+            this.linkLabel输出文件夹.Size = new System.Drawing.Size(164, 34);
             this.linkLabel输出文件夹.TabIndex = 1;
             this.linkLabel输出文件夹.TabStop = true;
             this.linkLabel输出文件夹.Text = "D:\\破片转码\\输出文件夹 \r\n↓下面文本框内填输入文件夹↓";
@@ -951,7 +951,7 @@
             this.panel切片设置.Controls.Add(this.comboBox切片模式);
             this.panel切片设置.Controls.Add(this.numericUpDown检测镜头);
             this.panel切片设置.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panel切片设置.Location = new System.Drawing.Point(0, 28);
+            this.panel切片设置.Location = new System.Drawing.Point(0, 21);
             this.panel切片设置.Name = "panel切片设置";
             this.panel切片设置.Size = new System.Drawing.Size(320, 27);
             this.panel切片设置.TabIndex = 1;
@@ -971,7 +971,7 @@
             "以间隔10分钟左右分割"});
             this.comboBox切片模式.Location = new System.Drawing.Point(0, 0);
             this.comboBox切片模式.Name = "comboBox切片模式";
-            this.comboBox切片模式.Size = new System.Drawing.Size(200, 32);
+            this.comboBox切片模式.Size = new System.Drawing.Size(200, 25);
             this.comboBox切片模式.TabIndex = 1;
             this.comboBox切片模式.Text = "ffmpeg扫描转场帧切割";
             this.comboBox切片模式.SelectedIndexChanged += new System.EventHandler(this.comboBox切片模式_SelectedIndexChanged);
@@ -998,7 +998,7 @@
             0,
             131072});
             this.numericUpDown检测镜头.Name = "numericUpDown检测镜头";
-            this.numericUpDown检测镜头.Size = new System.Drawing.Size(120, 34);
+            this.numericUpDown检测镜头.Size = new System.Drawing.Size(120, 25);
             this.numericUpDown检测镜头.TabIndex = 2;
             this.numericUpDown检测镜头.Value = new decimal(new int[] {
             11,
@@ -1012,7 +1012,7 @@
             this.checkBox转码成功后删除源视频.Dock = System.Windows.Forms.DockStyle.Top;
             this.checkBox转码成功后删除源视频.Location = new System.Drawing.Point(0, 0);
             this.checkBox转码成功后删除源视频.Name = "checkBox转码成功后删除源视频";
-            this.checkBox转码成功后删除源视频.Size = new System.Drawing.Size(320, 28);
+            this.checkBox转码成功后删除源视频.Size = new System.Drawing.Size(320, 21);
             this.checkBox转码成功后删除源视频.TabIndex = 10;
             this.checkBox转码成功后删除源视频.Text = "转码成功后删除源视频";
             this.checkBox转码成功后删除源视频.UseVisualStyleBackColor = true;
@@ -1046,7 +1046,7 @@
             // 
             // Form破片压缩
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1484, 938);
             this.Controls.Add(this.splitContainer1);
