@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.Eventing.Reader;
+using System.Runtime.InteropServices;
 
 namespace 破片压缩器 {
     public static class Settings {
@@ -149,12 +150,11 @@ namespace 破片压缩器 {
 
                 //vmaf接近时，p3比p5高2个CRF。
                 if (b根据帧率自动强化CRF) {//presert 3 ,crf 35 做基准档位参考
-
                     adjust_crf -= speed - 3;//每个压缩档位相差约1CRF
-
-                    if (adjust_crf < 0) adjust_crf = 0;
-                    else if (adjust_crf > 63) adjust_crf = 63;
                 }
+
+                if (adjust_crf < 0) adjust_crf = 0;
+                else if (adjust_crf > 63) adjust_crf = 63;
 
                 string cmd = $" -pix_fmt yuv420p10le -c:v libsvtav1 -crf {adjust_crf}  -preset {preset} -svtav1-params tune=1:lp=1";//:pin=1 
 
@@ -182,26 +182,35 @@ namespace 破片压缩器 {
                 }
                 return cmd;
             } else if (str视频编码库 == "libvvenc") {
-                if (speed == 4) preset = "medium";
-
-                else if (speed == 1) {
-                    preset = "slower"; adjust_crf += 2;
-                } else if (speed == 8) {
-                    preset = "slower"; adjust_crf += 2;
-                } else if (speed == 3) {
-                    preset = "slow"; adjust_crf += 1;
-                } else if (speed == 2) {
-                    preset = "slower"; adjust_crf += 2;
-                } else if (speed == 0) {
-                    preset = "slower"; adjust_crf += 2;
-                } else if (speed == 5) {
-                    preset = "fast"; adjust_crf -= 1;
-                } else if (speed == 6) {
-                    preset = "faster"; adjust_crf -= 2;
-                } else if (speed == 7) {
-                    preset = "faster"; adjust_crf -= 2;
-                } else preset = "medium";
-
+                if (speed == 4) {
+                    preset = "medium";
+                } else {
+                    if (b根据帧率自动强化CRF) {
+                        if (speed == 3) {
+                            preset = "slow"; adjust_crf += 1;
+                        } else if (speed == 5) {
+                            preset = "fast"; adjust_crf -= 1;
+                        } else if (speed >= 0 & speed < 3) {
+                            preset = "slower"; adjust_crf += 2;
+                        } else if (speed > 5) {
+                            preset = "faster"; adjust_crf -= 2;
+                        } else {
+                            preset = "medium";
+                        }
+                    } else {
+                        if (speed == 3) {
+                            preset = "slow";
+                        } else if (speed == 5) {
+                            preset = "fast";
+                        } else if (speed >= 0 & speed < 3) {
+                            preset = "slower";
+                        } else if (speed > 5) {
+                            preset = "faster";
+                        } else {
+                            preset = "medium";
+                        }
+                    }
+                }
 
                 if (adjust_crf < 0) adjust_crf = 0;
                 else if (adjust_crf > 63) adjust_crf = 63;
@@ -225,10 +234,12 @@ namespace 破片压缩器 {
                     else if (speed > 4) adjust_crf -= 4;
 
                     if (!b单线程) adjust_crf -= 1;//aom多线程质量降低1CRF
-
-                    if (adjust_crf < 0) adjust_crf = 0;
-                    else if (adjust_crf > 61) adjust_crf = 61;
                 }
+
+                if (adjust_crf < 0) adjust_crf = 0;
+                else if (adjust_crf > 61) adjust_crf = 61;
+
+
                 string cmd = $" -pix_fmt yuv420p10le -c:v libaom-av1 -crf {adjust_crf} -cpu-used {preset}  -threads 1 -aom-params row-mt=0:fp-mt=0";
 
                 str多线程编码库 = $" -pix_fmt yuv420p10le -c:v libaom-av1 -crf {adjust_crf} -cpu-used {preset}";
