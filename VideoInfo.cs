@@ -378,8 +378,8 @@ namespace 破片压缩器 {
             _str长乘宽 = $"{w}×{h}";
 
             if ((i输出宽 > Settings.i最小边长 && i输出宽 != i_剪后宽) || (i输出高 > Settings.i最小边长 && i输出高 != i_剪后高)) {
-                //str缩放滤镜 = $"scale={i输出宽}:{i输出高}:flags=lanczos";
-                str缩放滤镜 = $"scale={i输出宽}:{i输出高}:flags=bicubic";//lanczos硬、bicubic柔
+                str缩放滤镜 = $"scale={i输出宽}:{i输出高}:flags=lanczos";
+                //str缩放滤镜 = $"scale={i输出宽}:{i输出高}:flags=bicubic";//lanczos硬、bicubic柔
                 //   The default scaling flags wouldn't be applied, so the default scaling algorithm would be "bilinear" instead of "bicubic". [ Changed to "bicubic" since 9f14396a5103ec80893db801035ece5d14c0d3c5. ]͏    To achieve the same: specify the algorithm via "flags=bicubic" alike.
             }
 

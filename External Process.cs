@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -37,10 +36,13 @@ namespace 破片压缩器 {
 
         public StringBuilder sb输出数据流 = new StringBuilder( );//全局变量有调用，直接初始化。
 
-        Regex regex时长 = new Regex(@"Duration:\s*((?:\d{2}:){2,}\d{2}(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//视频时长
+        public static Regex regexFrame = new Regex(@"frame=\s*(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        public static Regex regex时长 = new Regex(@"Duration:\s*((?:\d{2}:){2,}\d{2}(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//视频时长
+
         Regex regex帧时长 = new Regex(@"time=\s*((?:\d{2}:){2,}\d{2}(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        Regex regexFrame = new Regex(@"frame=\s*(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         Regex regexSize = new Regex(@"size=\s*(\d+(?:\.\d+)?)KiB", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         Regex regexBitrate = new Regex(@"bitrate=\s*(\d+(?:\.\d+)?)kbits/s", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         Regex regexTime = new Regex(@"time=\s*(\d{2}:\d{2}:\d{2}(?:\.\d{2})?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -146,7 +148,7 @@ namespace 破片压缩器 {
                 if (iframes > 0) {
                     encodingFrames = (uint)iframes;
                     encFps = iframes / sec;
-                } else if (regexFrame.IsMatch(ffmpeg_Encoding)) {
+                } else if (regexFrame.IsMatch(ffmpeg_Encoding)) {//ffmpeg_Encoding是直接读取刷新的数据，容错设计
                     encodingFrames = uint.Parse(regexFrame.Match(ffmpeg_Encoding).Groups[1].Value);
                     encFps = encodingFrames / sec;
                 }
@@ -231,10 +233,10 @@ namespace 破片压缩器 {
 
             if (run) {
                 Thread thread_GetStandardError = new Thread(ffmpeg_读编码消息直到结束);
+                thread_GetStandardError.Priority = ThreadPriority.AboveNormal;
                 thread_GetStandardError.IsBackground = true;
                 thread_GetStandardError.Start( );
                 return true;//返回真代表加入等待队列。
-
             } else {
                 try { File.WriteAllText($"{fi源.DirectoryName}\\FFmpegAsync异常.{fi源.Name}.log", listError[0]); } catch { }
                 return false;
@@ -413,7 +415,6 @@ namespace 破片压缩器 {
             if (output.Data != null) {
                 listOutput.Add(output.Data);
                 sb输出数据流.AppendLine(output.Data);
-
             }
         }
         void ErrorData(object sendProcess, DataReceivedEventArgs output) {//标准输出、错误输出似乎共用缓冲区，只读其中一个，输出缓冲区可能会满，卡死
@@ -429,6 +430,14 @@ namespace 破片压缩器 {
                 StandardError = process.StandardError.ReadLine( );
                 if (!string.IsNullOrEmpty(StandardError)) {
                     if (regexFrame.IsMatch(StandardError)) {
+                        ffmpeg_Pace = StandardError;
+                        listError.Add(DateTime.Now + " 开始编码" + pid);
+                        listError.Add("------------------------------------------");
+                        if (subProcess(EXE.ffprobe, "-v error -show_entries format=duration " + fi源.Name, fi源.Directory.FullName, out string Output, out string Error)) {
+                            listError.Add(Output);
+                            listError.Add(Error);
+                            listError.Add("------------------------------------------");
+                        }
                         break;
                     } else {
                         listError.Add(StandardError);
@@ -438,50 +447,39 @@ namespace 破片压缩器 {
                     }
                 }
             }
-            if (!process.HasExited) {
-                //while (!process.StandardError.EndOfStream) {
-                //    StandardError = process.StandardError.ReadLine( ).TrimStart( );
-                //    if (!string.IsNullOrEmpty(StandardError)) {
-                //        if (StandardError.StartsWith("frame=")) {
-                //            ffmpeg_Pace = StandardError;
-                //            newFrame = true;
-                //            break;
-                //        } else if (StandardError.StartsWith("size=")) {
-                //            continue;
-                //        } else {
-                //            listError.Add(StandardError);
-                //        }
-                //    }
-                //}
-                while (!process.StandardError.EndOfStream) {
-                    ffmpeg_Encoding = process.StandardError.ReadLine( );
-                    int iframe = StandardError.IndexOf("frame=") + 6;
-                    if (iframe >= 6) {
-                        index_frame = iframe;
-                        ffmpeg_Pace = ffmpeg_Encoding;
-                        newFrame = true;
-                    } else
-                        listError.Add(ffmpeg_Encoding);
+
+            while (!process.StandardError.EndOfStream) {
+                ffmpeg_Encoding = process.StandardError.ReadLine( );
+                int iframe = ffmpeg_Encoding.IndexOf("frame=") + 6;
+                if (iframe >= 6) {
+                    index_frame = iframe;
+                    ffmpeg_Pace = ffmpeg_Encoding;
+                    newFrame = true;
+                } else {
+                    StandardError = ffmpeg_Encoding;
+                    listError.Add(ffmpeg_Encoding);
                 }
-                process.WaitForExit( );
             }
+            process.WaitForExit( );
+
 
             Fx文件处理( );
         }
 
         void read_StandardOutput( ) {
             while (!process.StandardOutput.EndOfStream) {
-
                 StandardOutput = process.StandardOutput.ReadLine( );
-                listOutput.Add(StandardOutput);
-                sb输出数据流.AppendLine(StandardOutput);
-
+                if (!string.IsNullOrEmpty(StandardOutput)) {
+                    listOutput.Add(StandardOutput);
+                    sb输出数据流.AppendLine(StandardOutput);
+                }
             }
         }
         void read_StandardError( ) {
             while (!process.StandardError.EndOfStream) {
                 StandardError = process.StandardError.ReadLine( );
                 listError.Add(StandardError);
+                sb输出数据流.AppendLine(StandardOutput);
             }
         }
 
@@ -504,17 +502,22 @@ namespace 破片压缩器 {
                 builder.Append(DateTime.Now).Append(" 异常退出，代码：").Append(process.ExitCode);
                 try { File.WriteAllText($"{fi源.DirectoryName}\\FFmpegAsync异常.{fi源.Name}@{DateTime.Now:yy-MM-dd HH.mm.ss}.log", builder.ToString( )); } catch { }
             } else {
-                Fx补齐时间码( );
-                //builder.AppendFormat("{0:yyyy-MM-dd HH:mm:ss} 均速{1:F4}fps 耗时 {2} ({3:F0})秒", DateTime.Now, getFPS( ), span耗时, span耗时.TotalSeconds);
+
                 builder.AppendFormat("{0:yyyy-MM-dd HH:mm:ss} 均速{1:F4}fps 耗时 {2} ({3})秒", DateTime.Now, getFPS( ), stopwatch.Elapsed, stopwatch.ElapsedMilliseconds / 1000);
                 if (File.Exists(fi编码.FullName)) {
-                    string name = fi源.Name.Substring(0, fi源.Name.Length - fi源.Extension.Length);
                     if (!di编码成功.Exists) try { di编码成功.Create( ); } catch { return; }
+                    string name = fi源.Name.Substring(0, fi源.Name.Length - fi源.Extension.Length);
+
+                    //Fx补齐时间码( );
+
                     string str转码完成文件 = $"{di编码成功.FullName}\\{name}{fi编码.Extension}";
                     if (File.Exists(str转码完成文件)) try { File.Delete(str转码完成文件); } catch { }
                     try { fi编码.MoveTo(str转码完成文件); } catch { return; }
                     try { File.WriteAllText($"{di编码成功.FullName}\\{name}_转码完成.log", builder.ToString( )); } catch { }
                     if (b编码后删除切片) try { fi源.Delete( ); } catch { }
+
+                    string str提取时间码命令行 = string.Format("timestamps_v2 {0} 0:{1}_timestamp.txt", fi编码.Name, name);
+                    subProcess(EXE.mkvextract, str提取时间码命令行, fi编码.DirectoryName, out string Output, out string Error);
                 }
 
                 Form破片压缩.autoReset合并.Set( );//转码后文件移动到成功文件夹，触发一次合并查询。
@@ -523,7 +526,7 @@ namespace 破片压缩器 {
             b已结束 = true;
             process.Dispose( );
         }
-
+        
         void Fx补齐时间码( ) {
             if (b补齐时间戳 && TimeSpan.TryParse(regex帧时长.Match(ffmpeg_Pace).Groups[1].Value, out TimeSpan ts编码时长)) {
                 if (span输入时长 > ts编码时长) {
@@ -534,7 +537,8 @@ namespace 破片压缩器 {
                         if (tcLine.Length > 2) {
                             string endSeconds = span输入时长.TotalMilliseconds.ToString( );
                             string outName = fi编码.Name.Substring(0, fi编码.Name.LastIndexOf('.'));
-                            for (int len = tcLine.Length - 1; len > 0; len--) {
+                            ////ffmpeg 双刃剑设计，丢弃最后一帧时间戳。当vfr最后一帧重复时，抛弃重复帧时间戳，导致切片合并后缺失部分时间
+                            for (int len = tcLine.Length - 1; len > 0; len--) {//旧补齐算法未判断已编码帧数量 encodingFrames，导致最后一个时间戳未对齐末尾帧
                                 StringBuilder sbTC = new StringBuilder( );
                                 for (int i = 0; i < len; i++) {
                                     sbTC.AppendLine(tcLine[i]);
@@ -546,7 +550,7 @@ namespace 破片压缩器 {
                                 }
                                 string timestampMKV = $"{outName}-timestamp{len}.mkv";
                                 if (subProcess(EXE.mkvmerge, $"--output \"{timestampMKV}\" --timestamps \"0:{timeCodeFile}\" \"{fi编码.Name}\"", fi编码.DirectoryName, "Progress: 100%")) {
-                                    if (subProcess(EXE.ffprobe, $"\"{timestampMKV}\"", fi编码.DirectoryName, out List<string> listError)) {
+                                    if (subProcess(EXE.ffprobe, $"-hide_banner -i \"{timestampMKV}\"", fi编码.DirectoryName, out List<string> listError)) {
                                         foreach (string err in listError) {
                                             if (err.Length > 21 && err.StartsWith("Duration:")) {
                                                 string span = err.Substring(9, err.IndexOf(',', 9) - 9);
@@ -591,7 +595,7 @@ namespace 破片压缩器 {
             }
         }
 
-        bool subProcess(string FileName, string Arguments, string WorkingDirectory, string FinalTxt) {
+        public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, string FinalTxt) {
             using (Process p = new Process( )) {
                 p.StartInfo.FileName = FileName;
                 p.StartInfo.Arguments = Arguments;
@@ -616,7 +620,7 @@ namespace 破片压缩器 {
             return false;
         }
 
-        bool subProcess(string FileName, string Arguments, string WorkingDirectory, out string Output, out string Error) {
+        public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, out string Output, out string Error) {
             bool Success = false;
             using (Process p = new Process( )) {
                 p.StartInfo.FileName = FileName;
@@ -639,7 +643,7 @@ namespace 破片压缩器 {
             return Success;
         }
 
-        bool subProcess(string FileName, string Arguments, string WorkingDirectory, out List<string> listError) {
+        public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, out List<string> listError) {
             bool Success = false;
             listError = new List<string>( );
             using (Process p = new Process( )) {

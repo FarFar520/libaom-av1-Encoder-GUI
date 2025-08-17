@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using static 破片压缩器.Scene;
 
 namespace 破片压缩器 {
     public class Scene {
-        public const int gop = 5;
+        public static int i分割最少秒 = 2;
         public List<Info> list_All = new List<Info>( );
         public List<Info> list_TypeI = new List<Info>( );
 
@@ -23,7 +24,7 @@ namespace 破片压缩器 {
 
         public class Info {
             public int hasNum = 0;
-            public uint n = 0, img = 0;
+            public int n = -1, img = 0;
             public double pts_time = 0;
 
             public string type = string.Empty;
@@ -38,7 +39,21 @@ namespace 破片压缩器 {
 
             public Info info前场;
 
+            public double d画面方差 = 0;
+
             //所有函数都初始化，避免意外调用。
+
+            public void fx画面方差(Info info) {
+                double dif_Mean = 1, dif_Stdev = 1;
+
+                if (mean.has && info.mean.has)
+                    dif_Mean = Math.Pow(info.mean.R - mean.R, 2) + Math.Pow(info.mean.G - mean.G, 2) + Math.Pow(info.mean.B - mean.B, 2);
+
+                if (stdev.has && info.stdev.has)
+                    dif_Stdev = Math.Pow(info.stdev.R - stdev.R, 2) + Math.Pow(info.stdev.G - stdev.G, 2) + Math.Pow(info.stdev.B - stdev.B, 2);
+
+                d画面方差 = dif_Mean * dif_Mean;//有任意项为0风险。
+            }
 
             public double dif时空(Info info, double d段落) {
                 double dif_Mean = 1, dif_Stdev = 1;
@@ -70,7 +85,7 @@ namespace 破片压缩器 {
                             }
                             info前场.sec本场时长 = sec前场时长 = pts_time - infos[i].pts_time;
 
-                            if (dif前场mean < 4 && dif前场stdev < 4.9 && sec前场时长 < gop) return false;//画面非常接近
+                            if (dif前场mean < 4 && dif前场stdev < 4.9 && sec前场时长 < i分割最少秒) return false;//画面非常接近
                             if ((dif前场mean < 34 && dif前场stdev < 12) && sec前场时长 < 1) return false;//变动不大，时长接近
 
                             //if (sec前场时长 <= 0.5 && (dif前场mean < 202 || dif前场stdev < 118)) return false;//时长短，变化不大。
@@ -142,7 +157,7 @@ namespace 破片压缩器 {
                         for (--i; i >= 0 && line[i] != ' '; i--) sbKey.Insert(0, line[i]);//冒号前面没有空格的规律，匹配非空格。
                         switch (sbKey.ToString( ).Trim( )) {
                             case "n": {
-                                if (uint.TryParse(sbValue.ToString( ), out n)) {
+                                if (int.TryParse(sbValue.ToString( ), out n)) {
                                     img = n + 1;
                                     hasNum++;
                                 }
@@ -178,7 +193,7 @@ namespace 破片压缩器 {
 
             }
 
-            public Info(uint n, double pts_time) {
+            public Info(int n, double pts_time) {
                 this.n = n;
                 this.img = n + 1;
                 this.pts_time = pts_time;
@@ -203,16 +218,27 @@ namespace 破片压缩器 {
                 }
             }
 
-            foreach (Info info in infos) {
-                info.d时间x空间 = info.sec本场时长 / f平均秒 * info.dif后场mean;//还行
+            infos = infos.OrderBy(s => s.n).ToList( );
 
-                //info.d时间x空间 = info.sec本场时长 / f平均秒 * info.dif后场mean * info.dif后场stdev * info.sec前场时长 / f平均秒 * info.dif前场mean * info.dif后场stdev;
+            infos[0].d时间x空间 = infos[0].sec本场时长 / f平均秒 * infos[0].dif后场mean;
 
-                //info.d时间x空间 = info.sec本场时长 / f平均秒 * info.dif后场mean + info.sec前场时长 / f平均秒 * info.dif前场mean;
-                //前后场景，[持续时长×场景变化]做镜头切换排序一局
+            infos[0].d画面方差 = Math.Pow(infos[0].mean.R, 2) + Math.Pow(infos[0].mean.G, 2) + Math.Pow(infos[0].mean.B, 2) * Math.Pow(infos[0].stdev.R, 2) + Math.Pow(infos[0].stdev.G, 2) + Math.Pow(infos[0].stdev.B, 2);
 
-                //info.d时间x空间 = Math.Pow(info.sec本场时长 / f平均秒, 2) * info.dif后场mean;
+            for (int i = 1; i < infos.Count; i++) {
+                infos[i].fx画面方差(infos[i - 1]);
+                infos[i].d时间x空间 = infos[i].sec本场时长 / f平均秒 * infos[i].dif后场mean;
             }
+
+            //foreach (Info info in infos) {
+            //    info.d时间x空间 = info.sec本场时长 / f平均秒 * info.dif后场mean;//还行
+
+            //    //info.d时间x空间 = info.sec本场时长 / f平均秒 * info.dif后场mean * info.dif后场stdev * info.sec前场时长 / f平均秒 * info.dif前场mean * info.dif后场stdev;
+
+            //    //info.d时间x空间 = info.sec本场时长 / f平均秒 * info.dif后场mean + info.sec前场时长 / f平均秒 * info.dif前场mean;
+            //    //前后场景，[持续时长×场景变化]做镜头切换排序一局
+
+            //    //info.d时间x空间 = Math.Pow(info.sec本场时长 / f平均秒, 2) * info.dif后场mean;
+            //}
         }
 
         public void Add_TypeI(string[] lines) {
@@ -232,70 +258,40 @@ namespace 破片压缩器 {
                 return list;
             }
 
-            List<Info> infos = list_TypeI.OrderByDescending(a => a.d时间x空间).ToList( );
+            List<Info> infos = list_TypeI.OrderByDescending(a => a.d画面方差).ToList( );
 
             int count;
             double d段落;
-            if (f平均秒 < gop) {
-                d段落 = f平均秒;
-                count = (int)(f平均秒 / gop * infos.Count);
+            if (f平均秒 < i分割最少秒) {
+                d段落 = i分割最少秒;
+                count = (int)(f平均秒 / i分割最少秒 * infos.Count);
                 if (count * 2 < infos.Count) count = infos.Count / 2 + 1;//至少保留一半
             } else {
-                d段落 = gop;
-                count = infos.Count;
+                d段落 = f平均秒;
+                if (infos.Count > 1024) count = infos.Count / 2;
+                else count = infos.Count;
             }
 
             List<Info> keep = new List<Info>( );
             for (int i = 0; i < count; i++) keep.Add(infos[i]);
 
-            keep = keep.OrderBy(a => a.n).ToList( );
-
-            List<Info> remove = new List<Info>( );
-            /*
-            for (int i = 0; i < keep.Count; i++) {
-                if (keep[i].sec本场时长 < d段落) {
-                    //场景差异排序后删除。
-                    List<KeyValuePair<double, int>> list_偏差_下标 = new List<KeyValuePair<double, int>>( );
-                    for (int j = i + 1; j < keep.Count;) {
-                        if (keep[j].pts_time - keep[i].pts_time < d段落) {
-                            list_偏差_下标.Add(new KeyValuePair<double, int>(keep[i].dif时空(keep[j], d段落), j));
-                            j++;
-                        } else { break; }
-                    }
-                    if (list_偏差_下标.Count > 0) {
-                        list_偏差_下标 = list_偏差_下标.OrderByDescending(kv => kv.Key).ToList( );
-
-                        while (++i <= list_偏差_下标[0].Value) remove.Add(keep[i]);
-                    }
-                }
-            }            
-            for (int i = 0; i < remove.Count; i++) keep.Remove(remove[i]);
-            */
-
-            remove.Clear( );
-            //if (d段落 < gop) d段落 = gop;
-            for (int i = 0; i < keep.Count; i++) {
-                if (keep[i].sec本场时长 < d段落) {
-                    for (int j = i + 1; j < keep.Count; j++) {
-                        if (keep[j].pts_time - keep[i].pts_time < d段落) remove.Add(keep[j]);//最后去除过短片段。
-                        else {
-                            i = j - 1;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < remove.Count; i++) keep.Remove(remove[i]);
-
             Info[] arr = keep.OrderBy(a => a.n).ToArray( );
 
             List<float> list_typeI_pts_time = new List<float>( );
 
-            for (int i = 0; i < arr.Length; i++) {
-                list_typeI_pts_time.Add((float)arr[i].pts_time);
-            }
+            if (arr.Length > 2) {
+                int i = 0;
+                for (; i < arr.Length; i++)
+                    if (arr[i].pts_time > d段落) {
+                        list_typeI_pts_time.Add((float)arr[0].pts_time);
+                        i++;
+                        break;
+                    }
 
+                for (; i < arr.Length; i++)
+                    if (arr[i].pts_time - list_typeI_pts_time[list_typeI_pts_time.Count - 1] > d段落)
+                        list_typeI_pts_time.Add((float)arr[i].pts_time);
+            }
             return list_typeI_pts_time;
         }
 

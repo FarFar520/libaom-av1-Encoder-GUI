@@ -5,13 +5,13 @@ using System.IO;
 namespace 破片压缩器 {
     internal static class EXE {
         static DateTime time上次查找ffmpeg = DateTime.Now.AddDays(1);
-        public static string ffmpeg = "ffmpeg", ffprobe = "ffprobe", mkvmerge = "mkvmerge", mkvextract = "mkvextract";
+        public static string ffmpeg = "ffmpeg", ffprobe = "ffprobe", mkvmerge = "mkvmerge", mkvextract = "mkvextract";//运行库默认
         public static bool find最新版ffmpeg(out string exe) {
             DateTime time查找 = DateTime.Now;
             if (Math.Abs(time查找.Subtract(time上次查找ffmpeg).TotalSeconds) > 60) {
                 time上次查找ffmpeg = time查找;
                 try {
-                    string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*ffmpeg*.exe", SearchOption.AllDirectories);
+                    string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*ffmpeg*.exe");
                     FileInfo fi时间最近 = new FileInfo(exeFiles[0]);
                     for (int i = 1; i < exeFiles.Length; i++) {
                         FileInfo fi = new FileInfo(exeFiles[i]);
@@ -24,10 +24,10 @@ namespace 破片压缩器 {
             }
             exe = ffmpeg;
             return try_ffmpeg程序可运行(exe, "ffmpeg");
-        }
+        }//只查找程序同目录新增ffmpeg
         public static bool find最新版ffprobe(out string exe) {
             try {
-                string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*ffprobe*.exe", SearchOption.AllDirectories);
+                string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*ffprobe*.exe");
                 FileInfo fi时间最近 = new FileInfo(exeFiles[0]);
                 for (int i = 1; i < exeFiles.Length; i++) {
                     FileInfo fi = new FileInfo(exeFiles[i]);
@@ -42,7 +42,7 @@ namespace 破片压缩器 {
         }
         public static bool find最新版mkvmerge(out string exe) {
             try {
-                string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*mkvmerge*.exe", SearchOption.AllDirectories);
+                string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*mkvmerge*.exe");
 
                 FileInfo fi时间最近 = new FileInfo(exeFiles[0]);
                 for (int i = 1; i < exeFiles.Length; i++) {
@@ -58,7 +58,7 @@ namespace 破片压缩器 {
         }
         public static bool find最新版mkvextract(out string exe) {
             try {
-                string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*mkvextract*.exe", SearchOption.AllDirectories);
+                string[] exeFiles = Directory.GetFiles(Environment.CurrentDirectory, "*mkvextract*.exe");
                 FileInfo fi时间最近 = new FileInfo(exeFiles[0]);
                 for (int i = 1; i < exeFiles.Length; i++) {
                     FileInfo fi = new FileInfo(exeFiles[i]);

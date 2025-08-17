@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 
@@ -119,7 +120,7 @@ namespace 破片压缩器 {
                     FileInfo[] arrFileInfo = dir.GetFiles( );
                     foreach (FileInfo file in arrFileInfo) {
                         if (Video_Roadmap.is视频(file) && !is队列中(file)) {//每切片视频后，存在长时间等待编码结束。 Video_Roadmap.is视频内有判断一次视频存在情况。
-                            str正在转码文件夹 = $"{str切片根目录}\\{file.DirectoryName.Replace(file.Directory.Root.FullName, "")}";
+                            str正在转码文件夹 = $"{str切片根目录}\\{file.DirectoryName.Replace(file.Directory.Root.FullName, "").Trim('\\')}";
                             Video_Roadmap video = new Video_Roadmap(file, str正在转码文件夹);
                             if (!video.b解码60帧判断交错(out StringBuilder builder)) //扫描60帧，出结果较快。
                                 video.b读取视频头(out builder);
@@ -150,8 +151,8 @@ namespace 破片压缩器 {
                                 if (video.i剩余切片数量 > 0) add日志($"恭喜！获得视频碎片{video.i剩余切片数量}片 @{file.FullName}");
                                 if (!video.b查找MKA音轨( )) {
                                     add日志($"提取音轨：{video.strMKA文件名}");
-                                    video.b提取MKA音轨(ref builder);
-                                    //使用提取音轨消耗时间，让之前切片缓存完全写入磁盘。
+                                    Task.Run(( ) => { video.b提取MKA音轨(ref builder); });//体积大的视频会等好几分钟
+                                    try { Thread.Sleep(999); } catch { }
                                 }//mkvmerge小概率返回结果后，内存中的数据未完全写入磁盘。已增加命令行 --flush-on-close 完整写入磁盘退出
 
                                 txt日志(builder.ToString( ));
@@ -194,6 +195,8 @@ namespace 破片压缩器 {
                         video正在转码文件.b扫描视频黑边生成剪裁参数( );
                     }
                     video正在转码文件.b拼接转码摘要( );
+                    video正在转码文件.fx保存任务配置( );
+
                     timer刷新编码输出.Start( );
 
                     if (video正在转码文件.b后台转码MKA音轨( )) {//单独转码OPUS音轨，CPU资源占用少，放在视频队列之前。
@@ -266,7 +269,6 @@ namespace 破片压缩器 {
                     textBox日志.ScrollToCaret( );
                 }));
                 Thread.Sleep(9999);
-
             }
         }
 
@@ -431,6 +433,8 @@ namespace 破片压缩器 {
                 f保底缓存切片 = i多进程数量 * 1.2f + 1;
             }
 
+
+
             Settings.b单线程 = !comboBox_lib.Text.Contains("多线程");
 
             Settings.b磨皮降噪 = checkBox_磨皮.Checked;
@@ -472,6 +476,7 @@ namespace 破片压缩器 {
             Settings.b转可变帧率 = checkBox_VFR.Checked;
 
             Settings.sec_gop = (int)numericUpDown_GOP.Value;
+            Settings.i分割GOP = Scene.i分割最少秒 = (int)numericUpDown_分割最小秒.Value;
         }
 
         private void timer刷新编码输出_Tick(object sender, EventArgs e) {//辅助线程，显示编码中ffmpeg输出帧信息。
@@ -563,10 +568,10 @@ namespace 破片压缩器 {
             if (SelectedIndex == 0) {
                 i切片间隔秒 = Settings.sec_gop * 10;
                 Settings.b扫描场景 = true;
-                numericUpDown检测镜头.Visible = true;
+                numericUpDown_分割最小秒.Visible = numericUpDown检测镜头.Visible = true;
             } else {
                 Settings.b扫描场景 = false;
-                numericUpDown检测镜头.Visible = false;
+                numericUpDown_分割最小秒.Visible = numericUpDown检测镜头.Visible = false;
                 /*
                 ffmpeg扫描转场帧切割
                 以间隔5秒左右分割
@@ -706,6 +711,13 @@ namespace 破片压缩器 {
             }
         }
 
+        private void numericUpDown_GOP_ValueChanged(object sender, EventArgs e) {
+            int half = (int)numericUpDown_GOP.Value / 2;
+            if (half > numericUpDown_分割最小秒.Value) {
+                numericUpDown_分割最小秒.Value = half;
+            }
+        }
+
         private void textBox日志_KeyUp(object sender, KeyEventArgs e) {
             if (e.KeyCode == Keys.F5) {
                 if (thread切片.IsAlive && thread转码.IsAlive && thread合并.IsAlive) {
@@ -728,6 +740,7 @@ namespace 破片压缩器 {
                 numericUpDown_CRF.Minimum = 0;
                 numericUpDown_CRF.Value = 32;
                 Settings.str视频编码库 = "aomav1";
+
                 //config.partition_n = 2;
                 //int i视觉无损 = 23, i轻损 = 28, i忍损 = 35;//aomenc,crf固定，cpu-used不同，质量区别无法肉眼察觉，速度、体积可观测。
                 tips = "aomenc画质范围参考↓\r\n蓝光原盘：CRF=8\r\n视觉无损：CRF=16\r\n超清：\tCRF=23\r\n高清：\tCRF=28（推荐）\r\n标清：\tCRF=32（默认）";
@@ -742,13 +755,32 @@ namespace 破片压缩器 {
                 numericUpDown_CRF.Minimum = 1;
                 numericUpDown_CRF.Value = 35;
                 Settings.str视频编码库 = "svtav1";
-                //config.partition_n = 4;
-                //int i视觉无损 = 23, i轻损 = 28, i忍损 = 35;
-                tips = "SVT-AV1画质范围参考↓\r\n蓝光原盘：CRF=8\r\n视觉无损：CRF=18\r\n超清：\tCRF=25\r\n高清：\tCRF=30（推荐）\r\n标清：\tCRF=35（默认）";
+
+               //config.partition_n = 4;
+               //int i视觉无损 = 23, i轻损 = 28, i忍损 = 35;
+               tips = "SVT-AV1画质范围参考↓\r\n蓝光原盘：CRF=8\r\n视觉无损：CRF=18\r\n超清：\tCRF=25\r\n高清：\tCRF=30（推荐）\r\n标清：\tCRF=35（默认）";
 
                 if (lib.Contains("多线程")) {
                     comboBox_Workers.Text = (NumberOfLogicalProcessors / 16 + 1).ToString( );
                 }
+            } else if (lib.Contains("libvvenc")) {
+                comboBoxSpeed.SelectedIndex = 4;
+                numericUpDown_CRF.Maximum = 53;
+                numericUpDown_CRF.Minimum = 1;
+                numericUpDown_CRF.Value = 32;
+                Settings.str视频编码库 = "libvvenc";
+
+                tips = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=8\r\n视觉无损：QPA=16\r\n超清：\tQPA=23\r\n高清：\tQPA=28（推荐）\r\n标清：\tQPA=32（默认）";
+
+                if (lib.Contains("多线程")) {
+                    comboBox_Workers.Text = (NumberOfLogicalProcessors / 6 + 1).ToString( );
+                }
+            }
+
+            if (lib.Contains("libvvenc")) {
+                checkBox_磨皮.Visible = checkBox_磨皮.Enabled = false;
+            } else {
+                checkBox_磨皮.Visible = true;
             }
 
 
@@ -795,7 +827,7 @@ namespace 破片压缩器 {
             CPUNum( );
             comboBox切片模式.SelectedIndex = 4;
             comboBox_Crop.SelectedIndex = 0;
-            comboBox_lib.SelectedIndex = 0;
+            comboBox_lib.SelectedIndex = 1;
             this.Text += Application.ProductVersion;
         }
     }

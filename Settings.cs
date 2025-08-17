@@ -2,8 +2,10 @@
 
 namespace 破片压缩器 {
     public static class Settings {
+        public static bool b编码后删除切片 = true;
         public static bool b单线程 = true;
 
+        public static int i分割GOP = 2;
         public static int sec_gop = 5;
 
         public static int i降噪强度 = 4;
@@ -110,14 +112,26 @@ namespace 破片压缩器 {
             denoise = string.Empty;
 
             if (b根据帧率自动强化CRF) {
-                if (info.f输出帧率 > 210) adjust_crf = crf + 9;
-                else if (info.f输出帧率 > 170) adjust_crf = crf + 8;
-                else if (info.f输出帧率 > 115) adjust_crf = crf + 7;
-                else if (info.f输出帧率 > 57) adjust_crf = crf + 6;
-                else if (info.f输出帧率 > 40) adjust_crf = crf + 3;
-                else if (info.f输出帧率 > 28) adjust_crf = crf + 1;
-                else {
-                    adjust_crf = crf;
+                if (str视频编码库 == "libvvenc") {
+                    if (info.f输出帧率 > 210) adjust_crf = crf + 6;
+                    else if (info.f输出帧率 > 170) adjust_crf = crf + 5;
+                    else if (info.f输出帧率 > 115) adjust_crf = crf + 4;
+                    else if (info.f输出帧率 > 57) adjust_crf = crf + 3;
+                    else if (info.f输出帧率 > 40) adjust_crf = crf + 2;
+                    else if (info.f输出帧率 > 28) adjust_crf = crf + 1;
+                    else {
+                        adjust_crf = crf;
+                    }
+                } else {
+                    if (info.f输出帧率 > 210) adjust_crf = crf + 9;
+                    else if (info.f输出帧率 > 170) adjust_crf = crf + 8;
+                    else if (info.f输出帧率 > 115) adjust_crf = crf + 7;
+                    else if (info.f输出帧率 > 57) adjust_crf = crf + 5;
+                    else if (info.f输出帧率 > 40) adjust_crf = crf + 3;
+                    else if (info.f输出帧率 > 28) adjust_crf = crf + 1;
+                    else {
+                        adjust_crf = crf;
+                    }
                 }
             } else {
                 adjust_crf = crf;
@@ -167,7 +181,37 @@ namespace 破片压缩器 {
                     denoise = ".dn" + i降噪强度;
                 }
                 return cmd;
-            } else {
+            } else if (str视频编码库 == "libvvenc") {
+                if (speed == 4) preset = "medium";
+
+                else if (speed == 1) {
+                    preset = "slower"; adjust_crf += 2;
+                } else if (speed == 8) {
+                    preset = "slower"; adjust_crf += 2;
+                } else if (speed == 3) {
+                    preset = "slow"; adjust_crf += 1;
+                } else if (speed == 2) {
+                    preset = "slower"; adjust_crf += 2;
+                } else if (speed == 0) {
+                    preset = "slower"; adjust_crf += 2;
+                } else if (speed == 5) {
+                    preset = "fast"; adjust_crf -= 1;
+                } else if (speed == 6) {
+                    preset = "faster"; adjust_crf -= 2;
+                } else if (speed == 7) {
+                    preset = "faster"; adjust_crf -= 2;
+                } else preset = "medium";
+
+
+                if (adjust_crf < 0) adjust_crf = 0;
+                else if (adjust_crf > 63) adjust_crf = 63;
+
+                string cmd = $" -pix_fmt yuv420p10le -c:v libvvenc -qp {adjust_crf} -preset {preset} -vvenc-params  MCTF=1:MCTFSpeed=0:threads=1:MaxParallelFrames=1";
+
+                str多线程编码库 = $" -pix_fmt yuv420p10le -c:v libvvenc -qp {adjust_crf} -preset {preset} -vvenc-params MCTF=1:MCTFSpeed=0";
+
+                return cmd;
+            } else  {
                 if (speed > 7) preset = "8";
                 //--cpu-used=<arg> Speed setting (0..6 in good mode, 5..11 in realtime mode, 0..9 in all intra mode)
                 //ssim接近时，p3大约比p5、p6=p8 节约4CRF

@@ -202,13 +202,21 @@ namespace 破片压缩器 {
         public static bool Get独立进程输出(out string info) {
             info = string.Empty;
             if (process黑边 != null) {
-                info = process黑边.sb输出数据流.ToString( ) + "\r\n"
-                    + process黑边.get_ffmpeg_Pace;
+                try {
+                    info = process黑边.sb输出数据流.ToString( ) + "\r\n"
+                      + process黑边.get_ffmpeg_Pace;
+                } catch {
+                    info = process黑边.get_ffmpeg_Pace;
+                }
                 return true;
             }
             if (process场景 != null) {
-                info = process场景.sb输出数据流.ToString( ) + "\r\n"
-                    + process场景.get_ffmpeg_Pace;
+                try {
+                    info = process场景.sb输出数据流.ToString( ) + "\r\n"
+                     + process场景.get_ffmpeg_Pace;
+                } catch {
+                    info = process场景.get_ffmpeg_Pace;
+                }
                 return true;
             }
             if (process切片 != null) {
