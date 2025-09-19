@@ -253,7 +253,6 @@ namespace 破片压缩器 {
                 lock (obj转码队列) {
                     list_等待转码队列.Add(roadmap);
                 }//由转码线程结束后加入合并队列
-
                 autoReset转码.Set( );
             } else {//未完成的暂不加入合并队列，减少合并线程重复判断
                 string lowPath = roadmap.di编码成功.FullName.ToLower( );

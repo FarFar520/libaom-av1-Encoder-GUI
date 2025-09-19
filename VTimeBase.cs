@@ -40,7 +40,7 @@ namespace 破片压缩器 {
             , dic白场 = new ConcurrentDictionary<float, string>( )
             ;
 
-        string str单线程=string.Empty;
+        string str单线程 = string.Empty;
         float scene = 0.11f, sec分割至少 = 2, sec_gop, Duration = 0, Duration加一帧, f连续黑场最小秒 = 0.5f;
 
         public AutoResetEvent event计算 = new AutoResetEvent(false);
@@ -229,7 +229,7 @@ namespace 破片压缩器 {
             //    }
             //}
 
-            if (b读取关键帧 && b读取转场 && b读取黑场 && b读取白场) {
+            if (b读取关键帧 && b读取转场 && b读取黑场) {
                 fx同步计算分段点并存盘( );
             } else {
                 //th循环计算 = new Thread(fn循环计算分段点并存盘) { IsBackground = true, Name = "循环计算分段点并存盘" + fi输入文件.Name };
@@ -609,7 +609,7 @@ namespace 破片压缩器 {
                     fx添加结尾(list分段秒.Last( ) + sec分割至少, ref index转场, ref list分段秒);
                     break;
                 }
-            } while (list分段秒.Last( ) < Duration加一帧);//分段结束
+            } while (f后6组 < Duration);//分段结束
             list分段秒.Distinct( );
             list分段秒.Sort( );
             fx匹配关键帧(ref index关键帧, ref list分段秒);
@@ -1013,14 +1013,13 @@ namespace 破片压缩器 {
                 dic白场.Clear( );
                 dic转场帧.Clear( );
                 b正在计算 = false;
+                转码队列.Remove_VTimeBase(this);
+                Form破片压缩.autoReset转码.Set( );
             }
             try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv", @string.ToString( )); } catch (Exception err) {
                 @string.AppendLine( ).Append(err.Message);
                 try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv" + DateTime.Now.ToString("yyyy.MM.dd.HH.mm.ss.fff") + ".csv", @string.ToString( )); } catch { }
             }
-
-            转码队列.Remove_VTimeBase(this);
-            Form破片压缩.autoReset转码.Set( );
         }
 
     }
