@@ -19,15 +19,16 @@ namespace 破片压缩器 {
         public int i显示帧宽 = 1;
 
         public int i输出宽 = 1, i输出高 = 1, i输出长边 = 1, i输出短边 = 1;
-        public float f输入帧率 = 1.0f;
+        public float f输入帧率 = 23.976f;
         public float f输出帧率 = 1.0f;
+        public float f输入每帧秒 = 0.041708f;
 
         public bool b隔行扫描 = false;
         public bool b剪裁滤镜 = false, b缩放滤镜 = false, b改变了尺寸 = false;
 
         public string str剪裁滤镜, str缩放滤镜;
 
-        public int outSumFrames = 0;
+        public int inSumFrame = 1, outSumFrames = 1;
         public int sum_interlaced_frame = 0;
 
         public List<string> list信息流 = new List<string>( );
@@ -36,8 +37,7 @@ namespace 破片压缩器 {
                , list音频轨 = new List<int>( )
                , list字幕轨 = new List<int>( )
                , list图片轨 = new List<int>( )
-               , list其它轨 = new List<int>( )
-               ;
+               , list其它轨 = new List<int>( );
 
 
         public static Regex regexWH = new Regex(@"(?<w>[1-9]\d+)x(?<h>[1-9]\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -47,6 +47,8 @@ namespace 破片压缩器 {
         public static Regex regexAudio = new Regex(@"Audio: (?<code>\w+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         public static Regex regex隔行扫描 = new Regex(@"(top|bottom)\s+first", RegexOptions.IgnoreCase | RegexOptions.Compiled);//交错视频
 
+        public 输出 OUT = new 输出( );
+        public 输入 IN = new 输入( );
         public 剪裁参数 黑边剪裁 = new 剪裁参数( );
         public 剪裁参数 手动剪裁 = new 剪裁参数( );
 
@@ -168,6 +170,14 @@ namespace 破片压缩器 {
             }
         }
 
+        public class 输出 {
+            public float adjust_crf = 0;
+            public string enc = string.Empty, str量化名 = "crf", preset = string.Empty, str视流格式 = string.Empty, denoise = string.Empty;
+        }
+        public class 输入 {
+            public string ffmpeg单线程解码 = EXE.ffmpeg单线程解码;
+        }
+
         public VideoInfo(FileInfo fileInfo) {
             this.fileInfo = fileInfo;
             str视频名无后缀 = fileInfo.Name.Substring(0, fileInfo.Name.LastIndexOf("."));
@@ -219,7 +229,6 @@ namespace 破片压缩器 {
             }
         }
 
-
         void v匹配视频信息(string line, int i轨道号) {
             Match matchWH = regexWH.Match(line);
             if (matchWH.Success) {
@@ -248,13 +257,17 @@ namespace 破片压缩器 {
 
             if (regex隔行扫描.IsMatch(line)) b隔行扫描 = true;//隔行则不需要变动，非隔行则判断
 
-            if (float.TryParse(regexTBR.Match(line).Groups["tbr"].Value, out float tbr) && tbr > 0) {//tbr应该是显示帧率，包含时间码的。
-                f输入帧率 = tbr;
-            }
             if (float.TryParse(regexFPS.Match(line).Groups["fps"].Value, out float f) && f > 0) {
                 f输入帧率 = f;
             }
+            if (float.TryParse(regexTBR.Match(line).Groups["tbr"].Value, out float tbr) && tbr > 0) {//tbr应该是显示帧率，包含时间码的。
+                f输入帧率 = tbr;
+            }
+
             f输出帧率 = b隔行扫描 ? f输入帧率 * 2 : f输入帧率;
+            f输入每帧秒 = 1 / f输入帧率;
+            inSumFrame = (int)(f输入帧率 * time视频时长.TotalSeconds);
+            outSumFrames = (int)(f输出帧率 * time视频时长.TotalSeconds);
         }
 
         public void fx充分剪裁匹配(Dictionary<string, int> crops) {
@@ -389,6 +402,17 @@ namespace 破片压缩器 {
             b改变了尺寸 = b剪裁滤镜 || b缩放滤镜;
         }
 
+        public void v以帧判断隔行扫描(string[] Data) {
+            int scan_frame = 0;
+            for (int i = 0; i < Data.Length; i++) {
+                if (Data[i] == "interlaced_frame=1") {
+                    sum_interlaced_frame++;
+                } else if (Data[i] == "interlaced_frame=0")
+                    scan_frame++;
+            }
+            b隔行扫描 = scan_frame <= sum_interlaced_frame;
+            f输出帧率 = b隔行扫描 ? f输入帧率 * 2 : f输入帧率;
+        }
         public void v以帧判断隔行扫描(int scan_frame, List<string> Data) {
             for (int i = 0; i < Data.Count; i++) {
                 if (Data[i] == "interlaced_frame=1") {

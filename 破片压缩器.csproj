@@ -99,20 +99,43 @@
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == '远程TOPC7945HX|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\远程TOPC7945HX\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == '远程TOPC7945HX|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>\\TOPC7945HX\Usually\视频批量转码\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Management" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EXE.cs" />
+    <Compile Include="LibEnc.cs" />
     <Compile Include="Scene.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="UpdateFFmpeg.cs" />
     <Compile Include="VideoInfo.cs" />
+    <Compile Include="Encoding_Node.cs" />
     <Compile Include="Video_Roadmap.cs" />
     <Compile Include="External Process.cs" />
     <Compile Include="Form破片压缩.cs">
@@ -124,6 +147,8 @@
     <Compile Include="Get_DriveType.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VTimeBase.cs" />
+    <Compile Include="硬件.cs" />
     <Compile Include="转码队列.cs" />
     <EmbeddedResource Include="Form破片压缩.resx">
       <DependentUpon>Form破片压缩.cs</DependentUpon>
@@ -136,6 +161,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

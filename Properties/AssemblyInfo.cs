@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("破片压缩器")]
-[assembly: AssemblyDescription("视频分段压缩工具")]
+[assembly: AssemblyTitle("可分布式视频编码压缩GUI")]
+[assembly: AssemblyDescription("长视频切割分段视频编码，算力节点协同计算压缩")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("RanWay")]
-[assembly: AssemblyProduct("破片压缩器")]
+[assembly: AssemblyProduct("破片协同压缩器")]
 [assembly: AssemblyCopyright("Copyright ©  2024 RanWay")]
 [assembly: AssemblyTrademark("RanWay")]
 [assembly: AssemblyCulture("")]
@@ -32,6 +32,6 @@ using System.Runtime.InteropServices;
 //可以指定所有这些值，也可以使用“生成号”和“修订号”的默认值
 //通过使用 "*"，如下所示:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.2.12")]
-[assembly: AssemblyFileVersion("2025.08.17.2337")]
+[assembly: AssemblyVersion("1.4.5.15")]
+[assembly: AssemblyFileVersion("2025.09.20.0133")]
 

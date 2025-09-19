@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using static 破片压缩器.Scene;
 
 namespace 破片压缩器 {
     public class Scene {
@@ -43,7 +42,7 @@ namespace 破片压缩器 {
 
             //所有函数都初始化，避免意外调用。
 
-            public void fx画面方差(Info info) {
+            public double fx画面方差(Info info) {
                 double dif_Mean = 1, dif_Stdev = 1;
 
                 if (mean.has && info.mean.has)
@@ -53,6 +52,7 @@ namespace 破片压缩器 {
                     dif_Stdev = Math.Pow(info.stdev.R - stdev.R, 2) + Math.Pow(info.stdev.G - stdev.G, 2) + Math.Pow(info.stdev.B - stdev.B, 2);
 
                 d画面方差 = dif_Mean * dif_Mean;//有任意项为0风险。
+                return d画面方差;
             }
 
             public double dif时空(Info info, double d段落) {
@@ -201,7 +201,6 @@ namespace 破片压缩器 {
                 mean = new Some( );
                 stdev = new Some( );
             }
-
         }
         Regex regex时长 = new Regex(@"Duration: (\d{2}:\d{2}:\d{2}\.\d+)");
         void MatchDuration(string[] lines, ref List<Info> infos) {

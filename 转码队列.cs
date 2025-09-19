@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
 
 namespace 破片压缩器 {
     internal static class 转码队列 {
@@ -13,12 +12,14 @@ namespace 破片压缩器 {
         public static int i切片缓存 = 0;
 
         public static int i物理核心数 = 8;
+        public static int i逻辑核心数 = 16;
+
         public static int[] arr_核心号调度排序 = null;
         public static IntPtr[] arr_单核指针 = null;
 
         public static int i多进程数量 = 3;
 
-        static object obj增删排锁 = new object( );
+        static readonly object obj增删排锁 = new object( );
         static int padLen = 0;
         public static AutoResetEvent autoReset入队 = new AutoResetEvent(false);
 
@@ -30,39 +31,30 @@ namespace 破片压缩器 {
 
         public static bool b有任务 => list.Count > 0;
         public static int i并发任务数 => list.Count;
+        public static int i可入队数 => i多进程数量 - list.Count;
 
         static List<External_Process> list = new List<External_Process>( );
 
         public static External_Process process黑边 = null, process场景 = null, process切片 = null, process音轨 = null;//暂时设计为单任务。
 
+        public static SynchronizedCollection<VTimeBase> list扫分段 = new SynchronizedCollection<VTimeBase>( );
+
         public static bool b允许入队 => list.Count < i多进程数量;
+        public static bool b队列满 => i多进程数量 > 0 && list.Count >= i多进程数量;
 
-        static void Fx统计平均速度(External_Process p) {
-            uint encodingFrames = 0;
-            lock (obj增删排锁) {
-                for (int i = 0; i < list.Count; i++) {
-                    if (list[i].HasFrame(out uint f)) {//进程退出时触发，p已从list移除，无需判断
-                        encodingFrames += f;//正在编码的帧量求和，计算更准确的平均速度。
-                    }
+        public static bool b缓存余量充足 {
+            get {
+                int sum = 0;
+                foreach (int n in dic_切片路径_剩余.Values) {
+                    sum += n;
                 }
-            }
-            if (p.b安全退出) {
-                if (p.HasFrame(out uint f)) {
-                    ul累计完成帧 += f;
-                    totalFileKbit += p.fi编码.Length / 1024.0f * 8;//fi编码.Length=文件体积byte，×8换算为bit；
-                    totalVideoSeconds += p.span输入时长.TotalSeconds;
 
-                    double avg_vfr2tbr = ul累计完成帧 / totalVideoSeconds;// tbr (Time Base Rate)
-                    double avgKbps = totalFileKbit / totalVideoSeconds;
-                    double avgFps = (ul累计完成帧 + encodingFrames) * 1000.0f / stopwatch.ElapsedMilliseconds;
-
-                    strPast = $"  已压[{ul累计完成帧}帧÷{totalVideoSeconds:F0}秒={avg_vfr2tbr:F2}(tbr)]  平均编码效率[{avgFps:F5}fps @ {avgKbps:F0}Kbps]";
-                }
+                return (sum > i多进程数量 * 3);
             }
         }
 
         public static bool ffmpeg等待入队(External_Process p) {
-            while (list.Count >= i多进程数量) autoReset入队.WaitOne( );
+            //while (list.Count >= i多进程数量) autoReset入队.WaitOne( );需外部实现指定0任务，等待入队功能。
             if (p.async_FFmpeg编码( )) {
                 lock (obj增删排锁) {
                     list.Add(p);
@@ -74,15 +66,16 @@ namespace 破片压缩器 {
 
                         if (arr_核心号调度排序 != null && list[i].b单线程 && list.Count >= i多进程数量) {//达到指定任务数量开始分配内核
                             list[i].fx绑定编码进程到CPU单核心(arr_核心号调度排序[a]);//每增加一个，重排核心调度。
-                            if (++a > arr_核心号调度排序.Length) a = 0;
+                            if (++a >= arr_核心号调度排序.Length) a = 0;
                         }
                     }
                 }
             }
+            while (list.Count >= i多进程数量) autoReset入队.WaitOne( );//先入队，再等待
             return true;
         }
 
-        public static bool process主动移除结束(External_Process p) {
+        public static bool process移除结束(External_Process p) {
             int i进程数 = list.Count;
 
             bool success = false;
@@ -90,7 +83,27 @@ namespace 破片压缩器 {
                 success = list.Remove(p);//移除成功，队列计数会比进程数小1.
             }
             if (success) {//移除队列可以 在编码数据流停止&进程未退出 触发。b安全退出未标记就触发统计
-                Fx统计平均速度(p);
+                uint encodingFrames = 0;
+                lock (obj增删排锁) {
+                    for (int i = 0; i < list.Count; i++) {
+                        if (list[i].HasFrame(out uint f)) {//进程退出时触发，p已从list移除，无需判断
+                            encodingFrames += f;//正在编码的帧量求和，计算更准确的平均速度。
+                        }
+                    }
+                }
+                if (p.b安全退出) {
+                    if (p.HasFrame(out uint f)) {
+                        ul累计完成帧 += f;
+                        totalFileKbit += p.fi编码.Length / 1024.0f * 8;//fi编码.Length=文件体积byte，×8换算为bit；
+                        totalVideoSeconds += p.span输入时长.TotalSeconds;
+
+                        double avg_vfr2tbr = ul累计完成帧 / totalVideoSeconds;// tbr (Time Base Rate)
+                        double avgKbps = totalFileKbit / totalVideoSeconds;
+                        double avgFps = (ul累计完成帧 + encodingFrames) * 1000.0f / stopwatch.ElapsedMilliseconds;
+
+                        strPast = $"  已压[{ul累计完成帧}帧÷{totalVideoSeconds:F0}秒={avg_vfr2tbr:F2}(tbr)]  平均编码效率[{avgFps:F5}fps @ {avgKbps:F0}Kbps]";
+                    }
+                }
             }
 
             bool b等待入队 = autoReset入队.Set( );//移除、增加转码队列，在文件处理逻辑之前，合并信号由文件处理线程发起。
@@ -138,14 +151,15 @@ namespace 破片压缩器 {
                 for (int i = 0; i < list.Count; i++) {
                     encFps += list[i].getFPS( );//求帧率函数会计算编码帧量。
                     sum_encFrames += list[i].encodingFrames;
-                    string info = list[i].get_ffmpeg_Pace.Trim( );
+                    string info = list[i].get_ffmpeg_Pace;
                     list[i].CountSpan_BitRate(ref encSpan, ref encBitrate);
                     if (!string.IsNullOrWhiteSpace(info)) {
                         string txt = $"{list[i].fi编码.Name.PadLeft(padLen)} \t {info}";
-                        if (pairs.TryGetValue(list[i].fi源.DirectoryName, out var li)) {
+                        string title = list[i].di输出文件夹.FullName;
+                        if (pairs.TryGetValue(title, out var li)) {
                             li.Add(txt);
                         } else {
-                            pairs.Add(list[i].fi源.DirectoryName, new List<string>( ) { txt });
+                            pairs.Add(title, new List<string>( ) { txt });
                         }
                     }
                 }
@@ -198,9 +212,26 @@ namespace 破片压缩器 {
             return false;
         }
 
+        static readonly object obj扫描队列 = new object( );
+        public static void Add_VTimeBase(VTimeBase vTime) {
+            lock (obj扫描队列) list扫分段.Add(vTime);
+        }
+        public static void Remove_VTimeBase(VTimeBase vTime) {
+            lock (obj扫描队列) list扫分段.Remove(vTime);
+        }
 
         public static bool Get独立进程输出(out string info) {
             info = string.Empty;
+
+            if (list扫分段.Count > 0) {
+                for (int i = 0; i < list扫分段.Count; i++) {
+                    if (list扫分段[i].GetTxt(out string txt)) {
+                        info += txt;
+                    }
+                }
+                return true;
+            }
+
             if (process黑边 != null) {
                 try {
                     info = process黑边.sb输出数据流.ToString( ) + "\r\n"
