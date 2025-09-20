@@ -107,7 +107,7 @@ namespace 破片压缩器 {
         static void add_libvvenc( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
                 , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 16, my_max: 35, my_value: 28)
-                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 6);
+                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
 
             libEnc.Set使用位深(12);
 
