@@ -107,17 +107,33 @@ namespace 破片压缩器 {
         static void add_libvvenc( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
                 , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 16, my_max: 35, my_value: 28)
-                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
-
+                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
+            /*
+             * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
+             * 设置自动多线程设置 (-1: 自动, 0: 关闭, 1,2,3: 开启，根据线程数自动启用 Tile, IFP 和 WPP)
+             
+             * --MaxParallelFrames [-1] Maximum number of frames to be processed in parallel(0:off, >=2: enable parallel frames)
+             * 并行处理的最大帧数(0:关闭, >=2: 启用并行帧处理)
+            
+             * --IFPLines [-1] Inter-Frame Parallelization(IFP) explicit CTU-lines synchronization offset (-1: default mode with two lines, 0: off)
+             * 帧间并行化 (IFP) 显式 CTU 行同步偏移 (-1: 默认模式带两行偏移, 0: 关闭)
+             
+             * --IFP [auto] Inter-Frame Parallelization(IFP) (-1: auto, 0: off, 1: on, with default setting of IFPLines)
+             * 帧间并行化 (IFP) (-1: 自动, 0: 关闭, 1: 开启，使用 IFPLines 的默认设置)
+             
+             *--WaveFrontSynchro [auto]`        Enable entropy coding sync (WPP) (-1: auto, 0: off, 1: on)
+             *启用熵编码同步 (WPP) (-1: 自动, 0: 关闭, 1: 开启)*
+             */
             libEnc.Set使用位深(12);
 
+            libEnc.Set固定内参(new string[] { "PerceptQPA=0" });
+            //-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
+            //启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
+
             libEnc.Noise去除参数 = new SHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0);
-
             libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
-
             libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
-
-            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 6 }, { 170, 5 }, { 115, 4 }, { 57, 3 }, { 40, 2 }, { 28, 1 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
 
             libEnc.Add所有预设(dic显示_VVenC预设);
 
@@ -240,6 +256,7 @@ namespace 破片压缩器 {
             public 预设(string value预设, float crf偏移, byte min_判定帧型) {
                 _value = value预设; _crf偏移 = crf偏移; _min_判定帧型 = min_判定帧型;
             }
+            
             public float get_CRF(bool b微调crf, float crf, Num参数 CRF) {
                 if (b微调crf) {
                     crf += _crf偏移;
@@ -572,11 +589,12 @@ namespace 破片压缩器 {
             return rege多空格.Replace(str视编参数, " ");
         }
 
-        public string get压视频参数(VideoInfo info, List<string> list传递内参, string key选择预设, bool b多线程, bool b内降噪, bool b微调CRF, float crf, short value降噪, out string str多线程编码库) {
+        public string get压视频参数(VideoInfo info, List<string> list传递内参, string key选择预设, bool b多线程, bool b内降噪, bool b微调CRF, float crf, short value降噪
+            , out string str多线程编码库,out string str最低画质编码库,out string str多线程最低画质编码库) {
             if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
                 enc预设 = dic_选择_预设[_key显示预设];
             }
-
+            
             if (b多线程 && enc预设.eFPS_4K * 转码队列.i逻辑核心数 > info.f输入帧率) {//(假定单线程能实时解码）简单判断编码帧率是否超过解码速度
                 info.IN.ffmpeg单线程解码 = string.Empty;
             }
@@ -594,41 +612,61 @@ namespace 破片压缩器 {
 
             if (b内降噪 && Noise去除参数 != null) list传递内参.Add(Noise去除参数.get参数(value降噪, out info.OUT.denoise));
 
-            if (GOP跃秒 != null) list传递内参.Add(GOP跃秒.get((short)Settings.sec_gop));
-            else if (GOP跃帧 != null) list传递内参.Add(GOP跃帧.get(Settings.sec_gop));
 
             if (!b多线程) {
-                if (!string.IsNullOrEmpty(_value内参单线程)) list传递内参.Add(_value内参单线程);
-
                 if (lookahead != null) {
                     if (enc预设.min_判定帧型 > 0)
                         list传递内参.Add(lookahead.get(enc预设.min_判定帧型));
                 }
             }
 
-            string str视编参数;
-
             string str限缩位深格式化 = _byte位深 == 0 ? string.Empty : ("-pix_fmt " + dic_位深_限缩参数[_byte位深]);
 
-            if (list传递内参.Count > 0) {
-                str视编参数 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} {6} {7} {8}", str限缩位深格式化, _value编码库, _value外参单线程, _key预设, enc预设.value, CRF参数.key, info.OUT.adjust_crf, key编码器传参, list传递内参[0]);
+            string str视编参数 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} {6} ", str限缩位深格式化, _value编码库, _value外参单线程, _key预设, enc预设.value, CRF参数.key, info.OUT.adjust_crf);
 
-                str多线程编码库 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} {6} {7}", str限缩位深格式化, _value编码库, _key预设, enc预设.value, CRF参数.key, info.OUT.adjust_crf, key编码器传参, list传递内参[0]);
+            str多线程编码库 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} ", str限缩位深格式化, _value编码库, _key预设, enc预设.value, CRF参数.key, info.OUT.adjust_crf);
 
-                for (int i = 1; i < list传递内参.Count; i++) {
-                    str视编参数 += ":" + list传递内参[i];
-                    str多线程编码库 += ":" + list传递内参[i];
+            str最低画质编码库 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} {6} ", str限缩位深格式化, _value编码库, _value外参单线程, _key预设, enc预设.value, CRF参数.key, CRF参数.range_max);
+            str多线程最低画质编码库 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} ", str限缩位深格式化, _value编码库, _key预设, enc预设.value, CRF参数.key, CRF参数.range_max);
+
+
+
+            if (list传递内参.Count > 0 || GOP跃秒 != null || GOP跃帧 != null) {
+                string str内参 = key编码器传参;
+
+                if (list传递内参.Count > 0) {
+                    str内参 += ' ' + list传递内参[0];
+                    for (int i = 1; i < list传递内参.Count; i++) str内参 += ":" + list传递内参[i];
                 }
-            } else {
-                str视编参数 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} {6}", str限缩位深格式化, _value编码库, _value外参单线程, _key预设, enc预设.value, CRF参数.key, info.OUT.adjust_crf);
 
-                str多线程编码库 = string.Format(" {0} -c:v {1} {2} {3} {4} {5}", str限缩位深格式化, _value编码库, _key预设, enc预设.value, CRF参数.key, info.OUT.adjust_crf);
+                str最低画质编码库 += str内参;
+                str多线程最低画质编码库 += str内参;
+
+                string strGOP = string.Empty;
+                if (GOP跃秒 != null) {
+                    str内参 += ':' + GOP跃秒.get((short)Settings.sec_gop);
+                    strGOP += ':' + GOP跃秒.get((short)info.time视频时长.TotalSeconds);
+                } else if (GOP跃帧 != null) {
+                    str内参 += ':' + GOP跃帧.get(Settings.sec_gop);
+                    strGOP += ':' + GOP跃帧.get(info.outSumFrames);
+                }
+
+                str视编参数 += str内参;
+                str多线程编码库 += str内参;
+                str最低画质编码库 += strGOP;
+                str多线程最低画质编码库 += strGOP;
+
+                if (!string.IsNullOrEmpty(_value内参单线程)) {
+                    str视编参数 += ":" + _value内参单线程;
+                    str最低画质编码库 += ":" + _value内参单线程;
+                }
+            } else if (!string.IsNullOrEmpty(_value内参单线程)) {
+                str最低画质编码库 += string.Format(" {0} {1}", key编码器传参, _value内参单线程);
+                str视编参数 += string.Format(" {0} {1}", key编码器传参, _value内参单线程);
             }
 
-            str视编参数 = rege多空格.Replace(str视编参数, " ");
             str多线程编码库 = rege多空格.Replace(str多线程编码库, " ");
-
-            return str视编参数;
+            return rege多空格.Replace(str视编参数, " ");
         }
     }
 }

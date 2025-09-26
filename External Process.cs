@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -199,39 +200,35 @@ namespace 破片压缩器 {
 
         public bool HasFrame(out uint f) {
             f = encodingFrames;
-            string sf = regexFrame.Match(ffmpeg_Pace).Groups[1].Value;
-            if (!string.IsNullOrWhiteSpace(sf) && uint.TryParse(sf, out f)) {
-                encodingFrames = f; return true;
+            if (uint.TryParse(regexFrame.Match(ffmpeg_Pace).Groups[1].Value, out f)) {
+                if (f > 0) {
+                    encodingFrames = f;
+                    if (stopwatch.ElapsedMilliseconds > 0)
+                        encFps = encodingFrames * 1000.0f / stopwatch.ElapsedMilliseconds;
+                    return true;
+                } else
+                    return false;
             } else return f > 0;
         }
         public double getFPS( ) {
-            if (newFrame) {
+            if (newFrame && stopwatch.ElapsedMilliseconds > 0) {
                 newFrame = false;
-                //time出帧 = DateTime.Now;
-                int i = index_frame;
-                int iframes = 0;
-                //double sec = time出帧.Subtract(time编码开始).TotalSeconds;
                 double sec = stopwatch.ElapsedMilliseconds / 1000;
-                if (sec < 0) sec = 1;
-                for (; i < ffmpeg_Pace.Length; i++) { //开头可能有空格，先找到数字开头。
-                    //char c = ffmpeg_Pace[i];
-                    if (ffmpeg_Pace[i] >= '0' && ffmpeg_Pace[i] <= '9') {
-                        iframes = ffmpeg_Pace[i] - 48;
-                        break;
+                for (int i = index_frame; i < ffmpeg_Pace.Length; i++) {
+                    if (ffmpeg_Pace[i] >= '0' && ffmpeg_Pace[i] <= '9') { //开头可能有空格，先找到数字开头。
+                        long iframes = ffmpeg_Pace[i] - 48;
+                        for (++i; i < ffmpeg_Pace.Length; i++) {
+                            if (ffmpeg_Pace[i] >= '0' && ffmpeg_Pace[i] <= '9') {
+                                iframes = iframes * 10 + ffmpeg_Pace[i] - 48;
+                            } else {
+                                encodingFrames = (uint)iframes;
+                                return encFps = iframes / sec;
+                            }
+                        }
                     }
                 }
-                for (i++; i < ffmpeg_Pace.Length; i++) {
-                    if (ffmpeg_Pace[i] >= '0' && ffmpeg_Pace[i] <= '9') {
-                        iframes = iframes * 10 + ffmpeg_Pace[i] - 48;
-                    } else
-                        break;//非数字结尾退出
-                }
-                if (iframes > 0) {
-                    encodingFrames = (uint)iframes;
-                    encFps = iframes / sec;
-                } else if (regexFrame.IsMatch(ffmpeg_Encoding)) {//ffmpeg_Encoding是直接读取刷新的数据，容错设计
-                    encodingFrames = uint.Parse(regexFrame.Match(ffmpeg_Encoding).Groups[1].Value);
-                    encFps = encodingFrames / sec;
+                if (uint.TryParse(regexFrame.Match(ffmpeg_Pace).Groups[1].Value, out encodingFrames)) {
+                    return encFps = encodingFrames / sec;
                 }
             }
             return encFps;
@@ -538,13 +535,22 @@ namespace 破片压缩器 {
 
             while (!process.StandardError.EndOfStream) {
                 ffmpeg_Encoding = process.StandardError.ReadLine( );
-                int iframe = ffmpeg_Encoding.IndexOf("frame=") + 6;
-                if (iframe >= 6) {
-                    index_frame = iframe;
-                    ffmpeg_Pace = ffmpeg_Encoding; newFrame = true;
+                if (ffmpeg_Encoding.Length > 6 && ffmpeg_Encoding[0] == 'f' && ffmpeg_Encoding[1] == 'r' && ffmpeg_Encoding[2] == 'a' && ffmpeg_Encoding[3] == 'm' && ffmpeg_Encoding[4] == 'e' && ffmpeg_Encoding[5] == '=') {
+                    //正常输出概率最高的情况用字符匹配加快效率
+                    ffmpeg_Pace = ffmpeg_Encoding;
+                    index_frame = 6; 
+                    newFrame = true;
                 } else {
-                    StandardError = ffmpeg_Encoding;
-                    builder日志.AppendLine(ffmpeg_Encoding);
+                    int iframe = ffmpeg_Encoding.IndexOf("frame=") + 6;
+                    if (iframe >= 6) {//避免偶尔改变输出编码进度开头 frame=
+                        ffmpeg_Pace = ffmpeg_Encoding;
+                        index_frame = iframe;
+                        newFrame = true;
+                    } else {
+                        index_frame = -1;
+                        StandardError = ffmpeg_Encoding;
+                        builder日志.AppendLine(ffmpeg_Encoding);
+                    }
                 }
             }
             process.WaitForExit( );
@@ -565,11 +571,15 @@ namespace 破片压缩器 {
                 if (File.Exists(fi编码.FullName)) {
                     if (!di编码成功.Exists) try { di编码成功.Create( ); } catch { return; }
 
+                    if (HasFrame(out _)) {
+                        try { File.WriteAllText($"{di编码成功.FullName}\\{str成功文件名}_转码完成.log", builder日志.ToString( )); } catch { }
+                    } else {//分割点有误、编码器不输出等情况，输出0帧，但是正常退出。
+                        try { File.WriteAllText($"{di编码成功.FullName}\\{str成功文件名}_无帧转码完成.errlog", builder日志.ToString( )); } catch { }
+                    }
                     string str转码完成文件 = $"{di编码成功.FullName}\\{str成功文件名}{fi编码.Extension}";
                     if (File.Exists(str转码完成文件)) try { File.Delete(str转码完成文件); } catch { }
                     try { fi编码.MoveTo(str转码完成文件); } catch { return; }
-                    try { File.WriteAllText($"{di编码成功.FullName}\\{str成功文件名}_转码完成.log", builder日志.ToString( )); } catch { }
-
+                    
                     if (!b无缓转码) {
                         if (Settings.b编码后删除切片) {
                             try { fi源.Delete( ); } catch { }

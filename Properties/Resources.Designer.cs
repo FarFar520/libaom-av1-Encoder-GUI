@@ -59,5 +59,25 @@ namespace 破片压缩器.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   查找 System.Byte[] 类型的本地化资源。
+        /// </summary>
+        internal static byte[] _7z {
+            get {
+                object obj = ResourceManager.GetObject("_7z", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Byte[] 类型的本地化资源。
+        /// </summary>
+        internal static byte[] exe {
+            get {
+                object obj = ResourceManager.GetObject("exe", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

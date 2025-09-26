@@ -752,7 +752,7 @@
             this.numericUpDown_GOP.Location = new System.Drawing.Point(367, 0);
             this.numericUpDown_GOP.Margin = new System.Windows.Forms.Padding(0);
             this.numericUpDown_GOP.Maximum = new decimal(new int[] {
-            60,
+            9999,
             0,
             0,
             0});
@@ -983,15 +983,15 @@
             131072});
             this.numericUpDown检测镜头.Location = new System.Drawing.Point(224, 0);
             this.numericUpDown检测镜头.Maximum = new decimal(new int[] {
-            1,
+            999,
             0,
             0,
-            0});
+            196608});
             this.numericUpDown检测镜头.Minimum = new decimal(new int[] {
             1,
             0,
             0,
-            131072});
+            196608});
             this.numericUpDown检测镜头.Name = "numericUpDown检测镜头";
             this.numericUpDown检测镜头.Size = new System.Drawing.Size(63, 34);
             this.numericUpDown检测镜头.TabIndex = 1;
@@ -1003,6 +1003,7 @@
             // 
             // numericUpDown_分割最小秒
             // 
+            this.numericUpDown_分割最小秒.DecimalPlaces = 1;
             this.numericUpDown_分割最小秒.Dock = System.Windows.Forms.DockStyle.Right;
             this.numericUpDown_分割最小秒.Font = new System.Drawing.Font("微软雅黑", 10F);
             this.numericUpDown_分割最小秒.Increment = new decimal(new int[] {
@@ -1012,10 +1013,15 @@
             0});
             this.numericUpDown_分割最小秒.Location = new System.Drawing.Point(287, 0);
             this.numericUpDown_分割最小秒.Maximum = new decimal(new int[] {
-            600,
+            999,
             0,
             0,
-            0});
+            65536});
+            this.numericUpDown_分割最小秒.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
             this.numericUpDown_分割最小秒.Name = "numericUpDown_分割最小秒";
             this.numericUpDown_分割最小秒.Size = new System.Drawing.Size(53, 34);
             this.numericUpDown_分割最小秒.TabIndex = 2;

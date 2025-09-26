@@ -171,6 +171,7 @@ namespace 破片压缩器 {
         }
 
         public class 输出 {
+            public bool b抽重复帧 = false;
             public float adjust_crf = 0;
             public string enc = string.Empty, str量化名 = "crf", preset = string.Empty, str视流格式 = string.Empty, denoise = string.Empty;
         }

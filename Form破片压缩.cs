@@ -13,6 +13,8 @@ using System.Windows.Forms;
 namespace 破片压缩器 {
     public partial class Form破片压缩: Form {
 
+        public static HashSet<string> mapVideoExt = new HashSet<string>( ) { ".y4m", ".265", ".x265", ".h265", ".hevc", ".264", ".h264", ".x264", ".avi", ".wmv", ".wmp", ".wm", ".asf", ".mpg", ".mpeg", ".mpe", ".m1v", ".m2v", ".mpv2", ".mp2v", ".ts", ".tp", ".tpr", ".trp", ".vob", ".ifo", ".ogm", ".ogv", ".mp4", ".m4v", ".m4p", ".m4b", ".3gp", ".3gpp", ".3g2", ".3gp2", ".mkv", ".rm", ".ram", ".rmvb", ".rpm", ".flv", ".mov", ".qt", ".nsv", ".dpg", ".m2ts", ".m2t", ".mts", ".dvr-ms", ".k3g", ".skm", ".evo", ".nsr", ".amv", ".divx", ".wtv", ".f4v", ".mxf" };
+
         public static bool b保存异常日志 = true;
 
         int i切片间隔秒 = 60;
@@ -44,7 +46,9 @@ namespace 破片压缩器 {
 
         object obj转码队列 = new object( ), obj合并队列 = new object( );
 
+
         Video_Roadmap video正在转码文件 = null, video热乎的切片 = null;
+        HashSet<string> map已切片文件小写路径 = new HashSet<string>( );
         List<Video_Roadmap> list_等待转码队列 = new List<Video_Roadmap>( );
 
         Dictionary<string, Video_Roadmap> dic_完成路径_等待合并 = new Dictionary<string, Video_Roadmap>( );
@@ -94,22 +98,14 @@ namespace 破片压缩器 {
                 textBox日志.Text = log;
             }
         }
-        bool is队列中(FileInfo file) {
-            string name = file.Name.ToLower( );
-            if (name.Contains("svtav1") || name.Contains("aomav1")) return true;
 
-            string lower完整路径_输入视频 = file.FullName.ToLower( );
+        bool is有效视频(FileInfo file) {
+            if (mapVideoExt.Contains(file.Extension.ToLower( )) && File.Exists(file.FullName)) {
+                string name = file.Name.ToLower( );
+                if (name.Contains("svtav1") || name.Contains("aomav1") || name.Contains("vvenc")) return false;
 
-            if (video正在转码文件 != null && lower完整路径_输入视频 == video正在转码文件.lower完整路径_输入视频) return true;
-
-            for (int i = 0; i < list_等待转码队列.Count; i++)
-                if (lower完整路径_输入视频 == list_等待转码队列[i].lower完整路径_输入视频) return true;
-
-
-            string[] arrPath = dic_完成路径_等待合并.Keys.ToArray( );
-            foreach (string path in arrPath) {
-                if (dic_完成路径_等待合并.TryGetValue(path, out Video_Roadmap video)) {
-                    if (lower完整路径_输入视频 == video.lower完整路径_输入视频) return true;
+                if (map已切片文件小写路径.Add(file.FullName.ToLower( ))) {
+                    return true;
                 }
             }
 
@@ -143,7 +139,7 @@ namespace 破片压缩器 {
                         arrFileInfo = dir.GetFiles( );
                     }
                     foreach (FileInfo file in arrFileInfo) {
-                        if (Video_Roadmap.is有效视频(file) && !is队列中(file)) {//每切片视频后，存在长时间等待编码结束。 Video_Roadmap.is视频内有判断一次视频存在情况。
+                        if (is有效视频(file)) {
                             str正在转码文件夹 = $"{str切片根目录}\\{file.DirectoryName.Replace(file.Directory.Root.FullName, "").Trim('\\')}";
                             Video_Roadmap video = new Video_Roadmap(file, str正在转码文件夹, Settings.b无缓转码);
 
@@ -211,6 +207,7 @@ namespace 破片压缩器 {
             if (Settings.b自动裁黑边) {
                 add日志($"扫描黑边：{roadmap.fi输入视频.Name}");
                 roadmap.b扫描视频黑边生成剪裁参数( );
+                if (!转码队列.b有任务) autoReset初始信息.Set( );
             }
             if (roadmap.b拼接转码摘要( ))//多文件时，外部节点依赖存储机生成任务配置.ini
                 roadmap.fx保存任务配置( );
@@ -234,20 +231,23 @@ namespace 破片压缩器 {
             if (Settings.b自动裁黑边) {
                 add日志($"扫描黑边：{roadmap.fi输入视频.Name}");
                 roadmap.b扫描视频黑边生成剪裁参数( );
+                if (!转码队列.b有任务) autoReset初始信息.Set( );
             }
+            if (roadmap.b拼接转码摘要( ))
+                roadmap.fx清理存编终止切片( );//多文件时，外部节点依赖存储机生成任务配置.ini
+
+            roadmap.vTimeBase.b读取无缓转码csv(roadmap.di编码成功, roadmap.info.time视频时长);
+
 
             if (roadmap.vTimeBase.i总分段 < 1) {
                 while (转码队列.list扫分段.Count > 1) Thread.Sleep(999);//避免同时启动
                 add日志($"开始扫描视频帧数据：{roadmap.fi输入视频.Name}");
                 if (!Settings.b扫描场景) roadmap.vTimeBase.Start按关键帧(Settings.sec_gop);
                 else roadmap.vTimeBase.Start按转场(转码队列.b缓存余量充足, (float)d检测镜头精度, Settings.sec_gop, Settings.i分割GOP, 0.25f);
+                if (!转码队列.b有任务) autoReset初始信息.Set( );
             } else {
                 add日志($"已读取无缓转码.csv {roadmap.vTimeBase.i总分段} 段：{roadmap.fi输入视频.Name}");
             }
-
-            if (roadmap.b拼接转码摘要( )) roadmap.fx清理存编终止切片( );//多文件时，外部节点依赖存储机生成任务配置.ini
-
-            if (!转码队列.b有任务) autoReset初始信息.Set( );
 
             if (roadmap.is无缓视频未完成) {
                 lock (obj转码队列) {
@@ -302,10 +302,10 @@ namespace 破片压缩器 {
                                 add日志($"开始转码：{external_Process.fi编码.FullName}");
                                 转码队列.ffmpeg等待入队(external_Process);//有队列上限
                             }
-                            string lowPath = videoTemp.di编码成功.FullName.ToLower( );
-                            if (!dic_完成路径_等待合并.ContainsKey(lowPath)) {
+
+                            if (!dic_完成路径_等待合并.ContainsKey(videoTemp.lower完整路径_输入视频)) {
                                 lock (obj合并队列) {
-                                    dic_完成路径_等待合并.Add(lowPath, videoTemp);
+                                    dic_完成路径_等待合并.Add(videoTemp.lower完整路径_输入视频, videoTemp);
                                 }
                             }
                         }
@@ -368,7 +368,7 @@ namespace 破片压缩器 {
             StringBuilder sb合并 = new StringBuilder( );
             HashSet<string> set已合并文件夹 = new HashSet<string>( );
             while (true) {
-                autoReset合并.WaitOne( );//合并等待，发现未触发
+                while (dic_完成路径_等待合并.Count < 1) autoReset合并.WaitOne( );//等到
                 Video_Roadmap[] arr等待合并队列 = dic_完成路径_等待合并.Values.ToArray( );
                 for (int i = 0; i < arr等待合并队列.Length; i++) {
                     if (arr等待合并队列[i].b音轨需要更新) {
@@ -399,12 +399,12 @@ namespace 破片压缩器 {
                         }
                     }
                 }
-
                 if (!b需要重扫输入 && dic_完成路径_等待合并.Count == 0 && !转码队列.b有任务) {
                     timer刷新编码输出.Stop( );
                     转码队列.Has汇总输出信息(out string str编码信息);
                     txt日志($"{str编码信息}\r\n\r\n目录下视频已完成，增加新视频点击刷新按钮\r\n\r\n{sb合并.ToString( )}");
                 }
+                autoReset合并.WaitOne( );//合并等待,
             }
         }//3号线程，任务收尾工作。
 
@@ -739,6 +739,7 @@ namespace 破片压缩器 {
                     if (list输入路径.Count > 0) {
                         autoReset初始信息.Set( );
                         autoReset切片.Set( );
+                        autoReset转码.Set( );
                         autoReset合并.Set( );
                     }
 
@@ -973,7 +974,7 @@ namespace 破片压缩器 {
 
         private void numericUpDown_GOP_ValueChanged(object sender, EventArgs e) {
             int half = (int)numericUpDown_GOP.Value / 2;
-            if (half > numericUpDown_分割最小秒.Value) {
+            if (half > numericUpDown_分割最小秒.Value && half <= numericUpDown_分割最小秒.Maximum) {
                 numericUpDown_分割最小秒.Value = half;
             }
         }
@@ -1025,6 +1026,7 @@ namespace 破片压缩器 {
 
         private void numericUpDown_Workers_KeyPress(object sender, KeyPressEventArgs e) {
             if (e.KeyChar == 13 && numericUpDown_Workers.ForeColor == Color.Red) {
+                Settings.b多线程 = checkBox多线程.Checked;
                 转码队列.i多进程数量 = (int)numericUpDown_Workers.Value;
                 numericUpDown_Workers.ForeColor = Color.Black;
                 转码队列.autoReset入队.Set( );

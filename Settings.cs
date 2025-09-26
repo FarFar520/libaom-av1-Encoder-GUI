@@ -111,10 +111,9 @@ namespace 破片压缩器 {
 
         public static LibEnc lib已设置;
 
-        public static string Get_视频编码库(VideoInfo info, out string str多线程编码库) {
-            //设置参数手工刷新，再传入编码库拼接。
+        public static string Get_视频编码库(VideoInfo info, out string str多线程编码库, out string str最大压缩编码库, out string str多线程最大压缩编码库) {            //设置参数手工刷新，再传入编码库拼接。
             //info.OUT.enc = lib已设置.value编码库;
-            return lib已设置.get压视频参数(info, new List<string>( ), str选择预设, b多线程, b磨皮降噪, b根据帧率自动强化CRF, crf, (short)i降噪强度, out str多线程编码库);
+            return lib已设置.get压视频参数(info, new List<string>( ), str选择预设, b多线程, b磨皮降噪, b根据帧率自动强化CRF, crf, (short)i降噪强度, out str多线程编码库, out str最大压缩编码库, out str多线程最大压缩编码库);
         }
 
         //        public static string Get_视频编码库(VideoInfo info, out string str视流格式, out string str多线程编码库, out float adjust_crf, out string preset, out string denoise) {

@@ -132,7 +132,7 @@ namespace 破片压缩器 {
             if (list.Count < 1) {
                 if (process音轨 != null) {
                     str编码信息 = process音轨.sb输出数据流.ToString( ) + "\r\n"
-                        + process场景.get_ffmpeg_Pace;
+                        + process音轨.get_ffmpeg_Pace;
                     return true;
                 } else if (!string.IsNullOrEmpty(strPast)) {
                     str编码信息 = strPast;
