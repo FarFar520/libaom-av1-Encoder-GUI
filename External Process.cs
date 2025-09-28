@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -538,7 +537,7 @@ namespace 破片压缩器 {
                 if (ffmpeg_Encoding.Length > 6 && ffmpeg_Encoding[0] == 'f' && ffmpeg_Encoding[1] == 'r' && ffmpeg_Encoding[2] == 'a' && ffmpeg_Encoding[3] == 'm' && ffmpeg_Encoding[4] == 'e' && ffmpeg_Encoding[5] == '=') {
                     //正常输出概率最高的情况用字符匹配加快效率
                     ffmpeg_Pace = ffmpeg_Encoding;
-                    index_frame = 6; 
+                    index_frame = 6;
                     newFrame = true;
                 } else {
                     int iframe = ffmpeg_Encoding.IndexOf("frame=") + 6;
@@ -579,7 +578,7 @@ namespace 破片压缩器 {
                     string str转码完成文件 = $"{di编码成功.FullName}\\{str成功文件名}{fi编码.Extension}";
                     if (File.Exists(str转码完成文件)) try { File.Delete(str转码完成文件); } catch { }
                     try { fi编码.MoveTo(str转码完成文件); } catch { return; }
-                    
+
                     if (!b无缓转码) {
                         if (Settings.b编码后删除切片) {
                             try { fi源.Delete( ); } catch { }

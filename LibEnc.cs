@@ -126,7 +126,7 @@ namespace 破片压缩器 {
              */
             libEnc.Set使用位深(12);
 
-            libEnc.Set固定内参(new string[] { "PerceptQPA=0" });
+            libEnc.Set固定内参(new string[] { "PerceptQPA=1" });
             //-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
             //启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
 
@@ -256,7 +256,7 @@ namespace 破片压缩器 {
             public 预设(string value预设, float crf偏移, byte min_判定帧型) {
                 _value = value预设; _crf偏移 = crf偏移; _min_判定帧型 = min_判定帧型;
             }
-            
+
             public float get_CRF(bool b微调crf, float crf, Num参数 CRF) {
                 if (b微调crf) {
                     crf += _crf偏移;
@@ -590,11 +590,11 @@ namespace 破片压缩器 {
         }
 
         public string get压视频参数(VideoInfo info, List<string> list传递内参, string key选择预设, bool b多线程, bool b内降噪, bool b微调CRF, float crf, short value降噪
-            , out string str多线程编码库,out string str最低画质编码库,out string str多线程最低画质编码库) {
+            , out string str多线程编码库, out string str最低画质编码库, out string str多线程最低画质编码库) {
             if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
                 enc预设 = dic_选择_预设[_key显示预设];
             }
-            
+
             if (b多线程 && enc预设.eFPS_4K * 转码队列.i逻辑核心数 > info.f输入帧率) {//(假定单线程能实时解码）简单判断编码帧率是否超过解码速度
                 info.IN.ffmpeg单线程解码 = string.Empty;
             }

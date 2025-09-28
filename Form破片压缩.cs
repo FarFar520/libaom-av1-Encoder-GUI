@@ -286,8 +286,6 @@ namespace 破片压缩器 {
                     video正在转码文件 = videoTemp;
                     str正在源文件夹 = video正在转码文件.str输入路径;
 
-                    this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));//要委托UI线程启动计时器才能正确启动。
-
                     if (video正在转码文件.b后台转码MKA音轨( )) {//单独转码OPUS音轨，CPU资源占用少，放在视频队列之前。
                         add日志($"转码音轨：{video正在转码文件.strMKA路径}");
                     }
@@ -295,6 +293,8 @@ namespace 破片压缩器 {
                     while (转码队列.i多进程数量 == 0) {
                         autoReset转码.WaitOne( );
                     }//存储机设置为0任务时，无限等待，编码交给外部算力节点。
+
+                    this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));//要委托UI线程启动计时器才能正确启动。
 
                     if (videoTemp.b无缓转码) {
                         if (File.Exists(videoTemp.fi输入视频.FullName)) {//任务有足够时间间隔，检测一次源文件存在情况，当手动删除源文件时跳过任务。
@@ -365,10 +365,11 @@ namespace 破片压缩器 {
         }
 
         void fn后台合并( ) {
+            while (dic_完成路径_等待合并.Count < 1) autoReset合并.WaitOne( );//等到有合并任务再开始
+
             StringBuilder sb合并 = new StringBuilder( );
             HashSet<string> set已合并文件夹 = new HashSet<string>( );
             while (true) {
-                while (dic_完成路径_等待合并.Count < 1) autoReset合并.WaitOne( );//等到
                 Video_Roadmap[] arr等待合并队列 = dic_完成路径_等待合并.Values.ToArray( );
                 for (int i = 0; i < arr等待合并队列.Length; i++) {
                     if (arr等待合并队列[i].b音轨需要更新) {
@@ -394,17 +395,23 @@ namespace 破片压缩器 {
 
                         arr等待合并队列[i].fx删除协编文件( );
 
-                        lock (obj合并队列) {
-                            dic_完成路径_等待合并.Remove(arr等待合并队列[i].di编码成功.FullName.ToLower( ));//合并后尝试移除，减少循环对音频文件判断，切片任务还有添加回来的可能性。
-                        }
+                        lock (obj合并队列) dic_完成路径_等待合并.Remove(arr等待合并队列[i].lower完整路径_输入视频);//合并后尝试移除，减少循环对音频文件判断，切片任务还有添加回来的可能性。
                     }
                 }
-                if (!b需要重扫输入 && dic_完成路径_等待合并.Count == 0 && !转码队列.b有任务) {
-                    timer刷新编码输出.Stop( );
-                    转码队列.Has汇总输出信息(out string str编码信息);
-                    txt日志($"{str编码信息}\r\n\r\n目录下视频已完成，增加新视频点击刷新按钮\r\n\r\n{sb合并.ToString( )}");
+
+                if (dic_完成路径_等待合并.Count > 0) {
+                    autoReset合并.WaitOne( );
+                } else {
+                    while (dic_完成路径_等待合并.Count < 1) {
+                        if (video正在转码文件 is null && set已合并文件夹.Count > 0 && !转码队列.b有任务) {
+                            this.Invoke(new Action(( ) => timer刷新编码输出.Stop( )));
+                            转码队列.Has汇总输出信息(out string str编码信息);
+                            txt日志($"{str编码信息}\r\n\r\n目录下视频已完成，增加新视频点击刷新按钮\r\n\r\n{sb合并.ToString( )}");
+                        }
+                        autoReset合并.WaitOne( );//等到有合并任务再次循环
+                    }
                 }
-                autoReset合并.WaitOne( );//合并等待,
+
             }
         }//3号线程，任务收尾工作。
 
@@ -647,7 +654,6 @@ namespace 破片压缩器 {
             b需要重扫输入 = list输入路径.Count > 0;
             b需要重扫缓存 = list缓存路径.Count > 0;
             //重扫优先级低，当点过刷新按钮，判断一下有输入文件夹就重新扫描一遍。
-
 
             return list输入路径.Count > 0 || list缓存路径.Count > 0; //路径读取成功返回真
 

@@ -144,7 +144,6 @@
     <Compile Include="Form破片压缩.Designer.cs">
       <DependentUpon>Form破片压缩.cs</DependentUpon>
     </Compile>
-    <Compile Include="Get_DriveType.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VTimeBase.cs" />

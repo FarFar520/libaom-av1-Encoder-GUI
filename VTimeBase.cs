@@ -407,7 +407,7 @@ namespace 破片压缩器 {
         void fx匹配关键帧(ref int index关键帧, ref List<float> list分段秒) {
             for (int index分段 = dic_分段_偏移.Count; index分段 < list分段秒.Count - 1; index分段++) {//找最近的关键帧秒
                 if (dic关键帧.ContainsKey(list分段秒[index分段])) {
-                    Span偏移 span = new Span偏移(index分段 + 1, list分段秒[index分段], list分段秒[index分段], list分段秒[index分段 + 1], vinfo.f输入每帧秒);
+                    Span偏移 span = new Span偏移(dic_分段_偏移.Count + 1, list分段秒[index分段], list分段秒[index分段], list分段秒[index分段 + 1], vinfo.f输入每帧秒);
                     dic_分段_偏移.TryAdd(span.i分段号, span);
                 } else {
                     float sec关键帧 = list关键帧[index关键帧];
@@ -416,7 +416,7 @@ namespace 破片压缩器 {
                     while (index关键帧 < list关键帧.Count - 1) {
                         if (list关键帧[index关键帧] <= list分段秒[index分段] && list分段秒[index分段] <= list关键帧[index关键帧 + 1]) {
                             sec关键帧 = list关键帧[index关键帧];
-                            Span偏移 span = new Span偏移(index分段 + 1, sec关键帧, list分段秒[index分段], list分段秒[index分段 + 1], vinfo.f输入每帧秒);
+                            Span偏移 span = new Span偏移(dic_分段_偏移.Count + 1, sec关键帧, list分段秒[index分段], list分段秒[index分段 + 1], vinfo.f输入每帧秒);
                             dic_分段_偏移.TryAdd(span.i分段号, span);
                             break;
                         } else {
@@ -576,9 +576,7 @@ namespace 破片压缩器 {
             float f后6组 = 0;
             do {
                 f后6组 += sec_gop * 6;//每轮
-
                 if (f后6组 > Duration) f后6组 = Duration;
-
                 if (index黑场 < list黑场.Count && list黑场[index黑场] <= f后6组) {
                     for (++index黑场; index黑场 < list黑场.Count && list黑场[index黑场] < f后6组; index黑场++) {//步时长6图组内寻找下一黑场。
                         if (list黑场[index黑场] - list分段秒.Last( ) > sec_gop * 3) {//两个黑场之间超过3个图组尝试寻找插入转场。

@@ -51,7 +51,6 @@ namespace 破片压缩器 {
             if (!string.IsNullOrEmpty(str水印))
                 list.Add($"drawtext=text='{str水印}'{str水印字体参数}:fontsize={fontsize}:fontcolor=white@0.618:x=(w-text_w):y=0");
 
-
             StringBuilder builder = new StringBuilder( );
             if (list.Count > 0) {
                 builder.Append(" -lavfi \"").Append(list[0]);
@@ -88,10 +87,14 @@ namespace 破片压缩器 {
 
         string get_lavfi( ) {
             List<string> list = new List<string>( );
-            
+
             //滤镜顺序1.自动反交错。二选一
+            //bwdif=mode:parity:deint
+            //mode0=send_frame将输入视频的每一帧直接作为输出帧（不进行场合并） mode1=send_field将每个输入帧拆分为独立的场（奇数行和偶数行分别输出）
+            //parity‌ - 1=auto自动检测场序（默认值）
+            //deint‌0 = all对所有帧进行去隔行处理（默认） deint1=interlaced仅对标记为隔行的帧进行处理
             if (info.b隔行扫描) list.Add("bwdif=1:-1:1");// bwdif=1:-1:1 按场反交错，上下场各生成一帧
-            //if (info.b隔行扫描) list.Add("bwdif=1:-1:0");//bwdif=1:-1:1 按帧反交错，上下场组合为一帧。
+            //if (info.b隔行扫描) list.Add("bwdif=0:-1:1");//bwdif=0:-1:1 按帧反交错，上下场组合为一帧。
 
             if (info.b剪裁滤镜) list.Add(info.str剪裁滤镜);
             if (info.b缩放滤镜) list.Add(info.str缩放滤镜);
@@ -383,20 +386,12 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 }
 
                 if (_b无缓转码) {
-                    if (File.Exists(path无缓转码csv)) {// && Directory.Exists(di编码成功.FullName)
-                        if (vTimeBase.is扫描完成 && vTimeBase.i剩余分段 <= 0) {
-                            FileInfo[] arrFI_MKV视频 = di编码成功.GetFiles("*.mkv");
-                            if (arrFI_MKV视频.Length >= vTimeBase.i总分段) {
-                                int count = 0;
-                                for (int i = 0; i < arrFI_MKV视频.Length; i++) {
-                                    string num = arrFI_MKV视频[i].Name.Substring(0, arrFI_MKV视频[i].Name.Length - 4);
-                                    if (int.TryParse(num, out _)) count++;
-                                }
-                                if (count >= vTimeBase.i总分段) return false;
-                            }
+                    if (vTimeBase.is扫描完成 && vTimeBase.i剩余分段 <= 0) {
+                        foreach (int i in vTimeBase.dic_分段_偏移.Keys) {
+                            if (!File.Exists(di编码成功.FullName + "\\" + i + ".mkv")) return true;
                         }
+                        return false;
                     }
-
                     return true;
                 }
 
@@ -1402,7 +1397,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         }
 
         bool b重算时间码(string path转码完成, List<int> list_SerialName) {
-
             float f帧毫秒 = 1000 / info.f输出帧率;
             string path切片日志 = string.Format("{0}\\视频切片_{1}.log", di切片.FullName, di切片.Name.Substring(3));
             List<float> list_timestamp = new List<float>( ) { };
