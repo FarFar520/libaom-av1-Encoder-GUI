@@ -987,7 +987,7 @@ namespace 破片压缩器 {
 
         private void comboBox预设_DropDownClosed(object sender, EventArgs e) {
             if (video热乎的切片 == null && video正在转码文件 == null)
-                add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, crf: numericUpDown_CRF.Value));
+                add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked,b多线程:checkBox多线程.Checked, crf: numericUpDown_CRF.Value));
         }
 
         decimal crf上次;
@@ -1002,7 +1002,7 @@ namespace 破片压缩器 {
             if (crf上次 != value) {
                 crf上次 = value;
                 if (video热乎的切片 == null && video正在转码文件 == null)
-                    add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, crf: numericUpDown_CRF.Value));
+                    add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, b多线程: checkBox多线程.Checked, crf: numericUpDown_CRF.Value));
             }
         }
 
@@ -1015,7 +1015,7 @@ namespace 破片压缩器 {
             if (e.KeyChar == 13) {
                 if (crf上次 != value) {
                     crf上次 = value;
-                    add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, crf: numericUpDown_CRF.Value));
+                    add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, b多线程: checkBox多线程.Checked, crf: numericUpDown_CRF.Value));
                 }
             }
         }

@@ -56,22 +56,22 @@ namespace 破片压缩器 {
             public int i分段号;
             public bool b已转码 = false;
 
-            public float f关键帧, f转场, f结束, f下一场, f偏移转场, f偏移结束, f末帧秒长, f持续秒;
+            public float f关键帧, f转场, f结束, f偏移转场, f偏移结束, f末帧秒长, f持续秒;
 
             public int in_frames, out_frames;
 
             public Span偏移(int i分段号, float f关键帧, float f转场, float f结束, float f末帧秒长) {
                 this.i分段号 = i分段号;
-
                 this.f关键帧 = f关键帧;
                 this.f末帧秒长 = f末帧秒长;//暂时未对vfr计算帧时长。
-
                 this.f转场 = f转场;
-                this.f结束 = f结束 - f末帧秒长;
-                f下一场 = f结束;
-
+                //f下一场 = f结束;
                 f偏移转场 = f转场 - f关键帧;
-                f偏移结束 = f结束 - f关键帧 - f末帧秒长;
+
+                //this.f结束 = f结束 - f末帧秒长;
+                //f偏移结束 = f结束 - f关键帧 - f末帧秒长; 
+                this.f结束 = f结束;
+                f偏移结束 = f结束 - f关键帧;//-ss 秒 含头， -to 秒 不包含时间戳帧 （含头不含尾）
 
                 f持续秒 = f结束 - f转场;
                 in_frames = (int)(f持续秒 * f末帧秒长);
@@ -87,11 +87,11 @@ namespace 破片压缩器 {
 
                 if (f关键帧 > f转场) f关键帧 = f转场;
 
-                f下一场 = f结束 + f末帧秒长;
-
                 f偏移转场 = f转场 - f关键帧;
                 f偏移结束 = f结束 - f关键帧;
-                f持续秒 = f下一场 - f转场;
+                f持续秒 = f结束 - f转场;
+                //f下一场 = f结束;
+
                 in_frames = (int)(f持续秒 * f末帧秒长);
                 success = true;
             }
@@ -101,6 +101,18 @@ namespace 破片压缩器 {
                 out_frames = (int)(out_fps * f持续秒);
             }
 
+            public string get二次跳转_SS_i_SS_T(FileInfo fi输入文件) {
+                string cmd;
+                if (f关键帧 > 0)
+                    cmd = $"-ss {f关键帧} -i \"{fi输入文件.Name}\"";
+                else
+                    cmd = $"-i \"{fi输入文件.Name}\"";
+
+                if (f偏移转场 > 0) cmd += $" -ss {f偏移转场}";
+                if (f偏移结束 > 0) cmd += $" -t {f持续秒}";
+
+                return cmd;
+            }
             public string get二次跳转_SS_i_SS_TO(FileInfo fi输入文件) {
                 string cmd;
                 if (f关键帧 > 0)
@@ -372,7 +384,7 @@ namespace 破片压缩器 {
                     }
                     i剩余 = set体积降序编码序列.Count;
                     if (dic_连续黑场.TryGetValue(span偏移.f转场, out var map)) {
-                        if (map.Contains(span偏移.f结束) || map.Contains(span偏移.f下一场)) {
+                        if (map.Contains(span偏移.f结束) || map.Contains(span偏移.f结束)) {
                             b全黑场 = true;
                         }
                     }
@@ -1012,7 +1024,7 @@ namespace 破片压缩器 {
                 Form破片压缩.autoReset转码.Set( );
             }
             try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv", @string.ToString( )); } catch (Exception err) {
-                @string.AppendLine( ).Append(err.Message);
+                @string.AppendLine( ).AppendLine(err.Message);
                 try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv" + DateTime.Now.ToString("yyyy.MM.dd.HH.mm.ss.fff") + ".csv", @string.ToString( )); } catch { }
             }
         }

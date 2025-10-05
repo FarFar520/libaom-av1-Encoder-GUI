@@ -569,7 +569,7 @@
             this.textBox_lavfi.Name = "textBox_lavfi";
             this.textBox_lavfi.Size = new System.Drawing.Size(340, 31);
             this.textBox_lavfi.TabIndex = 8;
-            this.textBox_lavfi.Text = "format=yuv420p16le , hqdn3d , unsharp=5:5:-0.01:5:5:0.0";
+            this.textBox_lavfi.Text = "format=rgba , hqdn3d , unsharp=5:5:-0.01:5:5:0.0";
             this.textBox_lavfi.Visible = false;
             // 
             // checkBox_lavfi

@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace 破片压缩器 {
     internal class External_Process {
@@ -434,22 +435,39 @@ namespace 破片压缩器 {
                 builder.AppendLine(err.Message);
                 return false;
             }
+            Task.Run(( ) => { while (!process.StandardError.EndOfStream) listError.Add(process.StandardError.ReadLine( )); });
+
+            List<string> listWarning = new List<string>( ), listMergeErr = new List<string>( );
             while (!process.StandardOutput.EndOfStream) {
                 string line = process.StandardOutput.ReadLine( ).TrimStart( );
                 if (!string.IsNullOrEmpty(line) && !line.StartsWith("Progress")) {
-                    builder.AppendLine(line);
-                    if (line.StartsWith("Error")) {
-                        listError.Add(line);
+                    if (line.StartsWith("Warning")) {
+                        listWarning.Add(line);
+                    } else if (line.StartsWith("Error")) {
+                        listMergeErr.Add(line);
                     } else
                         listOutput.Add(line);
                 }
             }
-
-            if (!process.StandardError.EndOfStream) {
-                string error = process.StandardError.ReadToEnd( );
-                builder.AppendLine("有错误发生").AppendLine(process.StandardOutput.ReadToEnd( ));
-            }
             process.WaitForExit( );
+
+            if (listError.Count > 2) {
+                builder.AppendLine("\r\n程序错误：");
+                for (int i = 2; i < listError.Count; i++) builder.AppendLine(listError[i]);
+            }
+
+            if (listMergeErr.Count > 0) {
+                builder.AppendLine("\r\n有错误：");
+                for (int i = 0; i < listMergeErr.Count; i++) builder.AppendLine(listMergeErr[i]);
+            }
+
+            if (listWarning.Count > 0) {
+                builder.AppendLine("\r\n有警告：");
+                for (int i = 0; i < listWarning.Count; i++) builder.AppendLine(listWarning[i]);
+            }
+
+            builder.AppendLine( );
+            for (int i = 0; i < listOutput.Count; i++) builder.AppendLine(listOutput[i]);
 
             arrLogs = listOutput.ToArray( );
             b安全退出 = process.ExitCode == 0;
@@ -488,13 +506,7 @@ namespace 破片压缩器 {
                 }
             }
         }
-        void read_StandardError( ) {
-            while (!process.StandardError.EndOfStream) {
-                StandardError = process.StandardError.ReadLine( );
-                listError.Add(StandardError);
-                sb输出数据流.AppendLine(StandardOutput);
-            }
-        }
+
         void ffmpeg_读编码消息直到结束( ) {//一条子线程          
             //time编码开始 = DateTime.Now;
             stopwatch.Start( );
@@ -546,7 +558,6 @@ namespace 破片压缩器 {
                         index_frame = iframe;
                         newFrame = true;
                     } else {
-                        index_frame = -1;
                         StandardError = ffmpeg_Encoding;
                         builder日志.AppendLine(ffmpeg_Encoding);
                     }
@@ -609,30 +620,6 @@ namespace 破片压缩器 {
             process.Dispose( );
         }
 
-        public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, string FinalTxt) {
-            using (Process p = new Process( )) {
-                p.StartInfo.FileName = FileName;
-                p.StartInfo.Arguments = Arguments;
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.UseShellExecute = false;
-                p.StartInfo.RedirectStandardError = true;
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.WorkingDirectory = WorkingDirectory;
-                p.StartInfo.StandardErrorEncoding = Encoding.UTF8;
-                p.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-                try { p.Start( ); } catch { return false; }
-                while (!p.StandardOutput.EndOfStream || !p.StandardError.EndOfStream) {
-                    if (!p.StandardOutput.EndOfStream && p.StandardOutput.ReadLine( ).Contains(FinalTxt)) {
-                        return true;
-                    }
-
-                    if (!p.StandardError.EndOfStream && p.StandardError.ReadLine( ).Contains(FinalTxt)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
 
         public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, out string Output, out string Error) {
             bool Success = false;
@@ -656,33 +643,5 @@ namespace 破片压缩器 {
             }
             return Success;
         }
-
-        public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, out List<string> listError) {
-            bool Success = false;
-            listError = new List<string>( );
-            using (Process p = new Process( )) {
-                p.StartInfo.FileName = FileName;
-                p.StartInfo.Arguments = Arguments;
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.UseShellExecute = false;
-                p.StartInfo.RedirectStandardError = true;
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.WorkingDirectory = WorkingDirectory;
-                p.StartInfo.StandardErrorEncoding = Encoding.UTF8;
-                p.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-                try { p.Start( ); } catch { return false; }
-                while (!p.StandardError.EndOfStream) {
-                    string e = p.StandardError.ReadLine( ).TrimStart( );
-                    if (!string.IsNullOrWhiteSpace(e)) {
-                        listError.Add(e);
-                    }
-                }
-                p.WaitForExit( );
-                Success = p.ExitCode == 0;
-            }
-
-            return Success;
-        }
-
     }
 }

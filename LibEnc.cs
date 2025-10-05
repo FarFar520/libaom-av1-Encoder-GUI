@@ -80,17 +80,17 @@ namespace 破片压缩器 {
         public static readonly Dictionary<string, 预设> dic显示_x264预设 = new Dictionary<string, 预设>( ) {
             //--preset <string>  Trade off performance for compression efficiency. Default medium,
                //ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, or placebo
-                {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:5){eFPS_2K=13,eFPS_4K=4.6f } },//编码器默认值    
-                {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 4,min_判定帧型:9)},
-                {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 3,min_判定帧型:9)},
-                {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 2,min_判定帧型:5)},
-                {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 1,min_判定帧型:5)},
-                //{"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:5)},//编码器默认值
-                //{"fast (快)",new 预设(value预设:"fast",crf偏移: -0.5f,min_判定帧型:5) },
-                //{"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -1,min_判定帧型:5)},
-                //{"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -1.5f, min_判定帧型 : 5)},
-                //{"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: -2,min_判定帧型:4)},
-                {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -2.5f,min_判定帧型:4){eFPS_2K=10,eFPS_4K=2 }}
+                {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4){eFPS_2K=13,eFPS_4K=4.6f } },//编码器默认值    
+                {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 2,min_判定帧型:17){eFPS_2K=1,eFPS_4K=0.1f }},
+                {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 1.5f,min_判定帧型:9){eFPS_2K=2,eFPS_4K=0.2f } },
+                {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 1,min_判定帧型:5)},
+                {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 0.5f,min_判定帧型:5)},
+                //{"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4)},//编码器默认值
+                //{"fast (快)",new 预设(value预设:"fast",crf偏移: -0.3f,min_判定帧型:4) },
+                //{"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -0.6f,min_判定帧型:4)},
+                //{"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -0.9f, min_判定帧型 : 4)},
+                //{"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: 1.2f,min_判定帧型:4)},
+                {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -1.5f,min_判定帧型:1){eFPS_2K=16,eFPS_4K=4 }}
         };
 
 
@@ -126,7 +126,7 @@ namespace 破片压缩器 {
              */
             libEnc.Set使用位深(12);
 
-            libEnc.Set固定内参(new string[] { "PerceptQPA=1" });
+            libEnc.Set固定内参(new string[] { "PerceptQPA=0" });
             //-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
             //启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
 
@@ -214,7 +214,7 @@ namespace 破片压缩器 {
             libEnc.Add所有预设("veryslow", dic显示_x265预设);
             libEnc.Set固定内参(new string[] { "fades=1", "no-info=1", "hist-scenecut=1", "tune=ssim" });//"single-sei=1" x265 [warning]: None of the SEI messages are enabled. Disabling Single SEI NAL
 
-            libEnc.lookahead = new BYTE内参("rc-lookahead={0}", 3, 250, 20);
+            //libEnc.lookahead = new BYTE内参("rc-lookahead={0}", 3, 250, 20);//缩小rc-lookahead会降低质量
 
             libEnc.Noise去除参数 = new SHORT内参带显示(key: "nr-intra={0}:nr-inter={0}:mcstf=1", str最小提示: "微微一降", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 1, max: 2000, use: 64);
 
@@ -232,6 +232,8 @@ namespace 破片压缩器 {
             libEnc.Add所有预设("meidum", dic显示_x264预设);
 
             libEnc.Set使用位深(0);
+
+            //libEnc.lookahead = new BYTE内参("rc-lookahead={0}", 1, 250, 40);//x264对输出质量有影响
             //libEnc.Set固定内参(new string[] { "tune=psnr" });
 
             //libEnc.Noise去除参数 = new SHORT内参带显示(key: "nr={0}", str最小提示: "微微一降", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 1, max: 64, use: 4);
@@ -241,7 +243,6 @@ namespace 破片压缩器 {
             libEnc.str画质参考 = "x264画质范围参考↓\r\n蓝光原盘：CRF=10\r\n视觉无损：CRF=18\r\n超清：CRF=21\r\n高清：CRF=23（推荐）\r\n标清：CRF=23（默认）";
             dic_编码库_初始设置.Add("轻快压 avc @x264", libEnc);
         }
-
 
         public class 预设 {
             float _crf偏移;
@@ -494,19 +495,12 @@ namespace 破片压缩器 {
 
         }
 
-        public string get参数_编码器预设画质(string key选择预设, bool b微调CRF, decimal crf) {
-            if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
-                enc预设 = dic_选择_预设[_key显示预设];
-            }
-            return string.Format("-c:v {0} {1} {2} {3} {4}", _value编码库, _key预设, enc预设.value, CRF参数.key, enc预设.get_CRF(b微调CRF, (float)crf, CRF参数));
-        }
-
         public string get参数_编码器预设画质(string key选择预设, bool b多线程, bool b微调CRF, decimal crf) {
             if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
                 enc预设 = dic_选择_预设[_key显示预设];
             }
 
-            if (b多线程 && !_b多线程优先) crf++;
+            if (b微调CRF && !b多线程 && !_b多线程优先) crf++;
 
             List<string> list传递内参 = new List<string>( );
 
@@ -551,7 +545,8 @@ namespace 破片压缩器 {
             if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
                 enc预设 = dic_选择_预设[_key显示预设];
             }
-            if (b多线程 && !_b多线程优先) crf++;
+
+            if (b微调CRF && !b多线程 && !_b多线程优先) crf++;
 
             List<string> list传递内参 = new List<string>( );
 
@@ -606,12 +601,11 @@ namespace 破片压缩器 {
 
             if (b微调CRF && !b多线程 && !_b多线程优先) crf++;
 
-            info.OUT.adjust_crf = enc预设.get_CRF(b微调CRF, crf, CRF参数, info.f输出帧率, _arr帧率CRF偏移);
+            info.OUT.adjust_crf = enc预设.get_CRF(b微调CRF, crf, CRF参数, info.OUT.b抽重复帧 ? info.f输入帧率 : info.f输出帧率, _arr帧率CRF偏移);
 
             if (_arr固定内参 != null) list传递内参.AddRange(_arr固定内参);
 
             if (b内降噪 && Noise去除参数 != null) list传递内参.Add(Noise去除参数.get参数(value降噪, out info.OUT.denoise));
-
 
             if (!b多线程) {
                 if (lookahead != null) {
@@ -628,7 +622,6 @@ namespace 破片压缩器 {
 
             str最低画质编码库 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} {6} ", str限缩位深格式化, _value编码库, _value外参单线程, _key预设, enc预设.value, CRF参数.key, CRF参数.range_max);
             str多线程最低画质编码库 = string.Format(" {0} -c:v {1} {2} {3} {4} {5} ", str限缩位深格式化, _value编码库, _key预设, enc预设.value, CRF参数.key, CRF参数.range_max);
-
 
 
             if (list传递内参.Count > 0 || GOP跃秒 != null || GOP跃帧 != null) {
