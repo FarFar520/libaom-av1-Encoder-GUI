@@ -384,7 +384,7 @@ namespace 破片压缩器 {
                     }
                     i剩余 = set体积降序编码序列.Count;
                     if (dic_连续黑场.TryGetValue(span偏移.f转场, out var map)) {
-                        if (map.Contains(span偏移.f结束) || map.Contains(span偏移.f结束)) {
+                        if (map.Last( ) >= span偏移.f结束 || map.Contains(span偏移.f结束)) {
                             b全黑场 = true;
                         }
                     }

@@ -301,6 +301,9 @@ namespace 破片压缩器 {
                             while (video正在转码文件.b转码下一个分段(out External_Process external_Process)) {
                                 add日志($"开始转码：{external_Process.fi编码.FullName}");
                                 转码队列.ffmpeg等待入队(external_Process);//有队列上限
+                                if (转码队列.Has汇总输出信息(out string str编码速度)) {
+                                    textBox日志.Invoke(new Action(( ) => textBox日志.Text = str编码速度));
+                                }
                             }
 
                             if (!dic_完成路径_等待合并.ContainsKey(videoTemp.lower完整路径_输入视频)) {
@@ -987,7 +990,7 @@ namespace 破片压缩器 {
 
         private void comboBox预设_DropDownClosed(object sender, EventArgs e) {
             if (video热乎的切片 == null && video正在转码文件 == null)
-                add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked,b多线程:checkBox多线程.Checked, crf: numericUpDown_CRF.Value));
+                add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, b多线程: checkBox多线程.Checked, crf: numericUpDown_CRF.Value));
         }
 
         decimal crf上次;
@@ -1007,7 +1010,7 @@ namespace 破片压缩器 {
         }
 
         private void checkBox_磨皮_MouseClick(object sender, MouseEventArgs e) {
-            add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, crf: numericUpDown_CRF.Value, b内降噪: checkBox_磨皮.Checked, value降噪: trackBar_降噪量.Value));
+            add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, b多线程: checkBox多线程.Checked, crf: numericUpDown_CRF.Value, b内降噪: checkBox_磨皮.Checked, value降噪: trackBar_降噪量.Value));
         }
 
         private void numericUpDown_CRF_KeyPress(object sender, KeyPressEventArgs e) {
@@ -1097,6 +1100,8 @@ namespace 破片压缩器 {
 
             comboBox预设.DataSource = libEnc选中.dic_选择_预设.Keys.ToArray( );
             comboBox预设.Text = libEnc选中.key显示预设;
+
+            label_CRF.Text = "画质" + libEnc选中.CRF参数.name.ToUpper( );
 
             numericUpDown_CRF.DecimalPlaces = libEnc选中.CRF参数.i小数位;
             numericUpDown_CRF.Maximum = (decimal)libEnc选中.CRF参数.my_max;

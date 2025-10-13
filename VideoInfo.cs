@@ -176,7 +176,7 @@ namespace 破片压缩器 {
             public string enc = string.Empty, str量化名 = "crf", preset = string.Empty, str视流格式 = string.Empty, denoise = string.Empty;
         }
         public class 输入 {
-            public string ffmpeg单线程解码 = EXE.ffmpeg单线程解码;
+            public string ffmpeg单线程解码 = EXE.ffmpeg单线程;
         }
 
         public VideoInfo(FileInfo fileInfo) {

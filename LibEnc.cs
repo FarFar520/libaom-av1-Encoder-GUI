@@ -6,107 +6,123 @@ namespace 破片压缩器 {
 
         public static readonly Dictionary<string, 预设> dic显示_VVenC预设 = new Dictionary<string, 预设>( ) {
             //--preset [medium] select preset for specific encoding setting (faster, fast, medium, slow, slower, medium_lowDecEnergy)
-                {"slower (最慢)",new 预设(value预设: "slower",crf偏移: 3) },
-                {"slow (慢)",new 预设(value预设:"slow",crf偏移:2) },
-                {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0) },//编码器默认值
-                //{"medium (中速,快速解码）",new 预设(value预设:"medium_lowDecEnergy",crf偏移:0) }, lib库中没有
-                {"fast (快)",new 预设(value预设:"fast",crf偏移:-1) },
-                {"faster (最快)",new 预设(value预设:"faster",crf偏移:-2) }
+            //{"VerySlow (特慢)",new 预设(value预设:"slower" ,crf偏移: 3)
+            //{ add内参= new string[]{ "FastSearch=1",  "ReduceFilterME=1" , "FastSearchSCC=0" } ,eFPS_2K=0.02f,eFPS_4K=0.002f} },
+            //--FastSearch [4]：搜索模式（0：全搜索，1：菱形搜索，2：已废弃，3：增强型菱形搜索，4：快速菱形搜索）
+            //--ReduceFilterME [2]：分数像素优化时使用减少抽头的滤波器（0：使用 8 抽头，1：6 抽头，2：4 抽头）
+            
+            {"slower (特慢)",new 预设(value预设: "slower",crf偏移: 3){  eFPS_2K = 0.03f, eFPS_4K = 0.003f } },
+            {"slow (慢)",new 预设(value预设:"slow",crf偏移:2) },
+            {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0) },//编码器默认值
+            //{"medium (中速,快速解码）",new 预设(value预设:"medium_lowDecEnergy",crf偏移:0) }, lib库中没有
+            {"fast (快)",new 预设(value预设:"fast",crf偏移:-1) },
+            {"faster (最快)",new 预设(value预设:"faster",crf偏移:-2) },
+
+            {"slower (录屏源)",new 预设(value预设:"slower" ,crf偏移: 3)
+            { add内参= new string[]{ "ForceSCC=3", "FastSearchSCC=3", "PYUV=1", "MCTF=0" },eFPS_2K=1,eFPS_4K=0.04f,b运动补偿时域滤波=false } },
+            {"medium (录屏源)",new 预设(value预设:"medium" ,crf偏移: 0)
+            { add内参= new string[]{ "ForceSCC=3", "FastSearchSCC=3", "PYUV=1", "MCTF=0" },eFPS_2K=1,eFPS_4K=0.04f,b运动补偿时域滤波=false } },
+            //--ForceSCC [0]：强制屏幕内容编码（SCC）处理，而非自动检测（≤0：使用自动检测，1：将所有帧视为非屏幕内容编码（SCC）帧，2：将所有帧视为弱屏幕内容编码（SCC）帧，3：将所有帧视为强屏幕内容编码（SCC）帧）
+            //--FastSearchSCC [2]：屏幕内容编码（SCC）的搜索模式（0：使用非屏幕内容编码（SCC）搜索模式，1：已废弃，2：屏幕内容编码菱形搜索（DiamondSCC），3：屏幕内容编码快速菱形搜索（FastDiamondSCC））
+            
+            {"placebo (最慢,安慰剂)",new 预设(value预设:"slower" ,crf偏移: 4)
+            { add内参= new string[]{ "FastSearch=0", "ReduceFilterME=0", "FastSearchSCC=0", "ISP=1", "SBT=1", "CIIP=1", "EDO=1", "EncDbOpt=1", "SMVD=1" },eFPS_2K=0.009f,eFPS_4K=0.0009f } },
         };
         public static readonly Dictionary<string, 预设> dic显示_aomenc预设 = new Dictionary<string, 预设>( ) {
             //--cpu-used=<arg> Speed setting (0..6 in good mode, 5..12 in realtime mode, 0..9 in all intra mode)
-                {"0 (最慢)",new 预设(value预设:"0" ,crf偏移: 5) },//编码器默认
-                {"1 (慢速三挡↓)",new 预设(value预设:"1",crf偏移: 4) },
-                {"2 (慢速二挡↓)",new 预设(value预设:"2",crf偏移: 3) },
-                {"3 (慢速一挡↓)",new 预设(value预设:"3",crf偏移: 2) },
-                {"4 (慢)",new 预设(value预设:"4",crf偏移: 1) },
-                {"5 (中速)",new 预设(value预设:"5",crf偏移: 0) },
-                {"6 (快)",new 预设(value预设:"6",crf偏移: -1) },
-                {"7 (快速一挡)",new 预设(value预设:"7",crf偏移: -2) },
-                {"8 (快速二挡)",new 预设(value预设:"8",crf偏移: -3) },
-                //{"9 (快速3)",new 预设(value预设:"9",crf偏移: -4) },lib库中没有
-                //{"10 (快速4)",new 预设(value预设:"10",crf偏移: -5) },
-                //{"11 (快速5)",new 预设(value预设:"11" ,crf偏移: -6)},
-                //{"12 (最快速)",new 预设(value预设:"12" ,crf偏移: -7)}
+            {"0 (最慢)",new 预设(value预设:"0" ,crf偏移: 5) },//编码器默认
+            {"1 (慢速三挡↓)",new 预设(value预设:"1",crf偏移: 4){eFPS_2K = 0.08f, eFPS_4K = 0.008f } },
+            {"2 (慢速二挡↓)",new 预设(value预设:"2",crf偏移: 3){eFPS_2K = 0.12f, eFPS_4K = 0.01f } },
+            {"3 (慢速一挡↓)",new 预设(value预设:"3",crf偏移: 2){eFPS_2K = 0.3f, eFPS_4K = 0.03f } },
+            {"4 (慢)",new 预设(value预设:"4",crf偏移: 1){eFPS_2K = 0.5f, eFPS_4K = 0.05f } },
+            {"5 (中速)",new 预设(value预设:"5",crf偏移: 0){eFPS_2K = 0.8f, eFPS_4K = 0.08f } },
+            {"6 (快)",new 预设(value预设:"6",crf偏移: -1){eFPS_2K = 1.3f, eFPS_4K = 0.13f } },
+            {"7 (快速一挡)",new 预设(value预设:"7",crf偏移: -2){eFPS_2K = 1.3f, eFPS_4K = 0.13f } },
+            {"8 (快速二挡)",new 预设(value预设:"8",crf偏移: -3){eFPS_2K = 1.3f, eFPS_4K = 0.13f } },
+            //{"9 (快速3)",new 预设(value预设:"9",crf偏移: -4) },lib库中没有
+            //{"10 (快速4)",new 预设(value预设:"10",crf偏移: -5) },
+            //{"11 (快速5)",new 预设(value预设:"11" ,crf偏移: -6)},
+            //{"12 (最快速)",new 预设(value预设:"12" ,crf偏移: -7)}
         };
         public static readonly Dictionary<string, 预设> dic显示_SvtAv1EncApp预设 = new Dictionary<string, 预设>( ) {
             //--preset Encoder preset, presets < 0 are for debugging.Higher presets means faster encodes, but with a quality tradeoff, default is 10[-1 - 13]
-                {"-1 (最慢,完全体)",new 预设(value预设:"-1" ,crf偏移: 3)},
-                {"0 (更慢)",new 预设(value预设:"0" ,crf偏移: 2)},
-                {"1 (慢)",new 预设(value预设:"1",crf偏移: 1) },
-                {"2 (低速,提画质)",new 预设(value预设:"2" ,crf偏移: 0)},
-                {"3 (中速)",new 预设(value预设:"3",crf偏移: -1)},
-                {"4 (快速一挡)",new 预设(value预设:"4",crf偏移: -2) },
-                {"5 (快速二挡)",new 预设(value预设:"5" ,crf偏移: -3)},
-                {"6 (快速三挡)",new 预设(value预设:"6" ,crf偏移: -4)},
-                {"7 (快速四挡)",new 预设(value预设:"7" ,crf偏移: -5)},
-                {"8 (快速五挡)",new 预设(value预设:"8" ,crf偏移: -6)},
-                {"9 (快速六挡)",new 预设(value预设:"9" ,crf偏移: -7)},
-                {"10 (快速七挡)",new 预设(value预设:"10" ,crf偏移: -8)},//编码器默认
-                {"11 (快速八挡)",new 预设(value预设:"11" ,crf偏移: -9)},
-                {"12 (快速九挡)",new 预设(value预设:"12" ,crf偏移: -10)},
-                {"13 (最快速)",new 预设(value预设:"13" ,crf偏移: -11)}
+            {"-1 (最慢,完全体)",new 预设(value预设:"-1" ,crf偏移: 3){eFPS_2K = 0.08f, eFPS_4K = 0.008f }},
+            {"0 (更慢)",new 预设(value预设:"0" ,crf偏移: 2){eFPS_2K = 0.12f, eFPS_4K = 0.01f }},
+            {"1 (慢)",new 预设(value预设:"1",crf偏移: 1){eFPS_2K = 0.3f, eFPS_4K = 0.03f }  },
+            {"2 (低速,提画质)",new 预设(value预设:"2" ,crf偏移: 0){eFPS_2K = 0.5f, eFPS_4K = 0.05f }},
+            {"3 (中速)",new 预设(value预设:"3",crf偏移: -1){eFPS_2K = 0.6f, eFPS_4K = 0.06f }},
+            {"4 (快速一挡)",new 预设(value预设:"4",crf偏移: -2){eFPS_2K = 0.7f, eFPS_4K = 0.07f } },
+            {"5 (快速二挡)",new 预设(value预设:"5" ,crf偏移: -3){eFPS_2K = 0.8f, eFPS_4K = 0.08f }},
+            {"6 (快速三挡)",new 预设(value预设:"6" ,crf偏移: -4){eFPS_2K = 0.9f, eFPS_4K = 0.09f }},
+            {"7 (快速四挡)",new 预设(value预设:"7" ,crf偏移: -5){eFPS_2K = 0.10f, eFPS_4K = 0.10f }},
+            {"8 (快速五挡)",new 预设(value预设:"8" ,crf偏移: -6){eFPS_2K = 0.11f, eFPS_4K = 0.11f }},
+            {"9 (快速六挡)",new 预设(value预设:"9" ,crf偏移: -7){eFPS_2K = 0.12f, eFPS_4K = 0.12f }},
+            {"10 (快速七挡)",new 预设(value预设:"10" ,crf偏移: -8){eFPS_2K = 0.13f, eFPS_4K = 0.13f }},//编码器默认
+            {"11 (快速八挡)",new 预设(value预设:"11" ,crf偏移: -9){eFPS_2K = 0.14f, eFPS_4K = 0.14f }},
+            {"12 (快速九挡)",new 预设(value预设:"12" ,crf偏移: -10){eFPS_2K = 0.15f, eFPS_4K = 0.15f }},
+            {"13 (最快速)",new 预设(value预设:"13" ,crf偏移: -11){eFPS_2K = 0.16f, eFPS_4K = 0.16f }}
         };
         public static readonly Dictionary<string, 预设> dic显示_rav1e预设 = new Dictionary<string, 预设>( ) {
             //--speed <SPEED>  [default: 6]
-          //Speed level (0 is best quality, 10 is fastest)
-          //Speeds 10 and 0 are extremes and are generally not recommended
-                {"0 (最慢)",new 预设(value预设:"0" ,crf偏移: 18) },
-                {"1 (慢速三挡↓)",new 预设(value预设:"1",crf偏移: 15) },
-                {"2 (慢速二挡↓)",new 预设(value预设:"2",crf偏移: 12) },
-                {"3 (慢速一挡↓)",new 预设(value预设:"3",crf偏移: 9) },
-                {"4 (慢)",new 预设(value预设:"4",crf偏移: 6) },
-                {"5 (低速)",new 预设(value预设:"5",crf偏移: 3) },
-                {"6 (中速)",new 预设(value预设:"6",crf偏移: 0) },//编码器默认
-                {"7 (快速一挡)",new 预设(value预设:"7",crf偏移: -3) },
-                {"8 (快速二挡)",new 预设(value预设:"8",crf偏移: -6) },
-                {"9 (快速三挡)",new 预设(value预设:"9",crf偏移: -9) },
-                {"10 (快速四挡)",new 预设(value预设:"10",crf偏移: -12) },
+            //Speed level (0 is best quality, 10 is fastest)
+            //Speeds 10 and 0 are extremes and are generally not recommended
+            {"0 (最慢)",new 预设(value预设:"0" ,crf偏移: 18) },
+            {"1 (慢速三挡↓)",new 预设(value预设:"1",crf偏移: 15) },
+            {"2 (慢速二挡↓)",new 预设(value预设:"2",crf偏移: 12) },
+            {"3 (慢速一挡↓)",new 预设(value预设:"3",crf偏移: 9) },
+            {"4 (慢)",new 预设(value预设:"4",crf偏移: 6) },
+            {"5 (低速)",new 预设(value预设:"5",crf偏移: 3) },
+            {"6 (中速)",new 预设(value预设:"6",crf偏移: 0) },//编码器默认
+            {"7 (快速一挡)",new 预设(value预设:"7",crf偏移: -3) },
+            {"8 (快速二挡)",new 预设(value预设:"8",crf偏移: -6) },
+            {"9 (快速三挡)",new 预设(value预设:"9",crf偏移: -9) },
+            {"10 (快速四挡)",new 预设(value预设:"10",crf偏移: -12) },
         };
         public static readonly Dictionary<string, 预设> dic显示_x265预设 = new Dictionary<string, 预设>( ) {
             //--preset <string>  Trade off performance for compression efficiency. Default medium,
-               //ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, or placebo
-                {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 4,min_判定帧型:9)},
-                {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 3,min_判定帧型:9){eFPS_2K=0.3f,eFPS_4K=0.05f }},
-                {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 2,min_判定帧型:5)},
-                {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 1,min_判定帧型:5)},
-                {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:5){eFPS_2K=3,eFPS_4K=1 }},//编码器默认值
-                {"fast (快)",new 预设(value预设:"fast",crf偏移: -0.5f,min_判定帧型:5) },
-                {"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -1,min_判定帧型:5)},
-                {"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -1.5f, min_判定帧型 : 5)},
-                {"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: -2,min_判定帧型:4)},
-                {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -2.5f,min_判定帧型:4){eFPS_2K=5,eFPS_4K=2 }}
+            //ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, or placebo
+            {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 4,min_判定帧型:9){eFPS_2K=0.05f,eFPS_4K=0.003f }},
+            {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 3,min_判定帧型:9){eFPS_2K=0.3f,eFPS_4K=0.05f }},
+            {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 2,min_判定帧型:5){eFPS_2K=0.7f,eFPS_4K=0.07f }},
+            {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 1,min_判定帧型:5){eFPS_2K=1.5f,eFPS_4K=0.15f }},
+            {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:5){eFPS_2K=3,eFPS_4K=0.9f }},//编码器默认值
+            {"fast (快)",new 预设(value预设:"fast",crf偏移: -0.5f,min_判定帧型:5) {eFPS_2K=3.5f,eFPS_4K=1 }},
+            {"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -1,min_判定帧型:5){eFPS_2K=3.5f,eFPS_4K=1 }},
+            {"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -1.5f, min_判定帧型 : 5){eFPS_2K=4,eFPS_4K=1 }},
+            {"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: -2,min_判定帧型:4){eFPS_2K=4.5f,eFPS_4K=1.5f }},
+            {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -2.5f,min_判定帧型:4){eFPS_2K=5,eFPS_4K=2 }}
         };
         public static readonly Dictionary<string, 预设> dic显示_x264预设 = new Dictionary<string, 预设>( ) {
             //--preset <string>  Trade off performance for compression efficiency. Default medium,
-               //ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, or placebo
-                {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4){eFPS_2K=13,eFPS_4K=4.6f } },//编码器默认值    
-                {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 2,min_判定帧型:17){eFPS_2K=1,eFPS_4K=0.1f }},
-                {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 1.5f,min_判定帧型:9){eFPS_2K=2,eFPS_4K=0.2f } },
-                {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 1,min_判定帧型:5)},
-                {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 0.5f,min_判定帧型:5)},
-                //{"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4)},//编码器默认值
-                //{"fast (快)",new 预设(value预设:"fast",crf偏移: -0.3f,min_判定帧型:4) },
-                //{"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -0.6f,min_判定帧型:4)},
-                //{"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -0.9f, min_判定帧型 : 4)},
-                //{"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: 1.2f,min_判定帧型:4)},
-                {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -1.5f,min_判定帧型:1){eFPS_2K=16,eFPS_4K=4 }}
+            //ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, or placebo
+            {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4){eFPS_2K=13,eFPS_4K=4.6f } },//编码器默认值    
+            {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 2,min_判定帧型:17){eFPS_2K=1,eFPS_4K=0.1f }},
+            {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 1.5f,min_判定帧型:9){eFPS_2K=2,eFPS_4K=0.2f } },
+            {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 1,min_判定帧型:5)},
+            {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 0.5f,min_判定帧型:5)},
+            //{"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4)},//编码器默认值
+            //{"fast (快)",new 预设(value预设:"fast",crf偏移: -0.3f,min_判定帧型:4) },
+            //{"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -0.6f,min_判定帧型:4)},
+            //{"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -0.9f, min_判定帧型 : 4)},
+            //{"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: 1.2f,min_判定帧型:4)},
+            {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -1.5f,min_判定帧型:1){eFPS_2K=16,eFPS_4K=4 }}
         };
 
 
         public static Dictionary<string, LibEnc> dic_编码库_初始设置 = new Dictionary<string, LibEnc>( );
 
         public static void fx编码库初始化( ) {
-            add_libvvenc( );
+            add_libvvenc_qpa( );
+            add_libvvenc_qp( );
             add_libaom_av1( );
             add_libsvtav1( );
-            add_librav1e( );
+            //add_librav1e( ); //硬实力弱于svt-av1 、aomenc，已去除
             add_libx265( );
             add_libx264( );
         }
-        static void add_libvvenc( ) {
+        static void add_libvvenc_qpa( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
-                , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 16, my_max: 35, my_value: 28)
+                , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 13, my_max: 33, my_value: 28)
                 , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
             /*
              * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
@@ -126,20 +142,65 @@ namespace 破片压缩器 {
              */
             libEnc.Set使用位深(12);
 
-            libEnc.Set固定内参(new string[] { "PerceptQPA=0" });
-            //-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
-            //启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
+            libEnc.Set固定内参(new string[] { "SameCQPTablesForAllChroma=0", "CabacZeroWordPaddingEnabled=0" });// "PerceptQPA=1"
+            /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
+            启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
+            --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
+            --CabacZeroWordPaddingEnabled [1]：为码流添加符合标准的上下文自适应二进制算术编码（CABAC）零字填充（0：不添加，1：按需添加）
+            */
 
             libEnc.Noise去除参数 = new SHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0);
+
             libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
             libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
-            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
+            //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 3 }, { 45, 2 }, { 35, 1 } };
 
+            libEnc.Add所有预设("slower", dic显示_VVenC预设);
+
+            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=28（推荐）\r\n标清：\tQPA=30\r\n标清：\tQPA=32（默认）";
+
+            dic_编码库_初始设置.Add("高压缩 h266 @VVenC-QPA", libEnc);
+        }
+        static void add_libvvenc_qp( ) {
+            LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
+                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 10, my_max: 36, my_value: 26)
+                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
+            /*
+             * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
+             * 设置自动多线程设置 (-1: 自动, 0: 关闭, 1,2,3: 开启，根据线程数自动启用 Tile, IFP 和 WPP)
+             
+             * --MaxParallelFrames [-1] Maximum number of frames to be processed in parallel(0:off, >=2: enable parallel frames)
+             * 并行处理的最大帧数(0:关闭, >=2: 启用并行帧处理)
+            
+             * --IFPLines [-1] Inter-Frame Parallelization(IFP) explicit CTU-lines synchronization offset (-1: default mode with two lines, 0: off)
+             * 帧间并行化 (IFP) 显式 CTU 行同步偏移 (-1: 默认模式带两行偏移, 0: 关闭)
+             
+             * --IFP [auto] Inter-Frame Parallelization(IFP) (-1: auto, 0: off, 1: on, with default setting of IFPLines)
+             * 帧间并行化 (IFP) (-1: 自动, 0: 关闭, 1: 开启，使用 IFPLines 的默认设置)
+             
+             *--WaveFrontSynchro [auto]`        Enable entropy coding sync (WPP) (-1: auto, 0: off, 1: on)
+             *启用熵编码同步 (WPP) (-1: 自动, 0: 关闭, 1: 开启)*
+             */
+            libEnc.Set使用位深(12);
+
+            libEnc.Set固定内参(new string[] { "PerceptQPA=0", "SameCQPTablesForAllChroma=0" });
+            /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
+            启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
+            --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
+            */
+
+            libEnc.Noise去除参数 = new SHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0) { str关闭 = "MCTF=0" };
+
+            libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
+            libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
+            //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 3 }, { 45, 2 }, { 35, 1 } };
             libEnc.Add所有预设(dic显示_VVenC预设);
 
-            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=28（推荐）\r\n标清：\tQPA=32（默认）";
+            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QP=10\r\n视觉无损：QP=15\r\n超清：\tQP=20\r\n高清：\tQP=24\r\n标清：\tQP=26（推荐）\r\n低清：\tQP=32(默认)";
 
-            dic_编码库_初始设置.Add("高压缩 vvc @VVenC", libEnc);
+            dic_编码库_初始设置.Add("中压缩 h266 @VVenC-QP", libEnc);
         }
         static void add_libaom_av1( ) {
             LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libaom-av1", key预设: "-cpu-used", key编码器传参: "-aom-params"
@@ -248,8 +309,10 @@ namespace 破片压缩器 {
             float _crf偏移;
             string _value;
             byte _min_判定帧型 = 0;
-
-            public float eFPS_2K = 0.1f, eFPS_4K = 0.03f;
+            List<string> _list补充内参 = new List<string>( );
+            public bool b运动补偿时域滤波 = true;
+            public string[] add内参 { set { _list补充内参.AddRange(value); } }
+            public float eFPS_2K = 10, eFPS_4K = 1;
 
             public 预设(string value预设, float crf偏移) {
                 _value = value预设; _crf偏移 = crf偏移;
@@ -258,6 +321,9 @@ namespace 破片压缩器 {
                 _value = value预设; _crf偏移 = crf偏移; _min_判定帧型 = min_判定帧型;
             }
 
+            public void set补充内参(ref List<string> list) {
+                if (_list补充内参.Count > 0) list.AddRange(_list补充内参);
+            }
             public float get_CRF(bool b微调crf, float crf, Num参数 CRF) {
                 if (b微调crf) {
                     crf += _crf偏移;
@@ -287,6 +353,7 @@ namespace 破片压缩器 {
             public string value => _value;
             public byte min_判定帧型 => _min_判定帧型;
         }
+
         public class Num参数 {
             string _key, _name;
             float _def;
@@ -368,12 +435,19 @@ namespace 破片压缩器 {
             string _key;
             short _min, _max, _use;
             string _str最小提示, _str最大提示, _str摘要;
+            string _str关闭;
             bool _b默启;
             public SHORT内参带显示(string key, string str最小提示, string str最大提示, string str摘要, bool b默启, short min, short max, short use) {
                 _str最小提示 = str最小提示; _str最大提示 = str最大提示;
                 _str摘要 = str摘要;
                 _b默启 = b默启;
                 _key = key; _min = min; _max = max; _use = use;
+            }
+
+            public string str关闭 { set { _str关闭 = value; } }
+
+            public void set关闭(ref List<string> list) {
+                if (!string.IsNullOrEmpty(_str关闭)) list.Add(_str关闭);
             }
 
             public string get提示参数(int value) {
@@ -462,6 +536,7 @@ namespace 破片压缩器 {
         void Set固定内参(string[] arr固定内参) {
             _arr固定内参 = arr固定内参;
         }
+
         void Add所有预设(Dictionary<string, 预设> dic_选择_预设) {
             _dic_选择_预设 = dic_选择_预设;
 
@@ -509,17 +584,17 @@ namespace 破片压缩器 {
             if (!b多线程 && !string.IsNullOrEmpty(_value内参单线程))
                 list传递内参.Add(_value内参单线程);
 
+            enc预设.set补充内参(ref list传递内参);
             string str视编参数;
 
             if (list传递内参.Count > 0) {
                 if (!b多线程)
                     str视编参数 = string.Format("-c:v {0} {1} {2} {3} {4} {5} {6} {7}", _value编码库, _value外参单线程, _key预设, enc预设.value, CRF参数.key, adjust_crf, key编码器传参, list传递内参[0]);
                 else
-                    str视编参数 = string.Format("-c:v {0} {1} {2} {3} {4}", _value编码库, _key预设, enc预设.value, CRF参数.key, adjust_crf);
+                    str视编参数 = string.Format("-c:v {0} {1} {2} {3} {4} {5} {6}", _value编码库, _key预设, enc预设.value, CRF参数.key, adjust_crf, key编码器传参, list传递内参[0]);
 
-                for (int i = 1; i < list传递内参.Count; i++) {
-                    str视编参数 += ":" + list传递内参[i];
-                }
+                for (int i = 1; i < list传递内参.Count; i++) str视编参数 += ":" + list传递内参[i];
+
             } else {
                 if (!b多线程)
                     str视编参数 = string.Format("-c:v {0} {1} {2} {3} {4} {5}", _value编码库, _value外参单线程, _key预设, enc预设.value, CRF参数.key, adjust_crf);
@@ -528,17 +603,6 @@ namespace 破片压缩器 {
 
             }
             return rege多空格.Replace(str视编参数, " ");
-        }
-
-        public string get参数_编码器预设画质(string key选择预设, decimal crf, bool b内降噪, int value降噪) {
-            if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
-                enc预设 = dic_选择_预设[_key显示预设];
-            }
-            if (b内降噪) {
-                return string.Format("-c:v {0} {1} {2} {3} {4} {5} {6}", _value编码库, _key预设, enc预设.value, CRF参数.key, crf, key编码器传参, Noise去除参数.get参数(value降噪));
-            } else {
-                return string.Format("-c:v {0} {1} {2} {3} {4}", _value编码库, _key预设, enc预设.value, CRF参数.key, crf);
-            }
         }
 
         public string get参数_编码器预设画质(string key选择预设, bool b多线程, bool b微调CRF, decimal crf, bool b内降噪, int value降噪) {
@@ -561,6 +625,8 @@ namespace 破片压缩器 {
 
             if (b内降噪 && Noise去除参数 != null)
                 list传递内参.Add(Noise去除参数.get参数(value降噪));
+
+            enc预设.set补充内参(ref list传递内参);
 
             string str视编参数;
 
@@ -590,8 +656,20 @@ namespace 破片压缩器 {
                 enc预设 = dic_选择_预设[_key显示预设];
             }
 
-            if (b多线程 && enc预设.eFPS_4K * 转码队列.i逻辑核心数 > info.f输入帧率) {//(假定单线程能实时解码）简单判断编码帧率是否超过解码速度
-                info.IN.ffmpeg单线程解码 = string.Empty;
+            if (b多线程) {
+                if (enc预设.eFPS_4K * 转码队列.i逻辑核心数 > info.f输入帧率) {//(假定单线程能实时解码）简单判断编码帧率是否超过解码速度
+                    info.IN.ffmpeg单线程解码 = string.Empty;
+                } else {
+                    if (Settings.b自定义滤镜 && !string.IsNullOrEmpty(Settings.str自定义滤镜))
+                        info.IN.ffmpeg单线程解码 = EXE.ffmpeg单线程;
+                }
+            } else {
+                if (b微调CRF && !_b多线程优先) crf++;
+
+                if (lookahead != null) {
+                    if (enc预设.min_判定帧型 > 0)
+                        list传递内参.Add(lookahead.get(enc预设.min_判定帧型));
+                }
             }
 
             info.OUT.enc = value编码库;
@@ -599,19 +677,18 @@ namespace 破片压缩器 {
             info.OUT.preset = enc预设.value;
             info.OUT.str量化名 = CRF参数.name;
 
-            if (b微调CRF && !b多线程 && !_b多线程优先) crf++;
-
             info.OUT.adjust_crf = enc预设.get_CRF(b微调CRF, crf, CRF参数, info.OUT.b抽重复帧 ? info.f输入帧率 : info.f输出帧率, _arr帧率CRF偏移);
 
             if (_arr固定内参 != null) list传递内参.AddRange(_arr固定内参);
 
-            if (b内降噪 && Noise去除参数 != null) list传递内参.Add(Noise去除参数.get参数(value降噪, out info.OUT.denoise));
+            enc预设.set补充内参(ref list传递内参);
 
-            if (!b多线程) {
-                if (lookahead != null) {
-                    if (enc预设.min_判定帧型 > 0)
-                        list传递内参.Add(lookahead.get(enc预设.min_判定帧型));
-                }
+            if (Noise去除参数 != null) {
+                if (b内降噪) {
+                    if (enc预设.b运动补偿时域滤波) {
+                        list传递内参.Add(Noise去除参数.get参数(value降噪, out info.OUT.denoise));
+                    }
+                } else Noise去除参数.set关闭(ref list传递内参);
             }
 
             string str限缩位深格式化 = _byte位深 == 0 ? string.Empty : ("-pix_fmt " + dic_位深_限缩参数[_byte位深]);
