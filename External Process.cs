@@ -233,7 +233,6 @@ namespace 破片压缩器 {
             }
             return encFps;
         }
-
         public void fx绑定编码进程到CPU单核心(int core) {
             if (转码队列.arr_单核指针.Length > 2 && process != null) {//转码队列.arr_单核指针 在调用函数前有为空判断
                 try {
@@ -245,7 +244,6 @@ namespace 破片压缩器 {
                 } catch (Exception err) { listError.Add(err.Message); }
             }
         }
-
         public bool sync( ) {
             process.OutputDataReceived += new DataReceivedEventHandler(OutputData);
             process.ErrorDataReceived += new DataReceivedEventHandler(ErrorData);
@@ -259,7 +257,6 @@ namespace 破片压缩器 {
             process.WaitForExit( );
             return process.ExitCode == 0;
         }//重定向读取错误输出和标准输出，函数可以阻塞原有进程；
-
         public bool sync(out List<string> OutputDataReceived, out List<string> ErrorDataReceived) {
             OutputDataReceived = listOutput;
             ErrorDataReceived = listError;
@@ -275,7 +272,6 @@ namespace 破片压缩器 {
             process.WaitForExit( );
             return process.ExitCode == 0;
         }//重定向读取错误输出和标准输出，函数可以阻塞原有进程；
-
         public bool async_FFmpeg编码( ) {
             bool run = false;
             try {
@@ -301,6 +297,44 @@ namespace 破片压缩器 {
                 return false;
             }
         }
+        public bool async_FFmpeg(out Process pFFmpeg) {
+            bool run = false;
+            try {
+                process.Start( );
+                pid = process.Id;
+                pFFmpeg = process;
+                run = true;
+            } catch (Exception err) {
+                listError.Add(err.Message);
+                pFFmpeg = null;
+            }
+            if (run) {
+                stopwatch.Start( );
+                Task.Run(( ) => {
+                    while (!process.StandardOutput.EndOfStream) {
+                        listOutput.Add(process.StandardOutput.ReadLine( ));
+                    }
+                });
+                Task.Run(( ) => {
+                    while (!process.StandardError.EndOfStream) {
+                        string StandardError = process.StandardError.ReadLine( );
+                        if (StandardError.StartsWith("frame=")) {
+                            if (uint.TryParse(regexFrame.Match(StandardError).Groups[1].Value, out uint temp)) {
+                                encodingFrames = temp;
+                                encFps = 1000.0f * encodingFrames / stopwatch.ElapsedMilliseconds;
+                            }
+                        } else {
+                            listError.Add(StandardError);
+                        }
+                    }
+                });
+
+                return true;
+            } else {
+
+                return false;
+            }
+        }
         public bool sync_FFmpegInfo(out List<string> arrLogs) {
             arrLogs = null;
             sb输出数据流 = new StringBuilder( );
@@ -310,6 +344,12 @@ namespace 破片压缩器 {
             } catch {
                 return false;
             }
+            stopwatch.Start( );
+            Task.Run(( ) => {
+                while (!process.StandardOutput.EndOfStream) {
+                    try { listOutput.Add(process.StandardOutput.ReadLine( )); } catch { }
+                }
+            });
             while (!process.StandardError.EndOfStream) {
                 StandardError = process.StandardError.ReadLine( ).TrimStart( );
                 if (!string.IsNullOrEmpty(StandardError)) {
@@ -519,6 +559,7 @@ namespace 破片压缩器 {
                 if (!string.IsNullOrEmpty(StandardError)) {
                     if (StandardError.IndexOf("frame=") >= 0) {
                         ffmpeg_Pace = StandardError;
+                        Form破片压缩.autoReset刷新输出.Set( );
                         builder日志.Insert(0, 硬件.str摘要);
                         builder日志.AppendLine(DateTime.Now + " 开始编码" + pid);
                         builder日志.AppendLine("------------------------------------------");
@@ -575,6 +616,7 @@ namespace 破片压缩器 {
                 try { File.WriteAllText($"{fi编码.DirectoryName}\\FFmpegAsync异常.{str成功文件名}@{DateTime.Now:yy-MM-dd HH.mm.ss}.errlog", builder日志.ToString( )); } catch { }
 
                 Thread.Sleep(999); 转码队列.process移除结束(this);//发生异常停顿一秒再继续下一个。
+                
             } else {
                 转码队列.process移除结束(this);
                 builder日志.AppendFormat("{0:yyyy-MM-dd HH:mm:ss} 均速{1:F4}fps 耗时 {2} ({3})秒", DateTime.Now, getFPS( ), stopwatch.Elapsed, stopwatch.ElapsedMilliseconds / 1000);
@@ -613,13 +655,13 @@ namespace 破片压缩器 {
                     subProcess(EXE.mkvextract, str提取时间码命令行, fi编码.DirectoryName, out string Output, out string Error);
                 }
 
+                Form破片压缩.autoReset刷新输出.Set( );
                 Form破片压缩.autoReset合并.Set( );//转码后文件移动到成功文件夹，触发一次合并查询。
             }
 
             b已结束 = true;
             process.Dispose( );
         }
-
 
         public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, out string Output, out string Error) {
             bool Success = false;

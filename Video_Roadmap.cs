@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace 破片压缩器 {
@@ -208,7 +209,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         FileInfo fiMKA = null, fiOPUS = null, fi视频头信息 = null, fi拆分日志 = null, fi合并日志 = null, fi外挂字幕 = null;
 
         string path无缓转码csv = string.Empty;
-        string lib视频编码器, lib多线程视频编码器, lib视频编码器_极压, lib多线程视频编码器_极压, lavfi字幕, lavfi全局值, str自定义滤镜值, str滤镜lavfi, str编码摘要, str音频命令, str音频摘要, str多线程编码指令, str编码指令, str编码指令_极压, str多线程编码指令_极压;
+        string lib视频编码器, lavfi字幕, lavfi全局值, str自定义滤镜值, str滤镜lavfi, str编码摘要, str音频命令, str音频摘要;
         string str连接视频名, str转码后MKV名, strMKA名, str完整路径MKA, str水印字体路径, str水印字体参数;
 
         string str输出格式 = ".mkv", str最终格式;
@@ -255,7 +256,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         public Video_Roadmap(FileInfo fileInfo, string str正在转码文件夹, bool b无缓转码) {
             fi输入视频 = fileInfo;
             info = new VideoInfo(fileInfo);
-
+            Task.Run(( ) => fn测试单核解码帧率( ));
             _b_opus = Settings.opus;
             _bGOP传参 = Settings.lib已设置.GOP跃帧 == null && Settings.lib已设置.GOP跃帧 == null;
 
@@ -443,6 +444,20 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         //6.合成→
         //7.移动合成后视频到切片父目录→
         //8.源文件处理，删除或者移动源文件到【源文件】。
+
+        public void fn测试单核解码帧率( ) {
+            string str = $"-hide_banner -threads 1 -filter_threads 1 -filter_complex_threads 1 -benchmark -i \"{fi输入视频.Name}\" -an -sn -to 10 -f null NUL";
+            External_Process ep = new External_Process(ffmpeg, str, fi输入视频);
+            if (ep.async_FFmpeg(out Process pFFmpeg)) {
+                while (!pFFmpeg.HasExited) {
+                    if (ep.encFps > 0) {
+                        info.IN.f单核解码能力 = (float)ep.encFps;
+                    }
+                    try { Thread.Sleep(99); } catch { }
+                }
+            }
+        }
+
         public bool b解码60帧判断交错(out StringBuilder builder) {
             string str视频头信息文件路径 = $"{str切片路径}\\{fi输入视频.Name}.info";
 
@@ -658,23 +673,28 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return fiMKA != null;
         }//提取音轨流程可放到转码前中后任意时刻
-
+        LibEnc.命令行 v命令行;
         public bool b拼接转码摘要( ) {
             if (info.list视频轨.Count < 1) return false;
 
-            lib视频编码器 = Settings.Get_视频编码库(info, out lib多线程视频编码器, out lib视频编码器_极压, out lib多线程视频编码器_极压);
-
             info.fx输出宽高( );
+            for (int i = 0; i < 30; i++) { //可等待3秒，获得真实解码能力。
+                try { Thread.Sleep(111); } catch { }
+                if (info.IN.f单核解码能力 < float.MaxValue) break;//解码能力通过测试获得。
+            }
+            lib视频编码器 = Settings.Get_视频编码库(info, out v命令行);
 
-            //str滤镜 = get_lavfi( );//滤镜根据视频头生成。
             str滤镜lavfi = get_lavfi( );
             str音频命令 = get_encAudio( );
 
-            str编码指令 = gop + lib视频编码器 + str音频命令;
-            str多线程编码指令 = gop + lib多线程视频编码器 + str音频命令;
+            v命令行.str编码指令 = gop + lib视频编码器 + str音频命令;
+            v命令行.str多线程编码指令 = gop + v命令行.str多线程编码库 + str音频命令;
 
-            str编码指令_极压 = gop_max + lib视频编码器_极压 + str音频命令;
-            str多线程编码指令_极压 = gop_max + lib多线程视频编码器_极压 + str音频命令;
+            v命令行.box_CRF编码指令 = gop + v命令行.box_CRF视参数+ str音频命令;
+            v命令行.box_CRF多线程编码指令 = gop + v命令行.box_CRF多线程编码库 + str音频命令;
+
+            v命令行.str编码指令_极压 = gop_max + v命令行.str最低画质编码库 + str音频命令;
+            v命令行.str多线程编码指令_极压 = gop_max + v命令行.str多线程最低画质编码库 + str音频命令;
 
             string vfr = Settings.b转可变帧率 ? ".vfr" : string.Empty;
 
@@ -748,8 +768,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             sb编码配置.Append("info.str视频名无后缀=").AppendLine(info.str视频名无后缀);
             sb编码配置.Append("info.i输出宽=").AppendLine(info.i输出宽.ToString( ));
 
-            sb编码配置.Append("str编码指令=").AppendLine(str编码指令);
-            sb编码配置.Append("str多线程编码指令=").AppendLine(str多线程编码指令);
+            sb编码配置.Append("str编码指令=").AppendLine(v命令行.str编码指令);
+            sb编码配置.Append("str多线程编码指令=").AppendLine(v命令行.str多线程编码指令);
             sb编码配置.Append("info.IN.ffmpeg单线程解码=").AppendLine(info.IN.ffmpeg单线程解码);
 
             //sb编码配置.Append("Settings.b单线程=").Append(Settings.b单线程).AppendLine( ); //SVT-AV1多线程不降低画质，允许灵活调整算力节点线程。
@@ -805,10 +825,11 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 string str滤镜 = get_Between滤镜(' ', span偏移.f偏移转场, span偏移.f偏移结束, b切片序号水印 ? str水印 : null);
 
                 if (Settings.b多线程) {
-                    str命令行 = $"{dec_1th}{input}{str滤镜}{(b全黑场 ? str多线程编码指令_极压 : str多线程编码指令)} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}";
-                    //单线程解码超4K有些跟不上编码速度。
+                    string encV = v命令行.format_CRF多线程编码库(b全黑场, span偏移.f指定画质CRF);
+                    str命令行 = $"{dec_1th}{input}{str滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}";
                 } else {
-                    str命令行 = $"{EXE.ffmpeg单线程}{input}{str滤镜}{(b全黑场 ? str编码指令_极压 : str编码指令)} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}";
+                    string encV = v命令行.format_CRF编码指令(b全黑场, span偏移.f指定画质CRF);
+                    str命令行 = $"{EXE.ffmpeg单线程}{input}{str滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}";
                 }
                 external_Process = new External_Process(span偏移, ffmpeg, str命令行, !Settings.b多线程, fi输入视频, di切片, di编码成功);
 
@@ -847,10 +868,10 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                 if (Settings.b多线程) {
                     //str命令行 = $"-hide_banner -i {fi切片.Name}{str滤镜}{str多线程编码指令} \"{str编码后切片}\"";
-                    str命令行 = $"{info.IN.ffmpeg单线程解码}-i {fi切片.Name}{str滤镜}{str多线程编码指令} {str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{info.IN.ffmpeg单线程解码}-i {fi切片.Name}{str滤镜}{v命令行.str多线程编码指令} {str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
                     //单线程解码超4K有些跟不上编码速度。
                 } else {
-                    str命令行 = $"{EXE.ffmpeg单线程}-i {fi切片.Name}{str滤镜}{str编码指令} {str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{EXE.ffmpeg单线程}-i {fi切片.Name}{str滤镜}{v命令行.str编码指令} {str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
                 }
 
                 external_Process = new External_Process(ffmpeg, str命令行, !Settings.b多线程, name, fi切片, di编码成功);
@@ -1130,14 +1151,21 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
         void fx扫描黑边(float ss, float t, ref uint count_Crop, ref Dictionary<string, int> dicCropdetect, ref StringBuilder builder) {
             string commamd = $"-hide_banner -ss {ss} -i \"{fi输入视频.Name}\" -t {t} -vf cropdetect=round=2 -f null -an /dev/null";
-            if (!转码队列.b允许入队) commamd = EXE.ffmpeg单线程 + " " + commamd;//CPU资源被占满后，以单线程运行减少损耗。
+
+            bool b单线程 = !转码队列.b允许入队;
+            if (b单线程) commamd = EXE.ffmpeg单线程 + " " + commamd;//CPU资源被占满后，以单线程运行减少损耗。
 
             转码队列.process黑边 = new External_Process(ffmpeg, commamd, fi输入视频);
             bool b扫描 = 转码队列.process黑边.sync_FFmpegInfo(out List<string> list);
+
+            if (b单线程 && 转码队列.process黑边.HasFrame(out _) && 转码队列.process黑边.encFps > info.IN.f单核解码能力) {
+                info.IN.f单核解码能力 = (float)转码队列.process黑边.encFps;
+            }
+
             转码队列.process黑边 = null;
 
             if (b扫描) {
-                for (int i = 0; i < list.Count; i++)
+                for (int i = 0; i < list.Count; i++) {
                     if (list[i].StartsWith("[Parsed_cropdetect")) {
                         count_Crop++;
                         int starIndex = list[i].LastIndexOf("crop=");
@@ -1150,8 +1178,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                         }
                         builder.AppendLine(list[i]);
                     }
+                }
             }
-
         }
 
         bool b读取场景切片数据(string path) {
@@ -1575,21 +1603,26 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     fi切片日志 = new FileInfo(copyPath);
                 }
             }
-            if (!_b无缓转码 && fi切片日志 != null) {//无缓转码没有切片数据。
-                builder.AppendFormat(" --attachment-name \"切片日志.txt\" --attachment-mime-type text/plain --attach-file \"{0}\"", fi切片日志.Name);
+            if (_b无缓转码) {
+                FileInfo fi无缓转码CSV = new FileInfo(str切片路径 + "\\无缓转码.csv");
+                if (fi无缓转码CSV.Exists)
+                    builder.AppendFormat(" --attachment-name 分段.csv --attachment-mime-type text/csv --attach-file \"{0}\"", fi无缓转码CSV.FullName);
+            } else {
+                if (fi切片日志 != null)
+                    builder.AppendFormat(" --attachment-name 切片日志.txt --attachment-mime-type text/plain --attach-file \"{0}\"", fi切片日志.FullName);
             }
+
 
             if (fi合并日志 != null) {
                 string copy = $"{fi连接后视频.DirectoryName}\\{fi合并日志.Name}";
                 if (File.Exists(copy)) {
                     try { File.Delete(copy); } catch { }
                 }
-
                 try { fi合并日志.CopyTo(copy); } catch { }
 
                 if (File.Exists(copy)) {
                     fi合并日志 = new FileInfo(copy);
-                    builder.AppendFormat(" --attachment-name \"合并日志.txt\" --attachment-mime-type text/plain --attach-file \"{0}\"", fi合并日志.Name);
+                    builder.AppendFormat(" --attachment-name 合并日志.txt --attachment-mime-type text/plain --attach-file \"{0}\"", fi合并日志.FullName);
                 }
             }
 

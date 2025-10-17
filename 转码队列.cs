@@ -54,7 +54,6 @@ namespace 破片压缩器 {
         }
 
         public static bool ffmpeg等待入队(External_Process p) {
-            //while (list.Count >= i多进程数量) autoReset入队.WaitOne( );需外部实现指定0任务，等待入队功能。
             if (p.async_FFmpeg编码( )) {
                 lock (obj增删排锁) {
                     list.Add(p);
@@ -71,7 +70,8 @@ namespace 破片压缩器 {
                     }
                 }
             }
-            while (list.Count >= i多进程数量) autoReset入队.WaitOne( );//先入队，再等待
+            if (b队列满) Form破片压缩.autoReset刷新输出.Set( );
+            while (list.Count >= i多进程数量) try { autoReset入队.WaitOne( ); } catch { }//先入队，再等待，避免等待过程中该文件被删除
             return true;
         }
 

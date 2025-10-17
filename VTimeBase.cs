@@ -55,15 +55,14 @@ namespace 破片压缩器 {
         public class Span偏移 {
             public int i分段号;
             public bool b已转码 = false;
-
-            public float f关键帧, f转场, f结束, f偏移转场, f偏移结束, f末帧秒长, f持续秒;
+            public float f指定画质CRF = -1;
+            public float f关键帧, f转场, f结束, f偏移转场, f偏移结束, f持续秒;
 
             public int in_frames, out_frames;
 
-            public Span偏移(int i分段号, float f关键帧, float f转场, float f结束, float f末帧秒长) {
+            public Span偏移(int i分段号, float f关键帧, float f转场, float f结束, float in_fps) {
                 this.i分段号 = i分段号;
                 this.f关键帧 = f关键帧;
-                this.f末帧秒长 = f末帧秒长;//暂时未对vfr计算帧时长。
                 this.f转场 = f转场;
                 //f下一场 = f结束;
                 f偏移转场 = f转场 - f关键帧;
@@ -74,25 +73,27 @@ namespace 破片压缩器 {
                 f偏移结束 = f结束 - f关键帧;//-ss 秒 含头， -to 秒 不包含时间戳帧 （含头不含尾）
 
                 f持续秒 = f结束 - f转场;
-                in_frames = (int)(f持续秒 * f末帧秒长);
+                in_frames = (int)(f持续秒 * in_fps);
             }
-            public Span偏移(string[] cells, out bool success) {
-                //序号,转场秒,结束秒,最近关键帧秒,偏移转场秒,偏移结束秒,结束帧秒长
-                if (!int.TryParse(cells[0], out i分段号)) { success = false; return; }
-
-                if (!float.TryParse(cells[1], out f转场)) { success = false; return; }
-                if (!float.TryParse(cells[2], out f结束)) { success = false; return; }
-                if (!float.TryParse(cells[3], out f关键帧)) { success = false; return; }
-                if (!float.TryParse(cells[6], out f末帧秒长)) { success = false; return; }
+            public Span偏移(string[] cells, out bool success, float in_fps) {
+                //序号,转场秒,结束秒,最近关键帧秒
+                if (cells.Length > 4) {
+                    if (!int.TryParse(cells[0], out i分段号)) { success = false; return; }
+                    if (!float.TryParse(cells[1], out f转场)) { success = false; return; }
+                    if (!float.TryParse(cells[2], out f结束)) { success = false; return; }
+                    if (!float.TryParse(cells[3], out f关键帧)) { success = false; return; }
+                }
+                if (float.TryParse(cells[4], out float crf)) {
+                    if (crf > -1) f指定画质CRF = crf;
+                }
 
                 if (f关键帧 > f转场) f关键帧 = f转场;
 
                 f偏移转场 = f转场 - f关键帧;
                 f偏移结束 = f结束 - f关键帧;
                 f持续秒 = f结束 - f转场;
-                //f下一场 = f结束;
 
-                in_frames = (int)(f持续秒 * f末帧秒长);
+                in_frames = (int)(f持续秒 * in_fps);
                 success = true;
             }
 
@@ -162,20 +163,46 @@ namespace 破片压缩器 {
             }
         }
 
+        Encoding getEncoding(FileInfo fi) {
+            byte[] fileBytes = new byte[3]; // 创建一个缓冲区
+            try {
+                using (FileStream fileStream = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read)) {
+                    //读取文件的一部分数据
+                    fileStream.Read(fileBytes, 0, fileBytes.Length);
+                }
+            } catch { }
+            Encoding encoding = Encoding.Default;
+            //UTF - 8
+            if (fileBytes.Length == 3) {
+                if ((fileBytes[0] == 34 && fileBytes[1] == 232 && fileBytes[2] == 167) ||
+                    (fileBytes[0] == 239 && fileBytes[1] == 187 && fileBytes[2] == 191)||
+                    (fileBytes[0] == 229 && fileBytes[1] == 186 && fileBytes[2] == 143)
+                    ) {
+                    encoding = Encoding.UTF8;
+                } else if (fileBytes[0] == 34 && fileBytes[1] == 202 && fileBytes[2] == 211) {
+                    encoding = Encoding.GetEncoding("GB2312");
+                } else if ((fileBytes[0] == 255 && fileBytes[1] == 254 && fileBytes[2] == 34) ||
+                        (fileBytes[0] == 254 && fileBytes[1] == 255 && fileBytes[2] == 0)) {
+                    encoding = Encoding.UTF32;
+                }
+            }
+            return encoding;
+        }
+
         public bool b读取无缓转码csv(DirectoryInfo di编码成功, TimeSpan ts视频时长) {
             double sec = ts视频时长.TotalSeconds - 0.5;
-
-            string str无缓记录 = di输出目录.FullName + "\\无缓转码.csv";
-            if (File.Exists(str无缓记录)) {
+            FileInfo fiCSV = new FileInfo(di输出目录.FullName + "\\无缓转码.csv");
+            if (fiCSV.Exists) {
                 string[] arr;
-                try { arr = File.ReadAllLines(str无缓记录); } catch { return false; }
-                if (arr.Length > 3 && arr.Last( ).TrimEnd( ).EndsWith("完成")) {
+                Encoding encoding = getEncoding(fiCSV);
+                try { arr = File.ReadAllLines(fiCSV.FullName, encoding); } catch { return false; }
+                if (arr.Length > 3 && arr.Last( ).Trim( ).StartsWith("完成")) {
                     for (int i = 1; i < arr.Length - 1; i++) {
                         string[] cell = arr[i].Split(',');
                         if (cell.Length > 5) {//理论上读取转场秒、结束秒即可工作。后续可以补全。
                             if (int.TryParse(cell[0], out int num)) {
                                 if (!dic_分段_偏移.ContainsKey(num)) {
-                                    Span偏移 span = new Span偏移(cell, out bool success);
+                                    Span偏移 span = new Span偏移(cell, out bool success, vinfo.f输入帧率);
                                     if (success) {
                                         dic_分段_偏移.TryAdd(num, span);
                                         if (File.Exists($"{di编码成功.FullName}\\{span.i分段号}.mkv")) set已编码.Add(span.i分段号);
@@ -368,7 +395,7 @@ namespace 破片压缩器 {
             }
 
             while (set体积降序编码序列.Count < 1 && b正在计算) {//如果没有等待转码，，并且扫描线程还在工作则无限等待
-                reset再次获取.WaitOne(666);
+                try { reset再次获取.WaitOne(666); } catch { }
                 event计算.Set( );
                 if (set体积降序编码序列.Count > 0) goto 再次检查; //延迟后，新计算出的分段需再次检查文件已存在。
             }
@@ -383,8 +410,8 @@ namespace 破片压缩器 {
                         set已编码.Add(n);
                     }
                     i剩余 = set体积降序编码序列.Count;
-                    if (dic_连续黑场.TryGetValue(span偏移.f转场, out var map)) {
-                        if (map.Last( ) >= span偏移.f结束 || map.Contains(span偏移.f结束)) {
+                    if (span偏移.f结束 > 0 && dic_连续黑场.TryGetValue(span偏移.f转场, out var map)) {
+                        if (map.Count > 0 && map.Last( ) >= span偏移.f结束 || map.Contains(span偏移.f结束)) {
                             b全黑场 = true;
                         }
                     }
@@ -423,7 +450,7 @@ namespace 破片压缩器 {
                     dic_分段_偏移.TryAdd(span.i分段号, span);
                 } else {
                     float sec关键帧 = list关键帧[index关键帧];
-                    while (list关键帧.Last( ) < list分段秒[index分段]) event计算.WaitOne(666);
+                    while (list关键帧.Last( ) < list分段秒[index分段]) try { event计算.WaitOne(666); } catch { }
 
                     while (index关键帧 < list关键帧.Count - 1) {
                         if (list关键帧[index关键帧] <= list分段秒[index分段] && list分段秒[index分段] <= list关键帧[index关键帧 + 1]) {
@@ -517,7 +544,7 @@ namespace 破片压缩器 {
             int i = 1;
             float last = 0;
             do {
-                if (th扫关键帧 != null && th扫关键帧.IsAlive) event计算.WaitOne(666);
+                if (th扫关键帧 != null && th扫关键帧.IsAlive) try { event计算.WaitOne(666); } catch { }
                 int count = dic_分段_偏移.Count;
                 for (; i < list关键帧.Count; i++) {
                     if (list关键帧[i] - last >= sec_gop) {
@@ -544,14 +571,14 @@ namespace 破片压缩器 {
 
             do {
                 while (转码队列.b队列满 && set体积降序编码序列.Count > 0 && !is扫描完成)
-                    event计算.WaitOne(666);
+                    try { event计算.WaitOne(666); } catch { }
 
                 f后6组 += sec_gop * 6;//每轮
                 float sec一打GOP = f后6组 + sec_gop * 6;
                 if (f后6组 > Duration) {
                     sec一打GOP = f后6组 = Duration;
                 }
-                for (; getSpan最慢 <= sec一打GOP;) event计算.WaitOne(6666);//缓冲跨步时长12组。
+                for (; getSpan最慢 <= sec一打GOP;) try { event计算.WaitOne(6666); } catch { }//缓冲跨步时长12组。
 
                 //if ((index黑场 < list黑场.Count - 1 || (index黑场 < list黑场.Count && list黑场.Last( ) < Duration)) && list黑场[index黑场] <= f后6组) {
                 if (index黑场 < list黑场.Count && list黑场[index黑场] <= f后6组) {
@@ -999,9 +1026,10 @@ namespace 破片压缩器 {
             }
             var dicSort_Part = from objDic in dic_分段_偏移 orderby objDic.Key ascending select objDic;
 
-            StringBuilder @string = new StringBuilder("序号,转场秒,结束秒,最近关键帧秒,偏移转场秒,偏移结束秒,结束帧秒长,持续秒");
-            foreach (var item in dicSort_Part) @string.AppendFormat("\r\n{0},{1},{2},{3},{4},{5},{6},{7}"
-                , item.Key, item.Value.f转场, item.Value.f结束, item.Value.f关键帧, item.Value.f偏移转场, item.Value.f偏移结束, item.Value.f末帧秒长, item.Value.f持续秒);
+
+            StringBuilder @string = new StringBuilder("序号,转场秒,结束秒,最近关键帧秒,f指定画质CRF,片段持续秒");
+            foreach (var item in dicSort_Part) @string.AppendFormat("\r\n{0},{1},{2},{3},-1,{4}"
+                , item.Key, item.Value.f转场, item.Value.f结束, item.Value.f关键帧, item.Value.f持续秒);
 
             if (b完成) {
                 int end = dic_分段_偏移.Keys.OrderByDescending(x => x).First( );

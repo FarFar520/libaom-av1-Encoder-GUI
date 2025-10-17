@@ -18,7 +18,7 @@ namespace 破片压缩器 {
 
         public int i显示帧宽 = 1;
 
-        public int i输出宽 = 1, i输出高 = 1, i输出长边 = 1, i输出短边 = 1;
+        public int i输出宽 = 1, i输出高 = 1, i输出长边 = 1, i输出短边 = 1,i输出像素=1;
         public float f输入帧率 = 23.976f;
         public float f输出帧率 = 1.0f;
         public float f输入每帧秒 = 0.041708f;
@@ -176,6 +176,7 @@ namespace 破片压缩器 {
             public string enc = string.Empty, str量化名 = "crf", preset = string.Empty, str视流格式 = string.Empty, denoise = string.Empty;
         }
         public class 输入 {
+            public float f单核解码能力 = float.MaxValue;//优先使用单线程解码，减少线程间通讯损耗。
             public string ffmpeg单线程解码 = EXE.ffmpeg单线程;
         }
 
@@ -388,7 +389,7 @@ namespace 破片压缩器 {
                 i输出长边 = h;
                 i输出短边 = w;
             }
-
+            i输出像素 = w * h;
             _str长乘宽 = $"{w}×{h}";
 
             if ((i输出宽 > Settings.i最小边长 && i输出宽 != i_剪后宽) || (i输出高 > Settings.i最小边长 && i输出高 != i_剪后高)) {

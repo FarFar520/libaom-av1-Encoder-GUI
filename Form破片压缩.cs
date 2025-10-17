@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,12 +38,13 @@ namespace 破片压缩器 {
             autoReset转码 = new AutoResetEvent(false),
             autoReset协转 = new AutoResetEvent(false),
             autoReset合并 = new AutoResetEvent(false),
+            autoReset刷新输出 = new AutoResetEvent(false),
             autoReset初始信息 = new AutoResetEvent(false);
 
         List<DirectoryInfo> list输入路径 = new List<DirectoryInfo>( );
         List<DirectoryInfo> list缓存路径 = new List<DirectoryInfo>( );
 
-        Thread thread切片, thread转码, thread合并, thread编码节点, thread初始信息;
+        Thread thread切片, thread转码, thread合并, thread编码节点, thread刷新输出, thread初始信息;
 
         object obj转码队列 = new object( ), obj合并队列 = new object( );
 
@@ -64,6 +66,7 @@ namespace 破片压缩器 {
             thread切片.Name = "切片";
 
             thread转码 = new Thread(fn后台转码);
+            thread转码.Priority = ThreadPriority.Highest;
             thread转码.IsBackground = true;
             thread转码.Name = "转码";
 
@@ -72,8 +75,14 @@ namespace 破片压缩器 {
             thread合并.Name = "合并";
 
             thread编码节点 = new Thread(fn协同视频编码);
+            thread转码.Priority = ThreadPriority.Highest;
             thread编码节点.IsBackground = true;
             thread编码节点.Name = "协转";
+
+            thread刷新输出 = new Thread(fn刷新输出);
+            thread刷新输出.IsBackground = true;
+            thread刷新输出.Priority = ThreadPriority.Lowest;
+            thread刷新输出.Start( );
         }
 
         void add日志(string log) {
@@ -124,6 +133,7 @@ namespace 破片压缩器 {
         }
 
         void fn后台切片( ) {
+            txt日志("读取视频信息中……");
             while (true) {
                 更改过文件夹: b更改过输入路径 = b需要重扫输入 = false;
                 lock (obj转码队列) { list_等待转码队列.Clear( ); }
@@ -142,15 +152,14 @@ namespace 破片压缩器 {
                         if (is有效视频(file)) {
                             str正在转码文件夹 = $"{str切片根目录}\\{file.DirectoryName.Replace(file.Directory.Root.FullName, "").Trim('\\')}";
                             Video_Roadmap video = new Video_Roadmap(file, str正在转码文件夹, Settings.b无缓转码);
-
                             if (!video.b解码60帧判断交错(out StringBuilder builder)) //扫描60帧，出结果较快。
                                 video.b读取视频头(out builder);
 
                             if (video.b无缓转码) {//有无缓转码.info文件时，代表未完成任务为无缓模式
                                 video.b查找MKA音轨( );
                                 Task.Run(( ) => fn无缓参数(video));
-                                Thread.Sleep(999); //最快每秒开启一次扫描任务。
-                                while (list_等待转码队列.Count > 2 || 转码队列.list扫分段.Count > 1) autoReset切片.WaitOne( );//事不过三，储备3个等待转码队列暂停扫描。
+                                try { Thread.Sleep(999); } catch { } //最快每秒开启一次扫描任务。
+                                while (list_等待转码队列.Count > 2 || 转码队列.list扫分段.Count > 1) try { autoReset切片.WaitOne( ); } catch { }//事不过三，储备3个等待转码队列暂停扫描。
                             } else {
                                 if (!video.b查找MKA音轨( )) {
                                     add日志($"提取音轨：{video.strMKA文件名}");
@@ -199,7 +208,7 @@ namespace 破片压缩器 {
                     }
                 }
                 add日志($"输入目录已全部扫描！");
-                while (!b需要重扫输入) autoReset切片.WaitOne( );
+                while (!b需要重扫输入) try { autoReset切片.WaitOne( ); } catch { }
             }
         }//1号线程，准备好了切片，后续线程才能顺序调度。
 
@@ -240,7 +249,7 @@ namespace 破片压缩器 {
 
 
             if (roadmap.vTimeBase.i总分段 < 1) {
-                while (转码队列.list扫分段.Count > 1) Thread.Sleep(999);//避免同时启动
+                while (转码队列.list扫分段.Count > 1) try { Thread.Sleep(999); } catch { }//避免同时启动
                 add日志($"开始扫描视频帧数据：{roadmap.fi输入视频.Name}");
                 if (!Settings.b扫描场景) roadmap.vTimeBase.Start按关键帧(Settings.sec_gop);
                 else roadmap.vTimeBase.Start按转场(转码队列.b缓存余量充足, (float)d检测镜头精度, Settings.sec_gop, Settings.i分割GOP, 0.25f);
@@ -263,7 +272,7 @@ namespace 破片压缩器 {
                     autoReset合并.Set( );
                 }
             }
-            Thread.Sleep(999);
+            try { Thread.Sleep(999); } catch { }
             autoReset切片.Set( );
         }
 
@@ -272,7 +281,7 @@ namespace 破片压缩器 {
                 while (list_等待转码队列.Count < 1) {
                     if (thread切片.ThreadState == (ThreadState.Background | ThreadState.WaitSleepJoin))
                         autoReset切片.Set( );//当转码队列为空间隔触发扫描任务
-                    autoReset转码.WaitOne(3333);
+                    try { autoReset转码.WaitOne(3333); } catch { }
                 }
                 while (list_等待转码队列.Count > 0) {
                     fx设置输出目录为当前时间( );
@@ -291,7 +300,7 @@ namespace 破片压缩器 {
                     }
 
                     while (转码队列.i多进程数量 == 0) {
-                        autoReset转码.WaitOne( );
+                        try { autoReset转码.WaitOne( ); } catch { }
                     }//存储机设置为0任务时，无限等待，编码交给外部算力节点。
 
                     this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));//要委托UI线程启动计时器才能正确启动。
@@ -301,9 +310,6 @@ namespace 破片压缩器 {
                             while (video正在转码文件.b转码下一个分段(out External_Process external_Process)) {
                                 add日志($"开始转码：{external_Process.fi编码.FullName}");
                                 转码队列.ffmpeg等待入队(external_Process);//有队列上限
-                                if (转码队列.Has汇总输出信息(out string str编码速度)) {
-                                    textBox日志.Invoke(new Action(( ) => textBox日志.Text = str编码速度));
-                                }
                             }
 
                             if (!dic_完成路径_等待合并.ContainsKey(videoTemp.lower完整路径_输入视频)) {
@@ -335,7 +341,7 @@ namespace 破片压缩器 {
         void fn协同视频编码( ) {//0号线程想设计为局域网多分机读取切片，转未处理的不同碎片，转完汇入主机合并。
                           //2。通过尝试移动碎片各自工作文件夹，分机自主处理各自任务，存在任务碎片化加剧问题。等待合并过程拉长。
 
-            if (list缓存路径.Count == 0) autoReset协转.WaitOne( );
+            if (list缓存路径.Count == 0) try { autoReset协转.WaitOne( ); } catch { }
             thread编码节点.Priority = ThreadPriority.Highest;//协同转码线程优先级高，保证能及时响应新任务。
 
             HashSet<string> set协编过的配置 = new HashSet<string>( );
@@ -363,12 +369,12 @@ namespace 破片压缩器 {
                         if (b更改过缓存路径) goto 更改过文件夹;//中途更改文件夹优先级高，立刻跳出重新扫描
                     }
                 }
-                autoReset协转.WaitOne(60000);//暂未考虑HTTP通信方案，使用每分钟定时检查一次存储文件。
+                try { autoReset协转.WaitOne(60000); } catch { }//暂未考虑HTTP通信方案，使用每分钟定时检查一次存储文件。
             }
         }
 
         void fn后台合并( ) {
-            while (dic_完成路径_等待合并.Count < 1) autoReset合并.WaitOne( );//等到有合并任务再开始
+            while (dic_完成路径_等待合并.Count < 1) try { autoReset合并.WaitOne( ); } catch { }//等到有合并任务再开始
 
             StringBuilder sb合并 = new StringBuilder( );
             HashSet<string> set已合并文件夹 = new HashSet<string>( );
@@ -403,7 +409,7 @@ namespace 破片压缩器 {
                 }
 
                 if (dic_完成路径_等待合并.Count > 0) {
-                    autoReset合并.WaitOne( );
+                    try { autoReset合并.WaitOne( ); } catch { }
                 } else {
                     while (dic_完成路径_等待合并.Count < 1) {
                         if (video正在转码文件 is null && set已合并文件夹.Count > 0 && !转码队列.b有任务) {
@@ -411,7 +417,7 @@ namespace 破片压缩器 {
                             转码队列.Has汇总输出信息(out string str编码信息);
                             txt日志($"{str编码信息}\r\n\r\n目录下视频已完成，增加新视频点击刷新按钮\r\n\r\n{sb合并.ToString( )}");
                         }
-                        autoReset合并.WaitOne( );//等到有合并任务再次循环
+                        try { autoReset合并.WaitOne( ); } catch { }//等到有合并任务再次循环
                     }
                 }
 
@@ -420,8 +426,8 @@ namespace 破片压缩器 {
 
         void fn初始信息( ) {
             while (true) {
-                autoReset初始信息.WaitOne( );
-                Thread.Sleep(3333);
+                try { autoReset初始信息.WaitOne( ); } catch { }
+                try { Thread.Sleep(3333); } catch { }
                 this.Invoke(new Action(( ) => timer刷新编码输出.Stop( )));
                 while (转码队列.Get独立进程输出(out string info)) {
                     if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
@@ -434,9 +440,19 @@ namespace 破片压缩器 {
                             textBox日志.ScrollToCaret( );
                         }));
                     }
-                    autoReset初始信息.WaitOne(3333);
+                    try { autoReset初始信息.WaitOne(3333); } catch { }
                 }
                 this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));
+            }
+        }
+
+        void fn刷新输出( ) {
+            while (true) {
+                try { autoReset刷新输出.WaitOne( ); } catch { }
+                try { Thread.Sleep(999); } catch { }
+                if (转码队列.Has汇总输出信息(out string str编码速度)) {
+                    textBox日志.Invoke(new Action(( ) => textBox日志.Text = str编码速度));
+                }
             }
         }
 
@@ -453,7 +469,7 @@ namespace 破片压缩器 {
                     b手动刷新切片数量 = false;//手动刷新显示日志，自动刷新不显示
                     add日志($"切片数量充足：{转码队列.i并发任务数} / {i剩余缓存}");
                 }
-                autoReset切片.WaitOne(i分钟 * 60000);//引入协同转码功能后，改为10分钟刷新一次
+                try { autoReset切片.WaitOne(i分钟 * 60000); } catch { }//引入协同转码功能后，改为10分钟刷新一次
 
                 if (i剩余缓存 > f保底缓存切片) goto 刷新缓存;//成功文件夹增加文件后，缓存数量扣减。
             }
@@ -1126,11 +1142,11 @@ namespace 破片压缩器 {
             }
 
             if (libEnc选中.Noise去除参数 == null) {
-                checkBox_磨皮.Visible = trackBar_降噪量.Visible = false;
+                checkBox_磨皮.Visible  = false;
                 if (video热乎的切片 == null && video正在转码文件 == null)
                     add日志(libEnc选中.get参数_编码器预设画质(libEnc选中.key显示预设, libEnc选中.b多线程优先, checkBox_DriftCRF.Checked, crf上次));
             } else {
-                checkBox_磨皮.Visible = trackBar_降噪量.Visible = true;
+                checkBox_磨皮.Visible = true;
                 checkBox_磨皮.Checked = libEnc选中.Noise去除参数.b默启;
                 trackBar_降噪量.Minimum = libEnc选中.Noise去除参数.min;
                 trackBar_降噪量.Maximum = libEnc选中.Noise去除参数.max;

@@ -111,7 +111,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == '远程TOPC7945HX|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>\\TOPC7945HX\Usually\视频批量转码\</OutputPath>
+    <OutputPath>\\S500r7840u\视频批量转码\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
