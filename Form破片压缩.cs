@@ -159,7 +159,7 @@ namespace 破片压缩器 {
                                 video.b查找MKA音轨( );
                                 Task.Run(( ) => fn无缓参数(video));
                                 try { Thread.Sleep(999); } catch { } //最快每秒开启一次扫描任务。
-                                while (list_等待转码队列.Count > 2 || 转码队列.list扫分段.Count > 1) try { autoReset切片.WaitOne( ); } catch { }//事不过三，储备3个等待转码队列暂停扫描。
+                                while (list_等待转码队列.Count > 0 || 转码队列.list扫分段.Count > 0) try { autoReset切片.WaitOne( ); } catch { }//只开一个扫描任务，参数调整生效更及时
                             } else {
                                 if (!video.b查找MKA音轨( )) {
                                     add日志($"提取音轨：{video.strMKA文件名}");
@@ -249,7 +249,7 @@ namespace 破片压缩器 {
 
 
             if (roadmap.vTimeBase.i总分段 < 1) {
-                while (转码队列.list扫分段.Count > 1) try { Thread.Sleep(999); } catch { }//避免同时启动
+                while (转码队列.list扫分段.Count > 0) try { Thread.Sleep(999); } catch { }//避免同时启动
                 add日志($"开始扫描视频帧数据：{roadmap.fi输入视频.Name}");
                 if (!Settings.b扫描场景) roadmap.vTimeBase.Start按关键帧(Settings.sec_gop);
                 else roadmap.vTimeBase.Start按转场(转码队列.b缓存余量充足, (float)d检测镜头精度, Settings.sec_gop, Settings.i分割GOP, 0.25f);
@@ -428,6 +428,7 @@ namespace 破片压缩器 {
             while (true) {
                 try { autoReset初始信息.WaitOne( ); } catch { }
                 try { Thread.Sleep(3333); } catch { }
+                
                 this.Invoke(new Action(( ) => timer刷新编码输出.Stop( )));
                 while (转码队列.Get独立进程输出(out string info)) {
                     if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
@@ -442,7 +443,8 @@ namespace 破片压缩器 {
                     }
                     try { autoReset初始信息.WaitOne(3333); } catch { }
                 }
-                this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));
+                if (转码队列.b有任务)
+                    this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));
             }
         }
 
@@ -760,7 +762,6 @@ namespace 破片压缩器 {
                         autoReset协转.Set( );
                     }
                     转码队列.autoReset入队.Set( );
-
                     if (list输入路径.Count > 0) {
                         autoReset初始信息.Set( );
                         autoReset切片.Set( );
@@ -768,10 +769,10 @@ namespace 破片压缩器 {
                         autoReset合并.Set( );
                     }
 
-                    if (转码队列.Has汇总输出信息(out string str编码速度)) {
+                    if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
                         textBox日志.Text = str编码速度;
                     }
-                    timer刷新编码输出.Start( );
+                    
                 } else {
                     if (Video_Roadmap.b查找可执行文件(out string log, out string txt)) {
                         button刷新.Text = "刷新(&R)";
@@ -779,8 +780,6 @@ namespace 破片压缩器 {
                         thread转码.Start( );
                         thread合并.Start( );
                         thread编码节点.Start( );
-
-                        timer刷新编码输出.Enabled = true;
                     } else {
                         add日志($"需要在工具同目录放入：" + log);
                         textBox日志.Text = txt;
@@ -1171,7 +1170,8 @@ namespace 破片压缩器 {
                 if (转码队列.Has汇总输出信息(out string str编码速度)) {
                     textBox日志.Text = str编码速度;
                 }
-                timer刷新编码输出.Start( );
+                if (转码队列.b有任务)
+                    timer刷新编码输出.Start( );
             }
         }
         private void textBox日志_Enter(object sender, EventArgs e) {
@@ -1182,11 +1182,10 @@ namespace 破片压缩器 {
         }
         private void Form破片压缩_Activated(object sender, EventArgs e) {
             timer刷新编码输出.Interval = 6666;
-            if (timer刷新编码输出.Enabled) {
-                if (转码队列.Has汇总输出信息(out string str编码速度)) {
-                    textBox日志.Text = str编码速度;
-                }
+            if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
+                textBox日志.Text = str编码速度;
             }
+
         }
         private void Form破片压缩_Deactivate(object sender, EventArgs e) {
             timer刷新编码输出.Interval = 66666;

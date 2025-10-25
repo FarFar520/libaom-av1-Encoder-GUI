@@ -154,6 +154,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             StringBuilder builder = new StringBuilder( );
             if (info.list音频轨.Count > 0) {
                 if (_b音轨同时切片) {
+                    builder.Append(" -map 0:a");
                     if (_b_opus) {
                         str音频摘要 = ".opus";
                         if (info.list音频轨.Count == 1 && Settings.i声道 > 0) {
@@ -163,16 +164,18 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                             str音频摘要 += $"{Settings.i声道}.0";
                         }
-                        builder.Append(" -map 0:a -c:a libopus -vbr on -compression_level 10");//-vbr 1~10
+                        builder.Append(" -c:a libopus -vbr on -compression_level 10");//-vbr 1~10
                         builder.Append(" -b:a ").Append(Settings.i音频码率).Append("k");
+
                         str音频摘要 += $".{Settings.i音频码率}k";
                     } else {
                         builder.Append(" -c:a copy");
                         str音频摘要 = info.get音轨code;
                         if (str音频摘要 != ".opus") str最终格式 = ".mkv";
                     }
-                    if (info.list字幕轨.Count > 0)
-                        builder.Append(" -c:s copy");
+
+                    if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0)
+                        builder.Append(" -map 0:s -c:s copy");
 
                 } else {
                     str音频摘要 = info.get音轨code;//沿用整轨音频格式。
@@ -258,6 +261,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             info = new VideoInfo(fileInfo);
             Task.Run(( ) => fn测试单核解码帧率( ));
             _b_opus = Settings.opus;
+            _b音轨同时切片 = Settings.b音轨同时切片转码;
             _bGOP传参 = Settings.lib已设置.GOP跃帧 == null && Settings.lib已设置.GOP跃帧 == null;
 
             _b无缓转码 = b无缓转码;
@@ -690,7 +694,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             v命令行.str编码指令 = gop + lib视频编码器 + str音频命令;
             v命令行.str多线程编码指令 = gop + v命令行.str多线程编码库 + str音频命令;
 
-            v命令行.box_CRF编码指令 = gop + v命令行.box_CRF视参数+ str音频命令;
+            v命令行.box_CRF编码指令 = gop + v命令行.box_CRF视参数 + str音频命令;
             v命令行.box_CRF多线程编码指令 = gop + v命令行.box_CRF多线程编码库 + str音频命令;
 
             v命令行.str编码指令_极压 = gop_max + v命令行.str最低画质编码库 + str音频命令;
@@ -922,7 +926,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10");//忽略视频轨道，转码全部音轨，字幕轨可能会保留一条。
                     //builder.Append(" -map 0:a:0 -c:a libopus -vbr on -compression_level 10"); //只保留一条音轨
                     //builder.Append(" -c:a libopus -vbr 2.0 -compression_level 10");//vbr 0~2;//vbr不太好用
-
+                    if (!string.IsNullOrEmpty(lavfi字幕) &&  info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
                     if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                         //opus默认码率每声道48K码率。多声道自动计算方便。
                     } else
@@ -958,7 +962,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10");//忽略视频轨道，转码全部音轨，字幕轨可能会保留一条。
                     //builder.Append(" -map 0:a:0 -c:a libopus -vbr on -compression_level 10"); //只保留一条音轨
                     //builder.Append(" -c:a libopus -vbr 2.0 -compression_level 10");//vbr 0~2;//vbr不太好用
-
+                    if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
                     if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                         //opus默认码率每声道48K码率。多声道自动计算方便。
                     } else
@@ -991,8 +995,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             return false;
         }
         public bool b更新OPUS音轨( ) {//在合并环节启动，视频没完成之前，音频码率可以热修改。
-
-            if (th音频转码 != null && th音频转码.IsAlive) return false;
+            if (_b音轨同时切片 || th音频转码 != null && th音频转码.IsAlive) return false;
 
             if (fiMKA == null || !File.Exists(fiMKA.FullName)) {//任务穿插进视频转码全过程，可能出现音轨被删除、视频被删除的情况。
                 if (File.Exists(fi输入视频.FullName))
@@ -1008,6 +1011,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             if (!转码队列.b允许入队) builder.Append(EXE.ffmpeg单线程);
             builder.Append(" -i \"").Append(fiMKA.FullName).Append('"');
             builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10");//-vn不处理视频， -map 0:a 转码全部音轨
+            if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
 
             if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                 //opus默认码率每声道48K码率。多声道自动计算方便。
@@ -1318,7 +1322,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
         Dictionary<string, float> dic_文件_秒长 = new Dictionary<string, float>( );
 
-        void fn_读写每个切片时长( ) {
+        void fn_读写每个切片时长( ) {//本设计于任务排序
             string path切片时长ini = di切片.FullName + "\\切片秒.ini";
             if (File.Exists(path切片时长ini)) {
                 string[] lines = null;
@@ -1382,9 +1386,11 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 string name = arr切片_转码后[i].Substring(path转码完成.Length + 1, arr切片_转码后[i].Length - path转码完成.Length - str输出格式.Length - 1);
                 if (int.TryParse(name, out int num) && name == num.ToString( )) {
                     list_SerialName.Add(num);
-                    string timeCodeFile = $"{path转码完成}\\{num}_timestamp.txt";
-                    if (!File.Exists(timeCodeFile))
-                        External_Process.subProcess(EXE.mkvextract, $"timestamps_v2 {num}{str输出格式} 0:{num}_timestamp.txt", path转码完成, out string Output, out string Error);
+                    if (!_b音轨同时切片) {
+                        string timeCodeFile = $"{path转码完成}\\{num}_timestamp.txt";
+                        if (!File.Exists(timeCodeFile))
+                            External_Process.subProcess(EXE.mkvextract, $"timestamps_v2 {num}{str输出格式} 0:{num}_timestamp.txt", path转码完成, out string Output, out string Error);
+                    }
                 }
             }
             if (fi连接后视频.Exists) {

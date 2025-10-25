@@ -15,7 +15,7 @@ namespace 破片压缩器 {
         List<string> listOutput = new List<string>( );
 
         public string StandardOutput = string.Empty, StandardError = string.Empty;
-        public string get_ffmpeg_Pace => ffmpeg_Pace;
+        public string get_ffmpeg_Pace => ffmpeg_Pace + str剩余;
 
         string ffmpeg_Pace = string.Empty;
         string ffmpeg_Encoding = string.Empty;
@@ -26,8 +26,7 @@ namespace 破片压缩器 {
         public double encFps = 0.0f;
 
         public Stopwatch stopwatch = new Stopwatch( );
-        //public DateTime time编码开始 = DateTime.Now, time出帧 = DateTime.Now;
-        public TimeSpan span输入时长 = TimeSpan.Zero;//, span耗时 = TimeSpan.Zero;
+        public TimeSpan span输入时长 = TimeSpan.Zero;
 
         public FileInfo fi源, fi编码;
 
@@ -210,6 +209,10 @@ namespace 破片压缩器 {
                     return false;
             } else return f > 0;
         }
+
+        double pecent = 0;
+        TimeSpan span剩余 = TimeSpan.Zero;
+        string str剩余 = string.Empty;
         public double getFPS( ) {
             if (newFrame && stopwatch.ElapsedMilliseconds > 0) {
                 newFrame = false;
@@ -222,6 +225,57 @@ namespace 破片压缩器 {
                                 iframes = iframes * 10 + ffmpeg_Pace[i] - 48;
                             } else {
                                 encodingFrames = (uint)iframes;
+                                int tend = ffmpeg_Pace.Length - 16;
+                                for (++i; i < tend; i++) {
+                                    if (ffmpeg_Pace[i] == 't') {
+                                        if (ffmpeg_Pace[i + 1] == 'i' && ffmpeg_Pace[i + 2] == 'm' & ffmpeg_Pace[i + 3] == 'e' & ffmpeg_Pace[i + 4] == '=') {
+                                            if (ffmpeg_Pace[i + 5] >= '0' && ffmpeg_Pace[i + 5] <= '9') {
+                                                float enc_sec = 0;
+
+                                                char hh_1 = ffmpeg_Pace[i + 5], hh_2 = ffmpeg_Pace[i + 6];
+                                                char mm_1 = ffmpeg_Pace[i + 8], mm_2 = ffmpeg_Pace[i + 9];
+                                                char ss_1 = ffmpeg_Pace[i + 11], ss_2 = ffmpeg_Pace[i + 12];
+                                                char ms_1 = ffmpeg_Pace[i + 14], ms_2 = ffmpeg_Pace[i + 15];
+
+                                                if (hh_2 >= '0' && hh_2 <= '9') enc_sec += (hh_1 - 48) * 36000 + (hh_2 - 48) * 3600;
+                                                if (mm_1 >= '0' && mm_1 <= '9' && mm_2 >= '0' && mm_2 <= '9') enc_sec += (mm_1 - 48) * 600 + (mm_2 - 48) * 60;
+                                                if (ss_1 >= '0' && ss_1 <= '9' && ss_2 >= '0' && ss_2 <= '9') enc_sec += (ss_1 - 48) * 10 + (ss_2 - 48);
+                                                if (ms_1 >= '0' && ms_1 <= '9' && ms_2 >= '0' && ms_2 <= '9') enc_sec += (ms_1 - 48) / 10.0f + (ms_2 - 48) / 100.0f;
+
+                                                pecent = enc_sec / span输入时长.TotalSeconds;
+                                                if (pecent > 0.618f) {
+                                                    str剩余 = "⏱️";
+                                                    span剩余 = TimeSpan.FromSeconds(sec / enc_sec * (span输入时长.TotalSeconds - enc_sec));
+                                                    if (span剩余.Days > 365) {
+                                                        str剩余 += string.Format("{0:F0}年", span剩余.Days / 365);
+                                                        int days = span剩余.Days % 365;
+                                                        if (days > 31) {
+                                                            str剩余 += string.Format("{0:F0}月", days / 31);
+                                                            if (days % 31 > 0)
+                                                                str剩余 += string.Format("{0}天", days % 31);
+                                                        }
+                                                    } else if (span剩余.Days > 31) {
+                                                        str剩余 += string.Format("{0:F0}月", span剩余.Days / 31);
+                                                        if (span剩余.Days % 31 > 0) str剩余 += string.Format("{0}天", span剩余.Days % 31);
+
+                                                    } else if (span剩余.Days > 0) str剩余 += string.Format("{0}天", span剩余.Days);
+
+                                                    if (span剩余.Hours > 0) str剩余 += string.Format("{0}小时", span剩余.Hours);
+
+                                                    if (span剩余.Days == 0 && span剩余.Hours < 10 && span剩余.Minutes > 0)
+                                                        str剩余 += string.Format("{0}分", span剩余.Minutes);
+
+                                                    if (span剩余.Hours == 0)
+                                                        str剩余 += string.Format("{0}秒", span剩余.Seconds);
+                                                } else
+                                                    str剩余 = pecent.ToString("P2");
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+
+
                                 return encFps = iframes / sec;
                             }
                         }
@@ -589,13 +643,13 @@ namespace 破片压缩器 {
                 ffmpeg_Encoding = process.StandardError.ReadLine( );
                 if (ffmpeg_Encoding.Length > 6 && ffmpeg_Encoding[0] == 'f' && ffmpeg_Encoding[1] == 'r' && ffmpeg_Encoding[2] == 'a' && ffmpeg_Encoding[3] == 'm' && ffmpeg_Encoding[4] == 'e' && ffmpeg_Encoding[5] == '=') {
                     //正常输出概率最高的情况用字符匹配加快效率
-                    ffmpeg_Pace = ffmpeg_Encoding;
+                    ffmpeg_Pace = ffmpeg_Encoding.TrimEnd()+'\t';
                     index_frame = 6;
                     newFrame = true;
                 } else {
                     int iframe = ffmpeg_Encoding.IndexOf("frame=") + 6;
                     if (iframe >= 6) {//避免偶尔改变输出编码进度开头 frame=
-                        ffmpeg_Pace = ffmpeg_Encoding;
+                        ffmpeg_Pace = ffmpeg_Encoding.TrimEnd( ) + '\t';
                         index_frame = iframe;
                         newFrame = true;
                     } else {
@@ -616,7 +670,7 @@ namespace 破片压缩器 {
                 try { File.WriteAllText($"{fi编码.DirectoryName}\\FFmpegAsync异常.{str成功文件名}@{DateTime.Now:yy-MM-dd HH.mm.ss}.errlog", builder日志.ToString( )); } catch { }
 
                 Thread.Sleep(999); 转码队列.process移除结束(this);//发生异常停顿一秒再继续下一个。
-                
+
             } else {
                 转码队列.process移除结束(this);
                 builder日志.AppendFormat("{0:yyyy-MM-dd HH:mm:ss} 均速{1:F4}fps 耗时 {2} ({3})秒", DateTime.Now, getFPS( ), stopwatch.Elapsed, stopwatch.ElapsedMilliseconds / 1000);
