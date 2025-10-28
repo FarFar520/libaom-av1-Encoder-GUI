@@ -123,7 +123,7 @@ namespace 破片压缩器 {
         }
         static void add_libvvenc_qpa( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
-                , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 13, my_max: 33, my_value: 28)
+                , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 13, my_max: 33, my_value: 27)
                 , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
             /*
              * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
@@ -159,7 +159,7 @@ namespace 破片压缩器 {
 
             libEnc.Add所有预设("slower", dic显示_VVenC预设);
 
-            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=28（推荐）\r\n标清：\tQPA=30\r\n标清：\tQPA=32（默认）";
+            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=27（推荐）\r\n标清：\tQPA=30\r\n标清：\tQPA=32（默认）";
 
             dic_编码库_初始设置.Add("高压缩 h266 @VVenC-QPA", libEnc);
         }

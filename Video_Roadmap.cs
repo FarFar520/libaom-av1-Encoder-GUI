@@ -926,7 +926,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10");//忽略视频轨道，转码全部音轨，字幕轨可能会保留一条。
                     //builder.Append(" -map 0:a:0 -c:a libopus -vbr on -compression_level 10"); //只保留一条音轨
                     //builder.Append(" -c:a libopus -vbr 2.0 -compression_level 10");//vbr 0~2;//vbr不太好用
-                    if (!string.IsNullOrEmpty(lavfi字幕) &&  info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
+                    if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
                     if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                         //opus默认码率每声道48K码率。多声道自动计算方便。
                     } else
@@ -1393,16 +1393,17 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     }
                 }
             }
+            if (!_b音轨同时切片) {
+                if (_b无缓转码) vTimeBase.is重算时间码(path转码完成, str编码摘要);
+                else b重算时间码(path转码完成, list_SerialName);
+            }
+
             if (fi连接后视频.Exists) {
                 return true;
             } else {
                 if (list_SerialName.Count < 1) return false;
                 else list_SerialName.Sort( );
 
-                if (!_b音轨同时切片) {
-                    if (_b无缓转码) vTimeBase.is重算时间码(path转码完成, str编码摘要);
-                    else b重算时间码(path转码完成, list_SerialName);
-                }
                 StringBuilder builder = new StringBuilder( );
 
                 FileInfo fi第一个webM = new FileInfo($"{path转码完成}\\{list_SerialName[0]}{str输出格式}");

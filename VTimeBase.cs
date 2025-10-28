@@ -60,6 +60,8 @@ namespace 破片压缩器 {
 
             public int in_frames, out_frames;
 
+            public TimeSpan ts分割时刻 => TimeSpan.FromSeconds(f转场);
+
             public Span偏移(int i分段号, float f关键帧, float f转场, float f结束, float in_fps) {
                 this.i分段号 = i分段号;
                 this.f关键帧 = f关键帧;
@@ -175,7 +177,7 @@ namespace 破片压缩器 {
             //UTF - 8
             if (fileBytes.Length == 3) {
                 if ((fileBytes[0] == 34 && fileBytes[1] == 232 && fileBytes[2] == 167) ||
-                    (fileBytes[0] == 239 && fileBytes[1] == 187 && fileBytes[2] == 191)||
+                    (fileBytes[0] == 239 && fileBytes[1] == 187 && fileBytes[2] == 191) ||
                     (fileBytes[0] == 229 && fileBytes[1] == 186 && fileBytes[2] == 143)
                     ) {
                     encoding = Encoding.UTF8;
@@ -196,7 +198,7 @@ namespace 破片压缩器 {
                 string[] arr;
                 Encoding encoding = getEncoding(fiCSV);
                 try { arr = File.ReadAllLines(fiCSV.FullName, encoding); } catch { return false; }
-                if (arr.Length > 3 && arr.Last( ).Trim( ).StartsWith("完成")) {
+                if ((arr.Length > 3 && arr.Last( ).Trim( ).StartsWith("完成")) || (arr.Length > 4 && arr[arr.Length - 2].Trim( ).StartsWith("完成"))) {
                     for (int i = 1; i < arr.Length - 1; i++) {
                         string[] cell = arr[i].Split(',');
                         if (cell.Length > 5) {//理论上读取转场秒、结束秒即可工作。后续可以补全。
@@ -345,39 +347,35 @@ namespace 破片压缩器 {
             else return false;
         }
         public bool is重算时间码(string path转码完成, string str编码摘要) {
-            bool b重算成功 = false;
+            fx获取时长( );
             string timestamp_v2 = "# timestamp format v2";
             StringBuilder @string = new StringBuilder(timestamp_v2);
-            string[] path_ts = Directory.GetFiles(path转码完成, "*_timestamp.txt");
-            if (path_ts.Length == dic_分段_偏移.Count) {
-                fx获取时长( );
-                var dicSort_Part = from objDic in dic_分段_偏移 orderby objDic.Key ascending select objDic;
-                foreach (var item in dicSort_Part) {
-                    string path = $"{path转码完成}\\{item.Key}_timestamp.txt";
-                    string[] arr;
-                    try { arr = File.ReadAllLines(path); } catch {
-                        return false;
-                    }
-                    if (arr.Length > 1) {
-                        for (int end = arr.Length - 1; end > 1; end--) {
-                            if (float.TryParse(arr[end], out _)) {
-                                float ms本场起始 = item.Value.f转场 * 1000;
-                                for (int i = 1; i < end; i++) {//最后一帧是结束时间戳，不需要计算
-                                    @string.AppendLine( ).Append(ms本场起始 + float.Parse(arr[i]));
-                                }
-                                goto 下一个;
+            var dicSort_Part = from objDic in dic_分段_偏移 orderby objDic.Key ascending select objDic;
+            foreach (var item in dicSort_Part) {
+                string path = $"{path转码完成}\\{item.Key}_timestamp.txt";
+                string[] arr;
+                try { arr = File.ReadAllLines(path); } catch { return false; }
+                if (arr.Length > 1) {
+                    for (int end = arr.Length - 1; end > 1; end--) {
+                        if (float.TryParse(arr[end], out _)) {
+                            float ms本场起始 = item.Value.f转场 * 1000;
+                            for (int i = 1; i < end; i++) {//最后一帧是结束时间戳，不需要计算
+                                @string.AppendLine( ).Append(ms本场起始 + float.Parse(arr[i]));
                             }
+                            goto 下一个;
                         }
                     }
-                    下一个:;
                 }
-                @string.AppendLine( ).Append(Duration * 1000);
-                timestamp_v2 = @string.ToString( );
-                DirectoryInfo di成功目录 = new DirectoryInfo(path转码完成);//合成函数会尝试合成切片目录下不同参数的文件
-                try { File.WriteAllText($"{di成功目录.Parent.FullName}\\重算时间码_{str编码摘要}.txt", timestamp_v2); } catch { }
-                b重算成功 = true;
+                下一个:;
             }
-            return b重算成功;
+            @string.AppendLine( ).Append(Duration * 1000);
+            timestamp_v2 = @string.ToString( );
+            DirectoryInfo di成功目录 = new DirectoryInfo(path转码完成);//合成函数会尝试合成切片目录下不同参数的文件
+            try {
+                File.WriteAllText($"{di成功目录.Parent.FullName}\\重算时间码_{str编码摘要}.txt", timestamp_v2);
+                return true;
+            } catch { }
+            return false;
         }
 
         readonly object obj读取文件号 = new object( );
@@ -582,6 +580,7 @@ namespace 破片压缩器 {
 
                 //if ((index黑场 < list黑场.Count - 1 || (index黑场 < list黑场.Count && list黑场.Last( ) < Duration)) && list黑场[index黑场] <= f后6组) {
                 if (index黑场 < list黑场.Count && list黑场[index黑场] <= f后6组) {
+                    list分段秒.Add(list黑场[index黑场]);
                     for (++index黑场; index黑场 < list黑场.Count && list黑场[index黑场] < f后6组; index黑场++) {//步时长6图组内寻找下一黑场。
                         if (list黑场[index黑场] - list分段秒.Last( ) > sec_gop * 3) {//两个黑场之间超过3个图组尝试寻找插入转场。
                             fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, list黑场[index黑场] - sec分割至少, ref index转场, ref list分段秒);
@@ -590,9 +589,6 @@ namespace 破片压缩器 {
                     }
                 } else if (index转场 < list转场.Count && list转场[index转场] <= f后6组) { //时段内无黑场，可能有转场
                     fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, f后6组, ref index转场, ref list分段秒);//每次后移6组
-                } else if (is扫描完成 && index黑场 >= list黑场.Count - 1 && index转场 >= list转场.Count - 1) {
-                    list分段秒.Add(Duration加一帧);
-                    break;
                 }
 
                 if (!is扫描完成 && DateTime.Now.Subtract(timeStart).TotalSeconds > 10) {
@@ -604,7 +600,8 @@ namespace 破片压缩器 {
                         Thread.Sleep(999);
                     }
                 }
-            } while (list分段秒.Last( ) < Duration加一帧);//分段结束
+            } while (f后6组 < Duration);//分段结束
+            list分段秒.Add(Duration加一帧);
 
             fx匹配关键帧(ref index关键帧, ref list分段秒);
             fx保存有序无缓转码csv(b完成: true);
@@ -617,6 +614,7 @@ namespace 破片压缩器 {
                 f后6组 += sec_gop * 6;//每轮
                 if (f后6组 > Duration) f后6组 = Duration;
                 if (index黑场 < list黑场.Count && list黑场[index黑场] <= f后6组) {
+                    list分段秒.Add(list黑场[index黑场]);
                     for (++index黑场; index黑场 < list黑场.Count && list黑场[index黑场] < f后6组; index黑场++) {//步时长6图组内寻找下一黑场。
                         if (list黑场[index黑场] - list分段秒.Last( ) > sec_gop * 3) {//两个黑场之间超过3个图组尝试寻找插入转场。
                             fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, list黑场[index黑场] - sec分割至少, ref index转场, ref list分段秒);
@@ -625,11 +623,11 @@ namespace 破片压缩器 {
                     }
                 } else if (index转场 < list转场.Count && list转场[index转场] <= f后6组) { //时段内无黑场，可能有转场
                     fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, f后6组, ref index转场, ref list分段秒);//每次后移6组
-                } else if (index黑场 >= list黑场.Count - 1 && index转场 >= list转场.Count - 1) {
-                    list分段秒.Add(Duration加一帧);
-                    //break;
                 }
             } while (f后6组 < Duration);//分段结束
+
+            list分段秒.Add(Duration加一帧);
+
             list分段秒.Distinct( );
             list分段秒.Sort( );
             fx匹配关键帧(ref index关键帧, ref list分段秒);
@@ -1027,9 +1025,10 @@ namespace 破片压缩器 {
             var dicSort_Part = from objDic in dic_分段_偏移 orderby objDic.Key ascending select objDic;
 
 
-            StringBuilder @string = new StringBuilder("序号,转场秒,结束秒,最近关键帧秒,f指定画质CRF,片段持续秒");
-            foreach (var item in dicSort_Part) @string.AppendFormat("\r\n{0},{1},{2},{3},-1,{4}"
-                , item.Key, item.Value.f转场, item.Value.f结束, item.Value.f关键帧, item.Value.f持续秒);
+            StringBuilder @string = new StringBuilder("序号,转场秒,结束秒,最近关键帧秒,f指定画质CRF,片段持续秒,分割时刻");
+            foreach (var item in dicSort_Part) @string.AppendFormat("\r\n{0},{1},{2},{3},-1,{4},{5}时{6}分{7}.{8}秒"
+                , item.Key, item.Value.f转场, item.Value.f结束, item.Value.f关键帧, item.Value.f持续秒
+                , item.Value.ts分割时刻.Hours, item.Value.ts分割时刻.Minutes, item.Value.ts分割时刻.Seconds, item.Value.ts分割时刻.Milliseconds);
 
             if (b完成) {
                 int end = dic_分段_偏移.Keys.OrderByDescending(x => x).First( );
@@ -1051,6 +1050,7 @@ namespace 破片压缩器 {
                 转码队列.Remove_VTimeBase(this);
                 Form破片压缩.autoReset转码.Set( );
             }
+
             try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv", @string.ToString( )); } catch (Exception err) {
                 @string.AppendLine( ).AppendLine(err.Message);
                 try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv" + DateTime.Now.ToString("yyyy.MM.dd.HH.mm.ss.fff") + ".csv", @string.ToString( )); } catch { }

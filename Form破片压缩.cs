@@ -133,16 +133,16 @@ namespace 破片压缩器 {
         }
 
         void fn后台切片( ) {
-            txt日志("读取视频信息中……");
+
             while (true) {
                 更改过文件夹: b更改过输入路径 = b需要重扫输入 = false;
                 lock (obj转码队列) { list_等待转码队列.Clear( ); }
                 DirectoryInfo[] arrDir = list输入路径.ToArray( );
-                foreach (DirectoryInfo dir in arrDir) {
+                foreach (DirectoryInfo dir in arrDir) {              
                     FileInfo[] arrFileInfo;
-                    if (File.Exists(dir.FullName))
+                    if (File.Exists(dir.FullName)) {                        
                         arrFileInfo = new FileInfo[] { new FileInfo(dir.FullName) };//如果是文件，直接处理。
-                    else if (!Directory.Exists(dir.FullName))
+                    } else if (!Directory.Exists(dir.FullName))
                         continue;//此处循环存在等待时长，文件夹有被移动风险。判断一次文件夹存在情况。
                     else {
                         add日志($"查找视频:{dir.FullName}");
@@ -150,6 +150,7 @@ namespace 破片压缩器 {
                     }
                     foreach (FileInfo file in arrFileInfo) {
                         if (is有效视频(file)) {
+                            txt日志($"正在读取{file.FullName}视频信息……");
                             str正在转码文件夹 = $"{str切片根目录}\\{file.DirectoryName.Replace(file.Directory.Root.FullName, "").Trim('\\')}";
                             Video_Roadmap video = new Video_Roadmap(file, str正在转码文件夹, Settings.b无缓转码);
                             if (!video.b解码60帧判断交错(out StringBuilder builder)) //扫描60帧，出结果较快。
@@ -207,7 +208,8 @@ namespace 破片压缩器 {
                         if (b更改过输入路径) goto 更改过文件夹;//中途更改文件夹优先级高，立刻跳出重新扫描
                     }
                 }
-                add日志($"输入目录已全部扫描！");
+                txt日志("输入目录已全部扫描！");
+                add日志("点击刷新，重新扫描输入目录！");
                 while (!b需要重扫输入) try { autoReset切片.WaitOne( ); } catch { }
             }
         }//1号线程，准备好了切片，后续线程才能顺序调度。
