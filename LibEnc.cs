@@ -24,9 +24,14 @@ namespace 破片压缩器 {
             { add内参= new string[]{ "ForceSCC=3", "FastSearchSCC=3", "PYUV=1", "MCTF=0" },eFPS_2K=1,eFPS_4K=0.04f,b运动补偿时域滤波=false } },
             //--ForceSCC [0]：强制屏幕内容编码（SCC）处理，而非自动检测（≤0：使用自动检测，1：将所有帧视为非屏幕内容编码（SCC）帧，2：将所有帧视为弱屏幕内容编码（SCC）帧，3：将所有帧视为强屏幕内容编码（SCC）帧）
             //--FastSearchSCC [2]：屏幕内容编码（SCC）的搜索模式（0：使用非屏幕内容编码（SCC）搜索模式，1：已废弃，2：屏幕内容编码菱形搜索（DiamondSCC），3：屏幕内容编码快速菱形搜索（FastDiamondSCC））
-            
+            {"slower+ (特慢+小参)",new 预设(value预设:"slower" ,crf偏移: 4)
+            { add内参= new string[]{"LMCS=1","LMCSUpdateCtrl=1","FastSearch=3","ReduceFilterME=0","ForceSCC=1", "FastSearchSCC=0"},eFPS_2K=0.006f,eFPS_4K=0.0006f } },
+            //--LMCSEnable [2] | --LMCS [2]：启用带色度缩放的亮度映射（LMCS）（0：关闭，1：开启，2：使用屏幕内容编码（SCC）检测，对屏幕编码内容禁用）
+            //--LMCSUpdateCtrl [0]：亮度映射与色度缩放（LMCS）模型更新控制（0：随机接入（RA），1：人工智能（AI），2：低延迟 B / 低延迟 P（LDB/LDP））
             {"placebo (最慢,安慰剂)",new 预设(value预设:"slower" ,crf偏移: 4)
-            { add内参= new string[]{ "FastSearch=0", "ReduceFilterME=0", "FastSearchSCC=0", "ISP=1", "SBT=1", "CIIP=1", "EDO=1", "EncDbOpt=1", "SMVD=1" },eFPS_2K=0.009f,eFPS_4K=0.0009f } },
+            { add内参= new string[]{"LumaLevelToDeltaQPMode=1","LMCS=1", "LMCSUpdateCtrl=1", "ISP=1", "SBT=1", "CIIP=1", "EDO=1", "EncDbOpt=1", "SMVD=1" ,"FastSearch=0", "ReduceFilterME=0", "FastSearchSCC=0"},eFPS_2K=0.009f,eFPS_4K=0.0009f } },
+            //--EncDbOpt [2]：带去块滤波器的编码器优化（0：关闭，1：遵循 VTM 标准，2：快速模式）
+            //--EDO [2]：带去块滤波器的编码器优化（0：关闭，1：遵循 VTM 标准，2：快速模式）
         };
         public static readonly Dictionary<string, 预设> dic显示_aomenc预设 = new Dictionary<string, 预设>( ) {
             //--cpu-used=<arg> Speed setting (0..6 in good mode, 5..12 in realtime mode, 0..9 in all intra mode)
@@ -159,13 +164,13 @@ namespace 破片压缩器 {
 
             libEnc.Add所有预设("slower", dic显示_VVenC预设);
 
-            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=27（推荐）\r\n标清：\tQPA=30\r\n标清：\tQPA=32（默认）";
+            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=27（推荐）\r\n标清：\tQPA=30\r\n低清：\tQPA=32(默认)";
 
             dic_编码库_初始设置.Add("高压缩 h266 @VVenC-QPA", libEnc);
         }
         static void add_libvvenc_qp( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
-                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 10, my_max: 36, my_value: 26)
+                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 10, my_max: 36, my_value: 23)
                 , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
             /*
              * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
@@ -199,7 +204,7 @@ namespace 破片压缩器 {
             libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 3 }, { 45, 2 }, { 35, 1 } };
             libEnc.Add所有预设(dic显示_VVenC预设);
 
-            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QP=10\r\n视觉无损：QP=15\r\n超清：\tQP=20\r\n高清：\tQP=24\r\n标清：\tQP=26（推荐）\r\n低清：\tQP=32(默认)";
+            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QP=10\r\n视觉无损：QP=15\r\n超清：\tQP=20\r\n高清：\tQP=23（推荐）\r\n标清：\tQP=27\r\n低清：\tQP=32(默认)";
 
             dic_编码库_初始设置.Add("中压缩 h266 @VVenC-QP", libEnc);
         }

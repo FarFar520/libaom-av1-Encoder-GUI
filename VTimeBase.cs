@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 
 namespace 破片压缩器 {
@@ -377,6 +378,7 @@ namespace 破片压缩器 {
             } catch { }
             return false;
         }
+
 
         readonly object obj读取文件号 = new object( );
         public bool hasNext_序列Span偏移(DirectoryInfo di编码成功, out Span偏移 span偏移, out int i剩余, out bool b全黑场) {

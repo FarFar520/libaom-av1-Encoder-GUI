@@ -1098,22 +1098,22 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 try { File.Delete(str水印字体路径); } catch { }
             }
 
-            if (bSuccess && Settings.b转码成功后删除源视频) {
-                try { fi输入视频.Delete( ); } catch { }
-                if (fi输入视频.Directory.GetFiles("*.*", SearchOption.AllDirectories).Length == 0) {
-                    try { fi输入视频.Directory.Delete( ); } catch { }
-                }
-            } else {
-                if (bSuccess) {
+            if (bSuccess) {
+                if (Settings.b转码成功后删除源视频) {
+                    try { fi输入视频.Delete( ); } catch { }
+                    if (fi输入视频.Directory.GetFiles("*.*", SearchOption.AllDirectories).Length == 0) {
+                        try { fi输入视频.Directory.Delete( ); } catch { }
+                    }
+                } else {
                     string path源视频 = $"{str输入路径}\\源视频";
                     //string path源视频 = bSuccess ? $"{str输入路径}\\源视频" : $"{str输入路径}\\合并失败";
 
                     if (!Directory.Exists(path源视频)) {
                         try { Directory.CreateDirectory(path源视频); } catch { }
                     }
-                    try { fi输入视频.MoveTo($"{path源视频}\\{fi输入视频.Name}"); } catch { }//正是运行再打开
-                } else {
-
+                    try { fi输入视频.MoveTo($"{path源视频}\\{fi输入视频.Name}"); } catch {
+                        try { fi输入视频.MoveTo($"{path源视频}\\{DateTime.Now:yy-MM-dd HH.mm.ss.fff} {fi输入视频.Name}"); } catch { }
+                    }//正是运行再打开
                 }
             }
 
@@ -1375,62 +1375,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 try { File.WriteAllText(path切片时长ini, builder.ToString( )); } catch { }
             }
         }
-
-        bool b连接序列切片(string path转码完成, out FileInfo fi连接后视频) {
-            fi连接后视频 = new FileInfo($"{di切片.FullName}\\{str编码摘要}{str输出格式}");
-            if (path转码完成.LastIndexOf("\\转码完成.") + 6 < 10) return false;
-
-            string[] arr切片_转码后 = Directory.GetFiles(path转码完成, $"*{str输出格式}");
-            List<int> list_SerialName = new List<int>( );
-            for (int i = 0; i < arr切片_转码后.Length; i++) {
-                string name = arr切片_转码后[i].Substring(path转码完成.Length + 1, arr切片_转码后[i].Length - path转码完成.Length - str输出格式.Length - 1);
-                if (int.TryParse(name, out int num) && name == num.ToString( )) {
-                    list_SerialName.Add(num);
-                    if (!_b音轨同时切片) {
-                        string timeCodeFile = $"{path转码完成}\\{num}_timestamp.txt";
-                        if (!File.Exists(timeCodeFile))
-                            External_Process.subProcess(EXE.mkvextract, $"timestamps_v2 {num}{str输出格式} 0:{num}_timestamp.txt", path转码完成, out string Output, out string Error);
-                    }
-                }
-            }
-            if (!_b音轨同时切片) {
-                if (_b无缓转码) vTimeBase.is重算时间码(path转码完成, str编码摘要);
-                else b重算时间码(path转码完成, list_SerialName);
-            }
-
-            if (fi连接后视频.Exists) {
-                return true;
-            } else {
-                if (list_SerialName.Count < 1) return false;
-                else list_SerialName.Sort( );
-
-                StringBuilder builder = new StringBuilder( );
-
-                FileInfo fi第一个webM = new FileInfo($"{path转码完成}\\{list_SerialName[0]}{str输出格式}");
-                builder.AppendFormat("--output \"{0}\" {1}{2}", fi连接后视频.FullName, list_SerialName[0], str输出格式);
-
-                for (int i = 1; i < list_SerialName.Count; i++)
-                    builder.Append(" + ").Append(list_SerialName[i]).Append(str输出格式);
-
-                builder.Append("  --title \"").Append(str连接视频名).Append("\"");
-                builder.Append(" --disable-track-statistics-tags --flush-on-close ");
-
-                External_Process ep = new External_Process(mkvmerge, builder.ToString( ), path转码完成, fi第一个webM);
-
-                string str日志文件 = $"连接序列切片_{fi连接后视频.Name}.log";
-                bool bsuccess = ep.sync_MKVmerge保存消息(path转码完成, str日志文件, out string[] logs, ref builder);
-
-                if (File.Exists(fi连接后视频.FullName)) {
-                    fi合并日志 = new FileInfo($"{path转码完成}\\{str日志文件}");
-                    return true;
-                } else {
-                    fi连接后视频 = null;
-                    try { File.WriteAllText($"{di切片.FullName}\\连接序列视频失败{DateTime.Now:yyyy.MM.dd.HH.mm.ss.fff}.errlog", builder.ToString( )); } catch { }
-                    return false;
-                }
-            }
-        }
-
         bool b重算时间码(string path转码完成, List<int> list_SerialName) {
             float f帧毫秒 = 1000 / info.f输出帧率;
             string path切片日志 = string.Format("{0}\\视频切片_{1}.log", di切片.FullName, di切片.Name.Substring(3));
@@ -1554,6 +1498,61 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 return true;
             }
             return false;
+        }
+
+        bool b连接序列切片(string path转码完成, out FileInfo fi连接后视频) {
+            fi连接后视频 = new FileInfo($"{di切片.FullName}\\{str编码摘要}{str输出格式}");
+            if (path转码完成.LastIndexOf("\\转码完成.") + 6 < 10) return false;
+
+            string[] arr切片_转码后 = Directory.GetFiles(path转码完成, $"*{str输出格式}");
+            List<int> list_SerialName = new List<int>( );
+            for (int i = 0; i < arr切片_转码后.Length; i++) {
+                string name = arr切片_转码后[i].Substring(path转码完成.Length + 1, arr切片_转码后[i].Length - path转码完成.Length - str输出格式.Length - 1);
+                if (int.TryParse(name, out int num) && name == num.ToString( )) {
+                    list_SerialName.Add(num);
+                    if (!_b音轨同时切片) {
+                        string timeCodeFile = $"{path转码完成}\\{num}_timestamp.txt";
+                        if (!File.Exists(timeCodeFile))
+                            External_Process.subProcess(EXE.mkvextract, $"timestamps_v2 {num}{str输出格式} 0:{num}_timestamp.txt", path转码完成, out string Output, out string Error);
+                    }
+                }
+            }
+            if (!_b音轨同时切片) {
+                if (_b无缓转码) vTimeBase.is重算时间码(path转码完成, str编码摘要);
+                else b重算时间码(path转码完成, list_SerialName);
+            }
+
+            if (fi连接后视频.Exists) {
+                return true;
+            } else {
+                if (list_SerialName.Count < 1) return false;
+                else list_SerialName.Sort( );
+
+                StringBuilder builder = new StringBuilder( );
+
+                FileInfo fi第一个webM = new FileInfo($"{path转码完成}\\{list_SerialName[0]}{str输出格式}");
+                builder.AppendFormat("--output \"{0}\" {1}{2}", fi连接后视频.FullName, list_SerialName[0], str输出格式);
+
+                for (int i = 1; i < list_SerialName.Count; i++)
+                    builder.Append(" + ").Append(list_SerialName[i]).Append(str输出格式);
+
+                builder.Append("  --title \"").Append(str连接视频名).Append("\"");
+                builder.Append(" --disable-track-statistics-tags --flush-on-close ");
+
+                External_Process ep = new External_Process(mkvmerge, builder.ToString( ), path转码完成, fi第一个webM);
+
+                string str日志文件 = $"连接序列切片_{fi连接后视频.Name}.log";
+                bool bsuccess = ep.sync_MKVmerge保存消息(path转码完成, str日志文件, out string[] logs, ref builder);
+
+                if (File.Exists(fi连接后视频.FullName)) {
+                    fi合并日志 = new FileInfo($"{path转码完成}\\{str日志文件}");
+                    return true;
+                } else {
+                    fi连接后视频 = null;
+                    try { File.WriteAllText($"{di切片.FullName}\\连接序列视频失败{DateTime.Now:yyyy.MM.dd.HH.mm.ss.fff}.errlog", builder.ToString( )); } catch { }
+                    return false;
+                }
+            }
         }
 
         bool b封装视频音频(FileInfo fi连接后视频) {
