@@ -160,7 +160,7 @@ namespace 破片压缩器 {
             libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
             libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
             //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
-            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 3 }, { 45, 2 }, { 35, 1 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 4 }, { 45, 3 }, { 35, 2 } };
 
             libEnc.Add所有预设("slower", dic显示_VVenC预设);
 
@@ -201,7 +201,7 @@ namespace 破片压缩器 {
             libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
             libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
             //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
-            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 3 }, { 45, 2 }, { 35, 1 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 4 }, { 45, 3 }, { 35, 2 } };
             libEnc.Add所有预设(dic显示_VVenC预设);
 
             libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QP=10\r\n视觉无损：QP=15\r\n超清：\tQP=20\r\n高清：\tQP=23（推荐）\r\n标清：\tQP=27\r\n低清：\tQP=32(默认)";
@@ -738,7 +738,7 @@ namespace 破片压缩器 {
                         info.IN.ffmpeg单线程解码 = EXE.ffmpeg单线程;
                 }
             } else {
-                if (b微调CRF && !_b多线程优先) crf += 0.5f;
+                if (b微调CRF && !_b多线程优先) crf ++;
 
                 if (lookahead != null) {
                     if (enc预设.min_判定帧型 > 0)

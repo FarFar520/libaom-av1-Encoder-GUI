@@ -18,7 +18,7 @@ namespace 破片压缩器 {
 
         public static bool b保存异常日志 = true;
 
-        int i切片间隔秒 = 60;
+        int i切分间隔秒 = 60;
         decimal d检测镜头精度 = new decimal(0.1);
 
         bool b更改过输入路径 = true, b更改过缓存路径 = true, b需要重扫输入 = false, b需要重扫缓存 = false, b最小化 = false;
@@ -138,9 +138,9 @@ namespace 破片压缩器 {
                 更改过文件夹: b更改过输入路径 = b需要重扫输入 = false;
                 lock (obj转码队列) { list_等待转码队列.Clear( ); }
                 DirectoryInfo[] arrDir = list输入路径.ToArray( );
-                foreach (DirectoryInfo dir in arrDir) {              
+                foreach (DirectoryInfo dir in arrDir) {
                     FileInfo[] arrFileInfo;
-                    if (File.Exists(dir.FullName)) {                        
+                    if (File.Exists(dir.FullName)) {
                         arrFileInfo = new FileInfo[] { new FileInfo(dir.FullName) };//如果是文件，直接处理。
                     } else if (!Directory.Exists(dir.FullName))
                         continue;//此处循环存在等待时长，文件夹有被移动风险。判断一次文件夹存在情况。
@@ -180,13 +180,13 @@ namespace 破片压缩器 {
                                         }
                                     }
                                     if (!video.b有切片记录) {//按转场切片有失败的可能性，重新切一次。
-                                        string log = $"按{i切片间隔秒}秒切片：{file.Name}";
+                                        string log = $"按{i切分间隔秒}秒切片：{file.Name}";
                                         add日志(log);
                                         //当前的工作流程设计是等到切片成功才开始转码。第一个视频初始化尚有优化空间。
                                         //如处理单个视频体积高达1TB，在8盘RAID0读写平均500MB/s 也需要1024*1024/512/60=34.133333分钟后才开始转码。
                                         //第一个开始切片的视频提高初始化效率的逻辑：每切出一块，开始转码一块。第二个视频则不需要。
                                         if (!转码队列.b有任务) autoReset初始信息.Set( );//切片大文件有点费时间，增加进度输出。
-                                        video.Fx按时间切片并获取列表(i切片间隔秒, ref builder);//当视频体积非常大时，切片耗时较长，软件完全看不出进度
+                                        video.Fx按时间切片并获取列表(i切分间隔秒, ref builder);//当视频体积非常大时，切片耗时较长，软件完全看不出进度
                                     }
                                 }
 
@@ -253,7 +253,7 @@ namespace 破片压缩器 {
             if (roadmap.vTimeBase.i总分段 < 1) {
                 while (转码队列.list扫分段.Count > 0) try { Thread.Sleep(999); } catch { }//避免同时启动
                 add日志($"开始扫描视频帧数据：{roadmap.fi输入视频.Name}");
-                if (!Settings.b扫描场景) roadmap.vTimeBase.Start按关键帧(Settings.sec_gop);
+                if (!Settings.b扫描场景) roadmap.vTimeBase.Start按关键帧(i切分间隔秒);
                 else roadmap.vTimeBase.Start按转场(转码队列.b缓存余量充足, (float)d检测镜头精度, Settings.sec_gop, Settings.i分割GOP, 0.25f);
                 if (!转码队列.b有任务) autoReset初始信息.Set( );
             } else {
@@ -430,7 +430,7 @@ namespace 破片压缩器 {
             while (true) {
                 try { autoReset初始信息.WaitOne( ); } catch { }
                 try { Thread.Sleep(3333); } catch { }
-                
+
                 this.Invoke(new Action(( ) => timer刷新编码输出.Stop( )));
                 while (转码队列.Get独立进程输出(out string info)) {
                     if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
@@ -774,7 +774,7 @@ namespace 破片压缩器 {
                     if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
                         textBox日志.Text = str编码速度;
                     }
-                    
+
                 } else {
                     if (Video_Roadmap.b查找可执行文件(out string log, out string txt)) {
                         button刷新.Text = "刷新(&R)";
@@ -837,24 +837,34 @@ namespace 破片压缩器 {
             checkBox_硬字幕.Checked = false;
             checkBox_硬字幕.Visible = false;
             checkBox编码后删除切片.Visible = true;
-
-            if (SelectedIndex == 0) {
-                i切片间隔秒 = Settings.sec_gop * 6;
-                Settings.b扫描场景 = true;
-                numericUpDown_分割最小秒.Visible = numericUpDown检测镜头.Visible = true;
-            } else if (SelectedIndex == 8) {
-                i切片间隔秒 = Settings.sec_gop * 3;
+            if (SelectedIndex == 8) {
+                i切分间隔秒 = Settings.sec_gop * 3;
                 Settings.b无缓转码 = Settings.b扫描场景 = true;
                 checkBox_硬字幕.Visible = true;
                 checkBox编码后删除切片.Visible = false;
-                numericUpDown_分割最小秒.Visible = numericUpDown检测镜头.Visible = true;
-
-            } else if (SelectedIndex == 9) {
+                numericUpDown_分割最小秒.Visible = true;
+                numericUpDown检测镜头.Visible = true;
+            } else if (SelectedIndex == 0) {
+                i切分间隔秒 = Settings.sec_gop * 6;
+                Settings.b扫描场景 = true;
+                numericUpDown_分割最小秒.Visible = true;
+                numericUpDown检测镜头.Visible = true;
+            } else if (SelectedIndex >= 9 && SelectedIndex <= 14) {
                 checkBox_硬字幕.Visible = true;
-                checkBox编码后删除切片.Visible = numericUpDown_分割最小秒.Visible = numericUpDown检测镜头.Visible = false;
-                i切片间隔秒 = Settings.sec_gop * 6;
+                checkBox编码后删除切片.Checked = false;
+                checkBox编码后删除切片.Visible = false;
+                numericUpDown_分割最小秒.Visible = false;
+                numericUpDown检测镜头.Visible = false;
+
                 Settings.b无缓转码 = true;
                 Settings.b扫描场景 = false;
+
+                if (SelectedIndex == 9) i切分间隔秒 = Settings.sec_gop * 6;
+                else if (SelectedIndex == 10) i切分间隔秒 = Settings.sec_gop * 12;
+                else if (SelectedIndex == 11) i切分间隔秒 = Settings.sec_gop * 36;
+                else if (SelectedIndex == 12) i切分间隔秒 = Settings.sec_gop * 60;
+                else if (SelectedIndex == 13) i切分间隔秒 = Settings.sec_gop * 120;
+                else if (SelectedIndex == 14) i切分间隔秒 = Settings.sec_gop * 180;
             } else {
                 Settings.b扫描场景 = false;
                 numericUpDown_分割最小秒.Visible = numericUpDown检测镜头.Visible = false;
@@ -869,14 +879,14 @@ namespace 破片压缩器 {
                 以间隔10分钟左右分割
                  */
                 switch (SelectedIndex) {
-                    case 1: i切片间隔秒 = 5; return;
-                    case 2: i切片间隔秒 = 10; return;
-                    case 3: i切片间隔秒 = 30; return;
-                    case 4: i切片间隔秒 = 60; return;
-                    case 5: i切片间隔秒 = 180; return;
-                    case 6: i切片间隔秒 = 300; return;
-                    case 7: i切片间隔秒 = 600; return;
-                    default: i切片间隔秒 = Settings.sec_gop; return;
+                    case 1: i切分间隔秒 = 5; return;
+                    case 2: i切分间隔秒 = 10; return;
+                    case 3: i切分间隔秒 = 30; return;
+                    case 4: i切分间隔秒 = 60; return;
+                    case 5: i切分间隔秒 = 180; return;
+                    case 6: i切分间隔秒 = 300; return;
+                    case 7: i切分间隔秒 = 600; return;
+                    default: i切分间隔秒 = Settings.sec_gop; return;
                 }
             }
         }
@@ -1143,7 +1153,7 @@ namespace 破片压缩器 {
             }
 
             if (libEnc选中.Noise去除参数 == null) {
-                checkBox_磨皮.Visible  = false;
+                checkBox_磨皮.Visible = false;
                 if (video热乎的切片 == null && video正在转码文件 == null)
                     add日志(libEnc选中.get参数_编码器预设画质(libEnc选中.key显示预设, libEnc选中.b多线程优先, checkBox_DriftCRF.Checked, crf上次));
             } else {
@@ -1216,8 +1226,5 @@ namespace 破片压缩器 {
             thread初始信息.IsBackground = true;
             thread初始信息.Start( );
         }
-
-
-
     }
 }
