@@ -36,12 +36,12 @@ namespace 破片压缩器 {
         string get_Between滤镜(char type, float sec_between_A, float sec_between_B, string str水印) {
             List<string> list = new List<string>( );
 
-            if (type != ' ') {
-                list.Add($"select=between({type}\\,{sec_between_A}\\,{sec_between_B})");
-                //list.Add($"select=between(t\\,{sec_Start}\\,{sec_End})"); //时间
-                //list.Add($"select=between(n\\,{sec_Start}\\,{sec_End})"); //帧号
-                list.Add("setpts=N/FRAME_RATE/TB");
-            }
+            //if (type != ' ') {
+            //    list.Add($"select=between({type}\\,{sec_between_A}\\,{sec_between_B})");
+            //    //list.Add($"select=between(t\\,{sec_Start}\\,{sec_End})"); //时间
+            //    //list.Add($"select=between(n\\,{sec_Start}\\,{sec_End})"); //帧号
+            //    list.Add("setpts=N/FRAME_RATE/TB");
+            //}//逐帧解码模式，速度较慢
 
             if (!string.IsNullOrEmpty(lavfi字幕)) {
                 list.Add(lavfi字幕);
@@ -688,7 +688,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             lib视频编码器 = Settings.Get_视频编码库(info, out v命令行);
 
-            str滤镜lavfi = get_lavfi( );
+            str滤镜lavfi = get_lavfi( );//全片通用滤镜
             str音频命令 = get_encAudio( );
 
             v命令行.str编码指令 = gop + lib视频编码器 + str音频命令;
@@ -810,10 +810,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 转码队列.dic_切片路径_剩余[str切片路径] = i剩余;
                 span偏移.fx计算帧量(info.f输入帧率, info.f输出帧率);
 
-                string str水印 = $"{info.str视频名无后缀} - {span偏移.i分段号}({span偏移.f转场}~{span偏移.f结束})";
-
-                //string str滤镜 = get_Between滤镜('t', span偏移.f偏移转场, span偏移.f偏移结束, b切片序号水印 ? name : null);
-
                 string path编码后切片 = $"{di切片.FullName}\\{span偏移.i分段号}_{str编码摘要}丨{DateTime.Now:yyyy.MM.dd.HH.mm.ss.fff}{str输出格式}";
 
                 string str命令行;
@@ -826,7 +822,14 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     input = span偏移.get精确跳转_i_SS_TO(fi输入视频);//渲染硬字幕使用逐帧解码同步时间模式。
                 }
 
-                string str滤镜 = get_Between滤镜(' ', span偏移.f偏移转场, span偏移.f偏移结束, b切片序号水印 ? str水印 : null);
+                //string str滤镜 = get_Between滤镜('t', span偏移.f偏移转场, span偏移.f偏移结束, b切片序号水印 ? name : null);//between解码速度较慢
+                string str滤镜;
+                if (b切片序号水印) {
+                    string str水印 = $"{info.str视频名无后缀} - {span偏移.i分段号}({span偏移.f转场}~{span偏移.f结束 - info.f输入每帧秒})";
+                    str滤镜 = get_Between滤镜(' ', span偏移.f偏移转场, span偏移.f偏移结束, str水印);
+                } else {
+                    str滤镜 = str滤镜lavfi;
+                }
 
                 if (Settings.b多线程) {
                     string encV = v命令行.format_CRF多线程编码库(b全黑场, span偏移.f指定画质CRF);
@@ -1137,7 +1140,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             StringBuilder builder = new StringBuilder( );
             转码队列.process音轨 = external_Process;
 
-            if (external_Process.sync( )) {//音轨转码线程不占用队列。会超出cpu核心数。
+            if (external_Process.sync_FFmpegInfo(out _)) {//音轨转码线程不占用队列。会超出cpu核心数。
                 转码队列.process音轨 = null;
                 FileInfo fi临时音轨 = external_Process.fi编码;
                 if (fi临时音轨.Exists) {

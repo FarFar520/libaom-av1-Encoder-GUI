@@ -48,7 +48,6 @@ namespace 破片压缩器 {
                 foreach (int n in dic_切片路径_剩余.Values) {
                     sum += n;
                 }
-
                 return (sum > i多进程数量 * 3);
             }
         }

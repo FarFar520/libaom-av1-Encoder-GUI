@@ -400,9 +400,11 @@ namespace 破片压缩器 {
             }
             stopwatch.Start( );
             Task.Run(( ) => {
-                while (!process.StandardOutput.EndOfStream) {
-                    try { listOutput.Add(process.StandardOutput.ReadLine( )); } catch { }
-                }
+                try {
+                    while (!process.StandardOutput.EndOfStream) {
+                        try { listOutput.Add(process.StandardOutput.ReadLine( )); } catch { }
+                    }
+                } catch { }
             });
             while (!process.StandardError.EndOfStream) {
                 StandardError = process.StandardError.ReadLine( ).TrimStart( );
@@ -589,6 +591,8 @@ namespace 破片压缩器 {
         void ErrorData(object sendProcess, DataReceivedEventArgs output) {//标准输出、错误输出似乎共用缓冲区，只读其中一个，输出缓冲区可能会满，卡死
             if (output.Data != null) {
                 listError.Add(output.Data);//异步中写逻辑会阻塞外部程序。使用线程休眠，可以让外部程序暂停。
+                StandardError = output.Data;
+                sb输出数据流.AppendLine(output.Data);
             }
         }
         void read_StandardOutput( ) {

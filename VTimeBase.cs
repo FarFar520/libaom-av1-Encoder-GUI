@@ -232,9 +232,14 @@ namespace 破片压缩器 {
             return false;
         }
 
-        public void Start按关键帧(float sec分段) {
+        public void Start按关键帧(float sec分段, float sec分割至少) {
             fx获取时长( );
-            this.sec分段 = sec分段;
+
+            if (sec分割至少 < sec分段) {
+                this.sec分段 = sec分段 < 1 ? 1 : sec分段;
+            } else {
+                this.sec分段 = sec分割至少 < 1 ? 1 : sec分割至少;
+            }
 
             fx读取关键帧( );
             if (!b读取关键帧) 转码队列.Add_VTimeBase(this);
@@ -260,7 +265,7 @@ namespace 破片压缩器 {
             this.sec分割至少 = sec分割至少 < sec_gop ? sec分割至少 : sec_gop;
             this.sec分段 = sec_gop > sec分割至少 ? sec_gop : sec分割至少;
 
-            //str单线程 = b单线程 ? EXE.ffmpeg单线程 : string.Empty;
+            str单线程 = b单线程 ? EXE.ffmpeg单线程 : string.Empty;
 
             int x白度 = 98, x像素白阈 = 250;
 
