@@ -133,6 +133,7 @@
     <Compile Include="LibEnc.cs" />
     <Compile Include="Scene.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="Subtitle.cs" />
     <Compile Include="UpdateFFmpeg.cs" />
     <Compile Include="VideoInfo.cs" />
     <Compile Include="Encoding_Node.cs" />

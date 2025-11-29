@@ -18,7 +18,7 @@ namespace 破片压缩器 {
 
         public int i显示帧宽 = 1;
 
-        public int i输出宽 = 1, i输出高 = 1, i输出长边 = 1, i输出短边 = 1,i输出像素=1;
+        public int i输出宽 = 1, i输出高 = 1, i输出长边 = 1, i输出短边 = 1, i输出像素 = 1;
         public float f输入帧率 = 23.976f;
         public float f输出帧率 = 1.0f;
         public float f输入每帧秒 = 0.041708f;
@@ -46,6 +46,7 @@ namespace 破片压缩器 {
         public static Regex regexDAR = new Regex(@"DAR\s*(?<darW>\d+):(?<darH>\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//备用
         public static Regex regexAudio = new Regex(@"Audio: (?<code>\w+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         public static Regex regex隔行扫描 = new Regex(@"(top|bottom)\s+first", RegexOptions.IgnoreCase | RegexOptions.Compiled);//交错视频
+        public static Regex regex时长 = new Regex(@"Duration:\s*(?:(?:(?:(?:(?<D>\d+)\s*[\.:]\s*)?(?<H>\d+)\s*:\s*)?(?<M>\d+)\s*:\s*)?(?<S>\d+))?(?:\s*\.\s*(?<MS>\d+))?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public 输出 OUT = new 输出( );
         public 输入 IN = new 输入( );
@@ -219,11 +220,22 @@ namespace 破片压缩器 {
                         list其它轨.Add(i轨道号);
                     }
                 } else if (line.StartsWith("Duration: ", StringComparison.OrdinalIgnoreCase)) {
-                    int len = line.IndexOf(',', 11) - 11;
-                    if (len > 0) {
-                        if (TimeSpan.TryParse(line.Substring(11, len), out TimeSpan timeSpan)) {
-                            if (timeSpan > TimeSpan.Zero) {
-                                time视频时长 = timeSpan;
+                    Match match = regex时长.Match(line);
+                    double Sec = 0;
+                    if (int.TryParse(match.Groups["D"].Value, out int day)) Sec += day * 86400;
+                    if (int.TryParse(match.Groups["H"].Value, out int Hour)) Sec += Hour * 3600;
+                    if (int.TryParse(match.Groups["M"].Value, out int Minute)) Sec += Minute * 60;
+                    if (int.TryParse(match.Groups["S"].Value, out int Second)) Sec += Second;
+                    if (int.TryParse(match.Groups["MS"].Value, out int MS)) Sec += 0.001 * MS;
+                    if (Sec > 0) {
+                        time视频时长 = TimeSpan.FromSeconds(Sec);
+                    } else {
+                        int len = line.IndexOf(',', 11) - 11;
+                        if (len > 0) {
+                            if (TimeSpan.TryParse(line.Substring(11, len), out TimeSpan timeSpan)) {
+                                if (timeSpan > TimeSpan.Zero) {
+                                    time视频时长 = timeSpan;
+                                }
                             }
                         }
                     }

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace 破片压缩器 {
+﻿namespace 破片压缩器 {
     public static class Settings {
         public static bool b编码后删除切片 = false;
         public static bool b转码成功后删除源视频 = false;

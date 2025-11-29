@@ -647,7 +647,7 @@ namespace 破片压缩器 {
                 ffmpeg_Encoding = process.StandardError.ReadLine( );
                 if (ffmpeg_Encoding.Length > 6 && ffmpeg_Encoding[0] == 'f' && ffmpeg_Encoding[1] == 'r' && ffmpeg_Encoding[2] == 'a' && ffmpeg_Encoding[3] == 'm' && ffmpeg_Encoding[4] == 'e' && ffmpeg_Encoding[5] == '=') {
                     //正常输出概率最高的情况用字符匹配加快效率
-                    ffmpeg_Pace = ffmpeg_Encoding.TrimEnd()+'\t';
+                    ffmpeg_Pace = ffmpeg_Encoding.TrimEnd( ) + '\t';
                     index_frame = 6;
                     newFrame = true;
                 } else {

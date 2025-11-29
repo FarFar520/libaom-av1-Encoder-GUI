@@ -30,7 +30,7 @@ namespace 破片压缩器 {
 
         TimeSpan span扫转场进度 = TimeSpan.MaxValue, span扫黑场进度 = TimeSpan.MaxValue, span扫白场进度 = TimeSpan.MaxValue;
 
-        Thread th扫关键帧, th扫转场, th扫黑场, th扫白场, th循环计算;
+        Thread th扫关键帧 = null, th扫转场 = null, th扫黑场 = null, th扫白场 = null, th循环计算 = null;
 
         ConcurrentDictionary<float, Scene.Info> dic转场帧 = new ConcurrentDictionary<float, Scene.Info>( );
 
@@ -215,7 +215,8 @@ namespace 破片压缩器 {
                     }
 
                     if (dic_分段_偏移.Count > 0) {
-                        fx读取黑场Info( );
+
+                        if (!Settings.b扫描场景) fx读取黑场Info( );
 
                         var dicSort_Sec = from objDic in dic_分段_偏移 orderby objDic.Value.f持续秒 descending select objDic;
                         foreach (var item in dicSort_Sec) lock (obj读取文件号)
@@ -244,8 +245,10 @@ namespace 破片压缩器 {
             fx读取关键帧( );
             if (!b读取关键帧) 转码队列.Add_VTimeBase(this);
 
-            th循环计算 = new Thread(fn循环计算关键帧并存盘) { IsBackground = true, Name = "循环计算关键帧并存盘" + fi输入文件.Name };
-            th循环计算.Start( );
+            if (th循环计算 == null) {
+                th循环计算 = new Thread(fn循环计算关键帧并存盘) { IsBackground = true, Name = "循环计算关键帧并存盘" + fi输入文件.Name };
+                th循环计算.Start( );
+            }
         }
 
         public void Start按转场(bool b单线程, float scene, float sec_gop, float sec分割至少, float f连续黑场最小秒) {
@@ -274,7 +277,7 @@ namespace 破片压缩器 {
             if (!b读取转场) {
                 string path视频同目录转场时间戳 = $"{fi输入文件.DirectoryName}\\检测镜头({scene:F3}).{fi输入文件.Name}.info";
                 b读取转场 = is成功读取(ref list转场, "转场", path视频同目录转场时间戳, ref span扫转场进度);
-                if (!b读取转场) {
+                if (!b读取转场 && th扫转场 == null) {
                     th扫转场 = new Thread(fn扫转场) { IsBackground = true, Name = "扫转场" + fi输入文件.Name };
                     th扫转场.Start( );
                 }
@@ -311,7 +314,7 @@ namespace 破片压缩器 {
             if (!b读取黑场) {
                 string path视频同目录黑场时间戳 = $"{fi输入文件.DirectoryName}\\检测黑场({x黑度},{x像素黑阈}).{fi输入文件.Name}.info";
                 b读取黑场 = is成功读取(ref list黑场, "黑场", path视频同目录黑场时间戳, ref span扫黑场进度);
-                if (!b读取黑场) {
+                if (!b读取黑场 && th扫黑场 == null) {
                     list黑场 = new SynchronizedCollection<float>( ) { 0 };
                     th扫黑场 = new Thread(fn扫黑场) { IsBackground = true, Name = "扫黑场" + fi输入文件.Name };
                     th扫黑场.Start( );
@@ -324,7 +327,7 @@ namespace 破片压缩器 {
             if (!b读取关键帧) {
                 string path视频同目录关键帧时间戳 = $"{fi输入文件.DirectoryName}\\关键帧时间戳_{fi输入文件.Name}.info";
                 b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span);
-                if (!b读取关键帧) {
+                if (!b读取关键帧 && th扫关键帧 == null) {
                     list关键帧 = new SynchronizedCollection<float>( ) { 0 };
                     th扫关键帧 = new Thread(fn扫关键帧) { IsBackground = true, Name = "扫关键帧" + fi输入文件.Name };
                     th扫关键帧.Start( );
@@ -365,7 +368,7 @@ namespace 破片压缩器 {
                         if (float.TryParse(arr[end], out _)) {
                             float ms本场起始 = item.Value.f转场 * 1000;
                             for (int i = 1; i < end; i++) {//最后一帧是结束时间戳，不需要计算
-                                @string.AppendLine( ).Append(ms本场起始 + float.Parse(arr[i]));
+                                @string.AppendLine( ).AppendFormat("{0:F0}", ms本场起始 + float.Parse(arr[i]));
                             }
                             goto 下一个;
                         }
@@ -373,7 +376,7 @@ namespace 破片压缩器 {
                 }
                 下一个:;
             }
-            @string.AppendLine( ).Append(Duration * 1000);
+            @string.AppendLine( ).AppendFormat("{0:F0}", Duration * 1000);
             timestamp_v2 = @string.ToString( );
             DirectoryInfo di成功目录 = new DirectoryInfo(path转码完成);//合成函数会尝试合成切片目录下不同参数的文件
             try {

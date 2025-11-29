@@ -39,7 +39,7 @@ namespace 破片压缩器 {
                             foreach (string file in arr下载中) {
                                 try { File.Delete(file); } catch { }
                             }
-
+                            //ffmpeg-master-win64-gpl-2025-11-23.zip
                             string[] arrZip = Directory.GetFiles(".\\", "ffmpeg-master-win64-gpl-????-??-??.zip");
                             foreach (string file in arrZip) {
                                 FileInfo fileInfo = new FileInfo(file);

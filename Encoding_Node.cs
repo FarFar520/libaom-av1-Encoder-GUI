@@ -146,23 +146,25 @@ namespace 破片压缩器 {
                                 list_切片体积降序.RemoveAt(0);
                                 continue;
                             }
+
                         } else {
                             try {
-                                using (FileStream stream = File.OpenWrite(list_切片体积降序[0].FullName)) { }
+                                using (FileStream fs = File.OpenWrite(list_切片体积降序[0].FullName)) { fs.Close( ); }
                             } catch {
                                 list_切片体积降序.RemoveAt(0);
                                 continue;
                             }
                         }
+
                         fi切片 = list_切片体积降序[0];
                         list_切片体积降序.RemoveAt(0);
                         break;
+
                     } else {
                         list_切片体积降序.RemoveAt(0);
                     }
                 }
             }
-
 
             转码队列.dic_切片路径_剩余[di协同编码.FullName] = list_切片体积降序.Count;
 
@@ -206,10 +208,10 @@ namespace 破片压缩器 {
             for (int i = 0; i < arr_di协编.Length; i++) {
                 FileInfo[] fi已有缓存 = arr_di协编[i].GetFiles("*.mkv");
                 for (int j = 0; j < fi已有缓存.Length; j++) {
-                    try {
-                        using (FileStream fs = File.OpenWrite(fi已有缓存[j].FullName)) { }//第三方节点正在编码的切片不添加队列。
-                    } catch { continue; }
-                    if (set已处理切片.Add(fi已有缓存[j].FullName.ToLower( ))) {
+                    if (set已处理切片.Add(fi已有缓存[j].Name)) {//只记录切片名
+                        try {
+                            using (FileStream fs = File.OpenWrite(fi已有缓存[j].FullName)) { fs.Close( ); }//第三方节点正在编码的切片不添加队列。
+                        } catch { continue; }
                         if (int.TryParse(fi已有缓存[j].Name.Substring(0, fi已有缓存[j].Name.Length - 4), out int n切片序号)) {
                             if (!dic_序列_源切片.ContainsKey(n切片序号)) dic_序列_源切片.Add(n切片序号, fi已有缓存[j]);  // 001.mkv、01.mkv、1.mkv
                         } else {
@@ -221,9 +223,11 @@ namespace 破片压缩器 {
 
             if (Directory.Exists(di切片文件夹.FullName)) {
                 FileInfo[] fi已有缓存 = di切片文件夹.GetFiles("*.mkv");
-
                 for (int i = 0; i < fi已有缓存.Length; i++) {
-                    if (set已处理切片.Add(fi已有缓存[i].FullName.ToLower( ))) {
+                    if (set已处理切片.Add(fi已有缓存[i].Name)) {
+                        try {
+                            using (FileStream fs = File.OpenWrite(fi已有缓存[i].FullName)) { fs.Close( ); }//第三方节点正在编码的切片不添加队列。
+                        } catch { continue; }
                         if (int.TryParse(fi已有缓存[i].Name.Substring(0, fi已有缓存[i].Name.Length - 4), out int n切片序号))
                             if (!dic_序列_源切片.ContainsKey(n切片序号)) dic_序列_源切片.Add(n切片序号, fi已有缓存[i]);  // 001.mkv、01.mkv、1.mkv
                     }

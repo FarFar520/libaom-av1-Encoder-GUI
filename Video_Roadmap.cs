@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows.Forms;
 
 namespace 破片压缩器 {
@@ -43,8 +45,8 @@ namespace 破片压缩器 {
             //    list.Add("setpts=N/FRAME_RATE/TB");
             //}//逐帧解码模式，速度较慢
 
-            if (!string.IsNullOrEmpty(lavfi字幕)) {
-                list.Add(lavfi字幕);
+            if (!string.IsNullOrEmpty(lavfi全片字幕)) {
+                list.Add(lavfi全片字幕);
             }
 
             if (!string.IsNullOrEmpty(lavfi全局值)) list.Add(lavfi全局值);
@@ -174,7 +176,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                         if (str音频摘要 != ".opus") str最终格式 = ".mkv";
                     }
 
-                    if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0)
+                    if (info.list字幕轨.Count > 0)
                         builder.Append(" -map 0:s -c:s copy");
 
                 } else {
@@ -202,17 +204,19 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
         public static string str软件标签 = $"-metadata encoding_tool=\"{Application.ProductName} {Application.ProductVersion}\"";
 
+        public static string str文本硬字幕样式 = ":force_style=FontName=阿里巴巴普惠体 3 75 SemiBold,FontSize=22.5,Outline=0.2,Shadow=0.25,Spacing=0.5,MarginV=12";
+
         public DirectoryInfo di编码成功, di切片;
 
         public VideoInfo info;
         public VTimeBase vTimeBase;
         bool bVFR = true;
-        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = false;
+        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = false,_b硬字幕=false;
 
-        FileInfo fiMKA = null, fiOPUS = null, fi视频头信息 = null, fi拆分日志 = null, fi合并日志 = null, fi外挂字幕 = null;
+        FileInfo fiMKA = null, fiOPUS = null, fi视频头信息 = null, fi拆分日志 = null, fi合并日志 = null, fi外挂字幕 = null,fi_STR字幕=null;
 
         string path无缓转码csv = string.Empty;
-        string lib视频编码器, lavfi字幕, lavfi全局值, str自定义滤镜值, str滤镜lavfi, str编码摘要, str音频命令, str音频摘要;
+        string lib视频编码器, lavfi全片字幕, lavfi全局值, str自定义滤镜值, str滤镜lavfi, str编码摘要, str音频命令, str音频摘要;
         string str连接视频名, str转码后MKV名, strMKA名, str完整路径MKA, str水印字体路径, str水印字体参数;
 
         string str输出格式 = ".mkv", str最终格式;
@@ -285,20 +289,29 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             di切片 = new DirectoryInfo(str切片路径);
             path无缓转码csv = di切片.FullName + "\\无缓转码.csv";
 
-            if (b无缓转码) {
-                vTimeBase = new VTimeBase(info, di切片);
+            _b硬字幕 = Settings.b硬字幕;
+            if (_b硬字幕) {
                 string path字幕 = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀;
                 if (File.Exists(path字幕 + ".ass")) {
-                    lavfi字幕 = $"subtitles='{info.str视频名无后缀}.ass'";
+                    lavfi全片字幕 = $"subtitles='{info.str视频名无后缀}.ass'";
                     fi外挂字幕 = new FileInfo(path字幕 + ".ass");
                 } else if (File.Exists(path字幕 + ".ssa")) {
-                    lavfi字幕 = $"subtitles='{info.str视频名无后缀}.ssa'";
+                    lavfi全片字幕 = $"subtitles='{info.str视频名无后缀}.ssa'";
                     fi外挂字幕 = new FileInfo(path字幕 + ".ssa");
-                } else if (File.Exists(path字幕 + ".srt")) {
-                    lavfi字幕 = $"subtitles='{info.str视频名无后缀}.srt:force_style=FontName=Microsoft YaHei UI Bold,Outline=0.2,Shadow=0.25,Spacing=0.5'";
-                    fi外挂字幕 = new FileInfo(path字幕 + ".srt");
                 }
-                if (!Settings.b硬字幕) lavfi字幕 = string.Empty;
+
+                string file_SRT = path字幕 + ".srt";
+                if (File.Exists(file_SRT)) {
+                    fi_STR字幕 = new FileInfo(file_SRT);
+                    if (string.IsNullOrEmpty(lavfi全片字幕)) {
+                        lavfi全片字幕 = $"subtitles='{info.str视频名无后缀}.srt{str文本硬字幕样式}'";
+                        fi外挂字幕 = new FileInfo(file_SRT);
+                    }
+                }
+            }
+
+            if (b无缓转码) {
+                vTimeBase = new VTimeBase(info, di切片);               
             }
             if (di切片.Exists) {
                 if (!b无缓转码) {
@@ -398,25 +411,24 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                         return false;
                     }
                     return true;
-                }
+                } else {
+                    if (Directory.Exists(di切片.FullName)) {
+                        FileInfo[] arrFI_MKV视频 = di切片.GetFiles("*.mkv");
+                        for (int i = 0; i < arrFI_MKV视频.Length; i++) {
+                            string num = arrFI_MKV视频[i].Name.Substring(0, arrFI_MKV视频[i].Name.Length - 4);
+                            if (uint.TryParse(num, out _)) return true;//做最简单判断，是序列号名。mkv就返回还有。
+                        }
 
-                if (Directory.Exists(di切片.FullName)) {
-                    FileInfo[] arrFI_MKV视频 = di切片.GetFiles("*.mkv");
-                    for (int i = 0; i < arrFI_MKV视频.Length; i++) {
-                        string num = arrFI_MKV视频[i].Name.Substring(0, arrFI_MKV视频[i].Name.Length - 4);
-                        if (uint.TryParse(num, out uint value)) return true;//做最简单判断，是序列号名。mkv就返回还有。
-                    }
-
-                    DirectoryInfo[] di协编们 = di切片.GetDirectories("*协同编码");// 协同编码的子工作目录
-                    foreach (DirectoryInfo di协编 in di协编们) {
-                        FileInfo[] arrFI_MKV协转 = di协编.GetFiles("*.mkv");
-                        for (int i = 0; i < arrFI_MKV协转.Length; i++) {
-                            if (uint.TryParse(arrFI_MKV协转[i].Name.Substring(0, arrFI_MKV协转[i].Name.Length - 4), out uint value)) {
-                                return true;
+                        DirectoryInfo[] di协编们 = di切片.GetDirectories("*协同编码");// 协同编码的子工作目录
+                        foreach (DirectoryInfo di协编 in di协编们) {
+                            FileInfo[] arrFI_MKV协转 = di协编.GetFiles("*.mkv");
+                            for (int i = 0; i < arrFI_MKV协转.Length; i++) {
+                                if (uint.TryParse(arrFI_MKV协转[i].Name.Substring(0, arrFI_MKV协转[i].Name.Length - 4), out _)) {
+                                    return true;
+                                }
                             }
                         }
                     }
-
                 }
                 return false;
             }
@@ -814,7 +826,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                 string str命令行;
                 string input, dec_1th;
-                if (string.IsNullOrEmpty(lavfi字幕)) {
+                if (string.IsNullOrEmpty(lavfi全片字幕)) {
                     dec_1th = info.IN.ffmpeg单线程解码;
                     input = span偏移.get二次跳转_SS_i_SS_TO(fi输入视频);//解码前跳转时间戳速度较快，遇到硬字幕渲染需求得重构字幕时间戳。
                 } else {
@@ -929,7 +941,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10");//忽略视频轨道，转码全部音轨，字幕轨可能会保留一条。
                     //builder.Append(" -map 0:a:0 -c:a libopus -vbr on -compression_level 10"); //只保留一条音轨
                     //builder.Append(" -c:a libopus -vbr 2.0 -compression_level 10");//vbr 0~2;//vbr不太好用
-                    if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
+                    if (info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
                     if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                         //opus默认码率每声道48K码率。多声道自动计算方便。
                     } else
@@ -965,7 +977,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10");//忽略视频轨道，转码全部音轨，字幕轨可能会保留一条。
                     //builder.Append(" -map 0:a:0 -c:a libopus -vbr on -compression_level 10"); //只保留一条音轨
                     //builder.Append(" -c:a libopus -vbr 2.0 -compression_level 10");//vbr 0~2;//vbr不太好用
-                    if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
+                    if (info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
                     if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                         //opus默认码率每声道48K码率。多声道自动计算方便。
                     } else
@@ -1014,7 +1026,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             if (!转码队列.b允许入队) builder.Append(EXE.ffmpeg单线程);
             builder.Append(" -i \"").Append(fiMKA.FullName).Append('"');
             builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10");//-vn不处理视频， -map 0:a 转码全部音轨
-            if (!string.IsNullOrEmpty(lavfi字幕) && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
+            if (info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
 
             if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                 //opus默认码率每声道48K码率。多声道自动计算方便。
@@ -1288,7 +1300,10 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             if (b完成切片) {
                 查找并按体积降序切片( );
-                return list_切片体积降序.Count > 0;
+                if (list_切片体积降序.Count > 0) {
+                    Task.Run(fx分割SRT字幕);
+                    return true;
+                } else return false;
             } else { //切片失败的情况，删除切片。
                 fx删除数字名称视频切片( );
             }
@@ -1321,7 +1336,35 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 }
             }
         }
+        void fx分割SRT字幕( ) {
+            if (list_切片体积降序.Count > 0 && fi_STR字幕!=null) {
 
+
+                int count = lib视频编码器.Count( );
+                float sec_Count = 0;
+                for (int i = 1; i <= count; i++) {
+                    using (Process p = new Process( )) {
+                        p.StartInfo.FileName = ffprobe;
+                        p.StartInfo.Arguments = string.Format("-show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -v error {0}\\{1}.mkv", str切片路径, i);
+                        p.StartInfo.CreateNoWindow = true;
+                        p.StartInfo.UseShellExecute = false;
+                        p.StartInfo.RedirectStandardError = true;
+                        p.StartInfo.RedirectStandardOutput = true;
+                        try { p.Start( ); } catch { return; }
+                        Task.Run(p.StandardError.ReadToEnd);
+                        string Output = p.StandardOutput.ReadToEnd( );
+
+                        if (float.TryParse(Output, out float sec)) {
+
+
+                            sec_Count += sec;
+                        }
+
+
+                    }
+                }
+            }
+        }
 
         Dictionary<string, float> dic_文件_秒长 = new Dictionary<string, float>( );
 
@@ -1361,8 +1404,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                             p.StartInfo.RedirectStandardError = true;
                             p.StartInfo.RedirectStandardOutput = true;
                             p.StartInfo.WorkingDirectory = di切片.FullName;
-                            p.StartInfo.StandardErrorEncoding = Encoding.UTF8;
-                            p.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                             try { p.Start( ); } catch { return; }
                             //string Error = p.StandardError.ReadToEnd( );
                             string Output = p.StandardOutput.ReadToEnd( );
@@ -1494,7 +1535,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                 StringBuilder sbTC = new StringBuilder("# timestamp format v2");
                 for (int i = 0; i < list_timestamp.Count; i++)
-                    sbTC.AppendLine( ).Append(list_timestamp[i]);
+                    sbTC.AppendLine( ).AppendFormat("{0:F0}", list_timestamp[i]);
 
                 string txt时间码 = sbTC.ToString( );
                 try { File.WriteAllText($"{str切片路径}\\重算时间码_{str编码摘要}.txt", txt时间码); } catch { }

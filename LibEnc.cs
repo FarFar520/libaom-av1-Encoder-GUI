@@ -19,9 +19,9 @@ namespace 破片压缩器 {
             {"faster (最快)",new 预设(value预设:"faster",crf偏移:-2) },
 
             {"slower (录屏源)",new 预设(value预设:"slower" ,crf偏移: 3)
-            { add内参= new string[]{ "ForceSCC=3", "FastSearchSCC=3", "PYUV=1", "MCTF=0" },eFPS_2K=1,eFPS_4K=0.04f,b运动补偿时域滤波=false } },
+            { add内参= new string[]{ "ForceSCC=3", "FastSearchSCC=3", "PYUV=1" },eFPS_2K=1,eFPS_4K=0.04f,b运动补偿时域滤波=false } },
             {"medium (录屏源)",new 预设(value预设:"medium" ,crf偏移: 0)
-            { add内参= new string[]{ "ForceSCC=3", "FastSearchSCC=3", "PYUV=1", "MCTF=0" },eFPS_2K=1,eFPS_4K=0.04f,b运动补偿时域滤波=false } },
+            { add内参= new string[]{ "ForceSCC=3", "FastSearchSCC=3", "PYUV=1"},eFPS_2K=1,eFPS_4K=0.04f,b运动补偿时域滤波=false } },
             //--ForceSCC [0]：强制屏幕内容编码（SCC）处理，而非自动检测（≤0：使用自动检测，1：将所有帧视为非屏幕内容编码（SCC）帧，2：将所有帧视为弱屏幕内容编码（SCC）帧，3：将所有帧视为强屏幕内容编码（SCC）帧）
             //--FastSearchSCC [2]：屏幕内容编码（SCC）的搜索模式（0：使用非屏幕内容编码（SCC）搜索模式，1：已废弃，2：屏幕内容编码菱形搜索（DiamondSCC），3：屏幕内容编码快速菱形搜索（FastDiamondSCC））
             {"slower+ (特慢+小参)",new 预设(value预设:"slower" ,crf偏移: 4)
@@ -599,8 +599,8 @@ namespace 破片压缩器 {
         }
 
         public string get参数_编码器预设画质(string key选择预设, bool b多线程, bool b微调CRF, decimal crf) {
-            if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
-                enc预设 = dic_选择_预设[_key显示预设];
+            if (!_dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
+                enc预设 = _dic_选择_预设[_key显示预设];
             }
 
             if (b微调CRF && !b多线程 && !_b多线程优先) crf++;
@@ -634,8 +634,8 @@ namespace 破片压缩器 {
         }
 
         public string get参数_编码器预设画质(string key选择预设, bool b多线程, bool b微调CRF, decimal crf, bool b内降噪, int value降噪) {
-            if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
-                enc预设 = dic_选择_预设[_key显示预设];
+            if (!_dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
+                enc预设 = _dic_选择_预设[_key显示预设];
             }
 
             if (b微调CRF && !b多线程 && !_b多线程优先) crf++;
@@ -679,7 +679,7 @@ namespace 破片压缩器 {
         }
 
         public class 命令行 {
-            float _crf,_max_CRF;
+            float _crf, _max_CRF;
 
             public string str视编参数, str最低画质编码库;
 
@@ -719,8 +719,8 @@ namespace 破片压缩器 {
         }
         public string get压视频参数(VideoInfo info, string key选择预设, bool b多线程, bool b内降噪, bool b微调CRF, float crf, ushort value降噪, out 命令行 v命令行) {
             List<string> list传递内参 = new List<string>( ), list极压内参;
-            if (!dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
-                enc预设 = dic_选择_预设[_key显示预设];
+            if (!_dic_选择_预设.TryGetValue(key选择预设, out 预设 enc预设)) {
+                enc预设 = _dic_选择_预设[_key显示预设];
             }
 
             if (b多线程) {
@@ -738,7 +738,7 @@ namespace 破片压缩器 {
                         info.IN.ffmpeg单线程解码 = EXE.ffmpeg单线程;
                 }
             } else {
-                if (b微调CRF && !_b多线程优先) crf ++;
+                if (b微调CRF && !_b多线程优先) crf++;
 
                 if (lookahead != null) {
                     if (enc预设.min_判定帧型 > 0)
@@ -765,7 +765,7 @@ namespace 破片压缩器 {
                     if (enc预设.b运动补偿时域滤波) {
                         list传递内参.Add(Noise去除参数.get参数(value降噪, out info.OUT.denoise));
                     }
-                } else Noise去除参数.set关闭(ref list传递内参);
+                } //else Noise去除参数.set关闭(ref list传递内参);//默认关闭
             }
 
             list极压内参 = new List<string>(list传递内参);
