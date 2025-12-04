@@ -101,9 +101,9 @@ namespace 破片压缩器 {
             //--preset <string>  Trade off performance for compression efficiency. Default medium,
             //ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, or placebo
             {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4){eFPS_2K=13,eFPS_4K=4.6f } },//编码器默认值    
-            {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 2,min_判定帧型:17){eFPS_2K=1,eFPS_4K=0.1f }},
-            {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 1.5f,min_判定帧型:9){eFPS_2K=2,eFPS_4K=0.2f } },
-            {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 1,min_判定帧型:5)},
+            {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 1.4f,min_判定帧型:17){eFPS_2K=1,eFPS_4K=0.1f }},
+            {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 1.2f,min_判定帧型:9){eFPS_2K=2,eFPS_4K=0.2f } },
+            {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 0.9f,min_判定帧型:5)},
             {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 0.5f,min_判定帧型:5)},
             //{"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:4)},//编码器默认值
             //{"fast (快)",new 预设(value预设:"fast",crf偏移: -0.3f,min_判定帧型:4) },

@@ -20,6 +20,7 @@ namespace 破片压缩器 {
             , str编码指令 = string.Empty, str多线程编码指令 = string.Empty, ffmpeg单线程解码 = string.Empty;
 
 
+        bool _b硬字幕 = false;
         bool b切片序号水印 = false;
         public DirectoryInfo di切片文件夹;
         DirectoryInfo di编码成功 = null, di协同编码 = null;
@@ -33,14 +34,19 @@ namespace 破片压缩器 {
 
         object obj切片队列 = new object( );
 
-        string get_加水印滤镜(string num) {
+        string get_加水印滤镜(string num, string lavfi硬字幕) {
             int star = str滤镜lavfi.IndexOf("\" -fps_mode");
-
             if (star > 0) {
                 string str水印 = $"drawtext=text='{str视频名无后缀} - {num}'{str水印字体参数}: fontsize={fontsize}: fontcolor=white@0.618: x=(w-text_w): y=0";
-                return string.Format("{0},{1}{2}", str滤镜lavfi.Substring(0, star), str水印, str滤镜lavfi.Substring(star)); ;
-            } else
-                return str滤镜lavfi;
+                if (!string.IsNullOrEmpty(lavfi硬字幕)) str水印 = lavfi硬字幕 + ',' + str水印;
+
+                return string.Format("{0},{1}{2}", str滤镜lavfi.Substring(0, star), str水印, str滤镜lavfi.Substring(star));
+            } else {
+                string str水印 = $"drawtext=text='{str视频名无后缀} - {num}'{str水印字体参数}: fontsize={fontsize}: fontcolor=white@0.618: x=(w-text_w): y=0";
+                if (!string.IsNullOrEmpty(lavfi硬字幕)) str水印 = lavfi硬字幕 + ',' + str水印;
+
+                return string.Format(" -lavfi \"{0},{1}\" {2}", str水印, lavfi硬字幕, str滤镜lavfi);
+            }
         }
 
         public Encoding_Node(FileInfo fi任务配置) {
@@ -65,6 +71,7 @@ namespace 破片压缩器 {
                         case "str多线程编码指令": str多线程编码指令 = str值.Trim( ); break;
                         case "info.IN.ffmpeg单线程解码": ffmpeg单线程解码 = str值.Trim( ); break;
                         case "b切片序号水印": b切片序号水印 = str值.ToLower( ) == "true"; break;
+                        case "_b硬字幕": _b硬字幕 = str值.ToLower( ) == "true"; break;
                         case "info.i输出宽": if (int.TryParse(str值, out int i宽)) i输出宽 = i宽; break;
                         case "info.str视频名无后缀=": str视频名无后缀 = str值.Trim( ); break;//不是必要参数，水印使用
                         case "di编码成功文件夹.Name": {
@@ -165,12 +172,20 @@ namespace 破片压缩器 {
                     }
                 }
             }
+            //启动逻辑不合理，有一个缓存在等待中，可以被其他机器抢占任务。
 
             转码队列.dic_切片路径_剩余[di协同编码.FullName] = list_切片体积降序.Count;
 
             if (fi切片 != null) {//音频和视频同时编码方案，允许删除不需要片段。 视频分片+音轨单编，就不能缺失片。
                 string name = fi切片.Name.Substring(0, fi切片.Name.Length - 4);
-                string str滤镜 = b切片序号水印 ? get_加水印滤镜(name) : str滤镜lavfi;
+
+                string lavfi硬字幕 = lavfi切片硬字幕(fi切片);
+                string str滤镜;
+
+                if (b切片序号水印 || !string.IsNullOrEmpty(lavfi硬字幕))
+                    str滤镜 = get_加水印滤镜(name, lavfi硬字幕);
+                else
+                    str滤镜 = str滤镜lavfi;
 
                 string str编码后切片 = $"{name}_{str编码摘要}丨{DateTime.Now:yyyy.MM.dd.HH.mm.ss.fff}{str输出格式}";
 
@@ -311,5 +326,27 @@ namespace 破片压缩器 {
 
             return di协同编码 != null;
         }
+
+        string lavfi切片硬字幕(FileInfo file分段) {
+            if (_b硬字幕) {
+                FileInfo fi_分段字幕 = new FileInfo(string.Format("{0}\\{1}.ass", di切片文件夹.FullName, file分段.Name.Substring(0, file分段.Name.Length - 4)));
+                if (fi_分段字幕.Exists) {
+                    return $"subtitles='..\\\\{fi_分段字幕.Name}'";
+                }
+
+                fi_分段字幕 = new FileInfo(string.Format("{0}\\{1}.ssa", di切片文件夹.FullName, file分段.Name.Substring(0, file分段.Name.Length - 4)));
+                if (fi_分段字幕.Exists) {
+                    return $"subtitles='..\\\\{fi_分段字幕.Name}'";
+                }
+
+                fi_分段字幕 = new FileInfo(string.Format("{0}\\{1}.srt", di切片文件夹.FullName, file分段.Name.Substring(0, file分段.Name.Length - 4)));
+                if (fi_分段字幕.Exists) {
+                    return $"subtitles='..\\\\{fi_分段字幕.Name}{Settings.str文本硬字幕样式}'";
+                }
+
+            }
+            return string.Empty;
+        }
+
     }
 }

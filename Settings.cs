@@ -1,5 +1,8 @@
 ﻿namespace 破片压缩器 {
     public static class Settings {
+
+        public static string str文本硬字幕样式 = ":force_style=FontName=阿里巴巴普惠体 3 75 SemiBold,FontSize=22.5,Outline=0.2,Shadow=0.25,Spacing=0.5,MarginV=12";
+
         public static bool b编码后删除切片 = false;
         public static bool b转码成功后删除源视频 = false;
 

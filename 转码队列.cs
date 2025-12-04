@@ -52,6 +52,28 @@ namespace 破片压缩器 {
             }
         }
 
+        public static bool ffmpeg直接入队(External_Process p) {
+            if (p.async_FFmpeg编码( )) {
+                lock (obj增删排锁) {
+                    list.Add(p);
+                    list = list.OrderBy(ep => ep.pid).ToList( );
+                    padLen = 0;
+                    for (int i = 0, a = 0; i < list.Count; i++) {
+                        if (padLen < list[i].fi编码.Name.Length)
+                            padLen = list[i].fi编码.Name.Length;
+
+                        if (arr_核心号调度排序 != null && list[i].b单线程 && list.Count >= i多进程数量) {//达到指定任务数量开始分配内核
+                            list[i].fx绑定编码进程到CPU单核心(arr_核心号调度排序[a]);//每增加一个，重排核心调度。
+                            if (++a >= arr_核心号调度排序.Length) a = 0;
+                        }
+                    }
+                }
+                if (b队列满) Form破片压缩.autoReset刷新输出.Set( );
+                return true;
+            }
+            return false;
+        }
+
         public static bool ffmpeg等待入队(External_Process p) {
             if (p.async_FFmpeg编码( )) {
                 lock (obj增删排锁) {
@@ -170,9 +192,9 @@ namespace 破片压缩器 {
             if (encFps > 0) {
                 if (encFps > 1) {
                     sb.Append($"∑fps={encFps:F3}");
-                } else if (encFps > 1.0f / 60) {
+                } else if (encFps > 0.016667) {
                     sb.Append($"∑fpm={encFps * 60:F3}");
-                } else if (encFps > 1.0f / 3600) {
+                } else if (encFps > 0.000278) {
                     sb.Append($"∑fpH={encFps * 3600:F3}");
                 } else {
                     sb.Append($"∑fpDay={encFps * 86400:F3}");

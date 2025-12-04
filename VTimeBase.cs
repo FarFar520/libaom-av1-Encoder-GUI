@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 
 namespace 破片压缩器 {
+
     internal class VTimeBase {
         public static Regex regex秒长 = new Regex(@"\[FORMAT\]\s+duration=(\d+\.\d+)\s+\[/FORMAT\]", RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
@@ -165,38 +166,12 @@ namespace 破片压缩器 {
             }
         }
 
-        Encoding getEncoding(FileInfo fi) {
-            byte[] fileBytes = new byte[3]; // 创建一个缓冲区
-            try {
-                using (FileStream fileStream = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read)) {
-                    //读取文件的一部分数据
-                    fileStream.Read(fileBytes, 0, fileBytes.Length);
-                }
-            } catch { }
-            Encoding encoding = Encoding.Default;
-            //UTF - 8
-            if (fileBytes.Length == 3) {
-                if ((fileBytes[0] == 34 && fileBytes[1] == 232 && fileBytes[2] == 167) ||
-                    (fileBytes[0] == 239 && fileBytes[1] == 187 && fileBytes[2] == 191) ||
-                    (fileBytes[0] == 229 && fileBytes[1] == 186 && fileBytes[2] == 143)
-                    ) {
-                    encoding = Encoding.UTF8;
-                } else if (fileBytes[0] == 34 && fileBytes[1] == 202 && fileBytes[2] == 211) {
-                    encoding = Encoding.GetEncoding("GB2312");
-                } else if ((fileBytes[0] == 255 && fileBytes[1] == 254 && fileBytes[2] == 34) ||
-                        (fileBytes[0] == 254 && fileBytes[1] == 255 && fileBytes[2] == 0)) {
-                    encoding = Encoding.UTF32;
-                }
-            }
-            return encoding;
-        }
-
         public bool b读取无缓转码csv(DirectoryInfo di编码成功, TimeSpan ts视频时长) {
             double sec = ts视频时长.TotalSeconds - 0.5;
             FileInfo fiCSV = new FileInfo(di输出目录.FullName + "\\无缓转码.csv");
             if (fiCSV.Exists) {
                 string[] arr;
-                Encoding encoding = getEncoding(fiCSV);
+                Encoding encoding = Subtitle.getEncoding(fiCSV);
                 try { arr = File.ReadAllLines(fiCSV.FullName, encoding); } catch { return false; }
                 if ((arr.Length > 3 && arr.Last( ).Trim( ).StartsWith("完成")) || (arr.Length > 4 && arr[arr.Length - 2].Trim( ).StartsWith("完成"))) {
                     for (int i = 1; i < arr.Length - 1; i++) {
@@ -385,7 +360,6 @@ namespace 破片压缩器 {
             } catch { }
             return false;
         }
-
 
         readonly object obj读取文件号 = new object( );
         public bool hasNext_序列Span偏移(DirectoryInfo di编码成功, out Span偏移 span偏移, out int i剩余, out bool b全黑场) {
@@ -717,7 +691,7 @@ namespace 破片压缩器 {
                 string path视频同目录时间戳 = fi输入文件.FullName + "_转场帧时间戳.info";
                 if (!process.HasExited) {
                     str扫转场 = DateTime.Now + "……";
-                    process.PriorityClass = ProcessPriorityClass.Idle;
+                    process.PriorityClass = ProcessPriorityClass.BelowNormal;
 
                     Dictionary<string, int> dic错误计数 = new Dictionary<string, int>( ) { };
                     StringBuilder @string = new StringBuilder( );
