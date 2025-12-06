@@ -6,6 +6,35 @@ using System.Text.RegularExpressions;
 
 namespace 破片压缩器 {
     public class VideoInfo {
+        internal class 音轨信息 {
+            public int Kbps = 0;
+            public float Ac = 1.0f;
+            public string map, 轨道码, 语言, 编码, 采样率, 声道, 位深, 码率Kbps;
+
+            public 音轨信息(Match match) {
+                map = match.Groups["map"].Value;
+                轨道码 = match.Groups["轨道码"].Value;
+                语言 = match.Groups["语言"].Value;
+                编码 = match.Groups["编码"].Value;
+                采样率 = match.Groups["采样率"].Value;
+                声道 = match.Groups["声道"].Value;
+                位深 = match.Groups["位深"].Value;
+                码率Kbps = match.Groups["码率Kbps"].Value;
+
+                if (!float.TryParse(声道, out Ac)) {
+                    if (声道 == "stereo") Ac = 2.0f;
+                    else if (声道 == "2 channels") Ac = 2.0f;
+                    else if (声道 == "5.1(side)") Ac = 5.1f;
+                    else if (声道 == "6 channels") Ac = 6.0f;
+                    else if (声道 == "mono") Ac = 1.0f;
+                    else Ac = 2.0f;
+                }
+
+                if (!int.TryParse(码率Kbps, out Kbps)) {
+                    Kbps = 1;
+                }
+            }
+        }
 
         public int i显示宽比 = 1, i显示高比 = 1;
 
@@ -45,6 +74,9 @@ namespace 破片压缩器 {
         public static Regex regexTBR = new Regex(@"(?<tbr>\d+(\.\d+)?) tbr", RegexOptions.IgnoreCase | RegexOptions.Compiled);//基准帧率
         public static Regex regexDAR = new Regex(@"DAR\s*(?<darW>\d+):(?<darH>\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//备用
         public static Regex regexAudio = new Regex(@"Audio: (?<code>\w+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        public static Regex regex音频信息 = new Regex(@"Stream #(?<map>\d+:\d+)(?<轨道码>\[0x[^]]+\])?(?:\((?<语言>\w+)\))?: Audio: (?<编码>[^,]+), (?<采样率>\d+ Hz), (?<声道>[^,]+)(?:, (?<位深>[^,]+))?(?:, (?<码率Kbps>\d+) kb/s[^,]*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         public static Regex regex隔行扫描 = new Regex(@"(top|bottom)\s+first", RegexOptions.IgnoreCase | RegexOptions.Compiled);//交错视频
         public static Regex regex时长 = new Regex(@"Duration:\s*(?:(?:(?:(?:(?<D>\d+)\s*[\.:]\s*)?(?<H>\d+)\s*:\s*)?(?<M>\d+)\s*:\s*)?(?<S>\d+))?(?:\s*\.\s*(?<MS>\d+))?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -172,11 +204,13 @@ namespace 破片压缩器 {
         }
 
         public class 输出 {
+            public string ar = string.Empty;
             public bool b抽重复帧 = false;
             public float adjust_crf = 0;
             public string enc = string.Empty, str量化名 = "crf", preset = string.Empty, str视流格式 = string.Empty, denoise = string.Empty;
         }
         public class 输入 {
+            public float f最大声道 = 2;
             public float f单核解码能力 = float.MaxValue;//优先使用单线程解码，减少线程间通讯损耗。
             public string ffmpeg单线程解码 = EXE.ffmpeg单线程;
         }
@@ -214,6 +248,12 @@ namespace 破片压缩器 {
                         v匹配视频信息(line, i轨道号);
                     } else if (line.IndexOf("Audio:", 11) > 11) {
                         list音频轨.Add(i轨道号);
+                        Match match = regex音频信息.Match(line);
+                        if (match.Success) {
+                            音轨信息 aInfo =new 音轨信息(match);
+                            if (aInfo.采样率 != "48000 Hz") OUT.ar = " -ar 48000";
+                            if (aInfo.Ac > IN.f最大声道) IN.f最大声道 = aInfo.Ac;
+                        }
                     } else if (line.IndexOf("Subtitle:", 11) > 11) {
                         list字幕轨.Add(i轨道号);
                     } else {

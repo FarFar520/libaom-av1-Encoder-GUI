@@ -187,7 +187,7 @@ namespace 破片压缩器 {
             Dictionary<float, List<Line>> _dic_sec时间戳_内容 = new Dictionary<float, List<Line>>( );
 
             float[] sec排序时间戳;
-            string Extension;
+            public string Extension;
             public ASS(FileInfo file) {
                 if (file.Length < 104857600) {
                     Extension = file.Extension;

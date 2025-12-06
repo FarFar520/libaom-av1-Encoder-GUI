@@ -241,6 +241,7 @@
             this.checkBox_硬字幕.TabIndex = 22;
             this.checkBox_硬字幕.Text = "视频目录查找同名SRT/ASS，切片渲染为硬字幕";
             this.checkBox_硬字幕.UseVisualStyleBackColor = true;
+            this.checkBox_硬字幕.CheckedChanged += new System.EventHandler(this.checkBox_硬字幕_CheckedChanged);
             // 
             // panel_Scale
             // 

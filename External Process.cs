@@ -536,6 +536,7 @@ namespace 破片压缩器 {
             List<string> listWarning = new List<string>( ), listMergeErr = new List<string>( );
             while (!process.StandardOutput.EndOfStream) {
                 string line = process.StandardOutput.ReadLine( ).TrimStart( );
+                builder.AppendLine(line);
                 if (!string.IsNullOrEmpty(line) && !line.StartsWith("Progress")) {
                     if (line.StartsWith("Warning")) {
                         listWarning.Add(line);

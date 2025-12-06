@@ -86,16 +86,16 @@ namespace 破片压缩器 {
         public static readonly Dictionary<string, 预设> dic显示_x265预设 = new Dictionary<string, 预设>( ) {
             //--preset <string>  Trade off performance for compression efficiency. Default medium,
             //ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, or placebo
-            {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 2.2f,min_判定帧型:9){eFPS_2K=0.05f,eFPS_4K=0.003f }},
-            {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 2f,min_判定帧型:9){eFPS_2K=0.3f,eFPS_4K=0.05f }},
-            {"slower (慢+)",new 预设(value预设:"slower",crf偏移: 1.5f,min_判定帧型:5){eFPS_2K=0.7f,eFPS_4K=0.07f }},
-            {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: 1f,min_判定帧型:5){eFPS_2K=1.5f,eFPS_4K=0.15f }},
-            {"medium (中速)",new 预设(value预设:"medium",crf偏移: 0,min_判定帧型:5){eFPS_2K=3,eFPS_4K=0.9f }},//编码器默认值
-            {"fast (快)",new 预设(value预设:"fast",crf偏移: -0.5f,min_判定帧型:5) {eFPS_2K=3.5f,eFPS_4K=1 }},
-            {"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -1,min_判定帧型:5){eFPS_2K=3.5f,eFPS_4K=1 }},
-            {"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -1.5f, min_判定帧型 : 5){eFPS_2K=4,eFPS_4K=1 }},
-            {"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: -2,min_判定帧型:4){eFPS_2K=4.5f,eFPS_4K=1.5f }},
-            {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -2.5f,min_判定帧型:4){eFPS_2K=5,eFPS_4K=2 }}
+            {"placebo (最慢,安慰剂)",new 预设(value预设:"placebo" ,crf偏移: 0.2f,min_判定帧型:9){eFPS_2K=0.05f,eFPS_4K=0.003f }},
+            {"VerySlow (特慢)",new 预设(value预设:"veryslow" ,crf偏移: 0,min_判定帧型:9){eFPS_2K=0.3f,eFPS_4K=0.05f }},
+            {"slower (慢+)",new 预设(value预设:"slower",crf偏移: -0.5f,min_判定帧型:5){eFPS_2K=0.7f,eFPS_4K=0.07f }},
+            {"slow (慢)",new 预设(value预设:"slow" ,crf偏移: -1,min_判定帧型:5){eFPS_2K=1.5f,eFPS_4K=0.15f }},
+            {"medium (中速)",new 预设(value预设:"medium",crf偏移: -1.5f,min_判定帧型:5){eFPS_2K=3,eFPS_4K=0.9f }},//编码器默认值
+            {"fast (快)",new 预设(value预设:"fast",crf偏移: -2f,min_判定帧型:5) {eFPS_2K=3.5f,eFPS_4K=1 }},
+            {"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -2.5f,min_判定帧型:5){eFPS_2K=3.5f,eFPS_4K=1 }},
+            {"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -3, min_判定帧型 : 5){eFPS_2K=4,eFPS_4K=1 }},
+            {"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: -3.5f,min_判定帧型:4){eFPS_2K=4.5f,eFPS_4K=1.5f }},
+            {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -4f,min_判定帧型:4){eFPS_2K=5,eFPS_4K=2 }}
         };
         public static readonly Dictionary<string, 预设> dic显示_x264预设 = new Dictionary<string, 预设>( ) {
             //--preset <string>  Trade off performance for compression efficiency. Default medium,
@@ -125,6 +125,7 @@ namespace 破片压缩器 {
             add_libx265( );
             add_libx264( );
             add_libx264_10bit( );
+            add_libaom_av1_12bit( );
         }
         static void add_libvvenc_qpa( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
@@ -213,14 +214,14 @@ namespace 破片压缩器 {
                 , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 8, my_max: 40, my_value: 28)
                 , b多线程优先: false, value内参单线程: "row-mt=0:fp-mt=0", value外参单线程: "-threads 1", i默认线程数: 3);
 
-            //libEnc.Add所有预设("2 (慢速↓2)", dic显示_aomenc预设);
+            //libEnc.Add所有预设("2 (慢速二挡↓)", dic显示_aomenc预设);
             libEnc.Add所有预设(dic显示_aomenc预设);
             libEnc.Noise去除参数 = new USHORT内参带显示(key: "denoise-noise-level={0}:enable-dnl-denoising=1", str最小提示: "微微一降", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 1, max: 50, use: 4);
 
             libEnc._arr帧率CRF偏移 = new short[,] { { 210, 9 }, { 170, 8 }, { 115, 7 }, { 57, 5 }, { 40, 3 }, { 28, 1 } };
 
             //int i视觉无损 = 23, i轻损 = 28, i忍损 = 35;//aomenc,crf固定，cpu-used不同，质量区别无法肉眼察觉，速度、体积可观测。
-            libEnc.str画质参考 = "aomenc画质范围参考↓\r\n蓝光原盘：CRF=8\r\n视觉无损：CRF=16\r\n超清：\tCRF=23\r\n高清：\tCRF=28（推荐）\r\n标清：\tCRF=32（默认）";
+            libEnc.str画质参考 = "aomenc.u5画质范围参考↓\r\n蓝光原盘：CRF=8\r\n视觉无损：CRF=16\r\n超清：\tCRF=23\r\n高清：\tCRF=28（推荐）\r\n标清：\tCRF=32（默认）";
 
             dic_编码库_初始设置.Add("中压缩 av1 @aomenc", libEnc);
         }
@@ -283,11 +284,11 @@ namespace 破片压缩器 {
 
             //libEnc.lookahead = new BYTE内参("rc-lookahead={0}", 3, 250, 20);//缩小rc-lookahead会降低质量
 
-            libEnc.Noise去除参数 = new USHORT内参带显示(key: "nr-intra={0}:nr-inter={0}:mcstf=1", str最小提示: "微微一降", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 1, max: 2000, use: 64);
+            libEnc.Noise去除参数 = new USHORT内参带显示(key: "nr-intra={0}:nr-inter={0}:mcstf=1", str最小提示: "仅时空降噪", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 0, max: 2000, use: 64);
 
             libEnc._arr帧率CRF偏移 = new short[,] { { 210, 5 }, { 170, 4 }, { 115, 3 }, { 57, 2 }, { 40, 1 } };
 
-            libEnc.str画质参考 = "x265画质范围参考↓\r\n超清：CRF=16\r\n高清：CRF=21（推荐）\r\n标清：CRF=28（默认）";
+            libEnc.str画质参考 = "x265画质范围参考↓\r\n超清：CRF=14\r\n高清：CRF=18.5（推荐）\r\n标清：CRF=23.5\r\n低清：CRF=28（默认）";
             dic_编码库_初始设置.Add("高画质 hevc @x265", libEnc);
         }
         static void add_libx264( ) {
@@ -312,9 +313,8 @@ namespace 破片压缩器 {
         }
         static void add_libx264_10bit( ) {
             LibEnc libEnc = new LibEnc(code: "avc", value编码库: "libx264", key预设: "-preset", key编码器传参: "-x264-params"
-                , CRF参数: new Num参数(key: "-crf", "10bit.crf", range_min: 0, range_max: 51, def: 23, i小数位: 1, my_min: 0, my_max: 30, my_value: 20.5f)
+                , CRF参数: new Num参数(key: "-crf", "10bit.crf", range_min: 0, range_max: 51, def: 23, i小数位: 1, my_min: 0, my_max: 30, my_value: 23f)
                 , b多线程优先: false, value内参单线程: "lookahead-threads=1:sliced-threads=1", value外参单线程: "-threads 1", i默认线程数: 16);
-
 
             libEnc.Add所有预设("placebo", dic显示_x264预设);
 
@@ -328,9 +328,28 @@ namespace 破片压缩器 {
             libEnc._arr帧率CRF偏移 = new short[,] { { 210, 3 }, { 115, 2 }, { 57, 1 } };
 
             libEnc.str画质参考 = "x264画质范围参考↓\r\n蓝光原盘：CRF=10\r\n视觉无损：CRF=18\r\n超清：CRF=21\r\n高清：CRF=23（推荐）\r\n标清：CRF=23（默认）";
-            dic_编码库_初始设置.Add("低兼容 avc10bit @x264", libEnc);
+            dic_编码库_初始设置.Add("低兼容 avc.10bit @x264", libEnc);
         }
 
+        static void add_libaom_av1_12bit( ) {
+            LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libaom-av1", key预设: "-cpu-used", key编码器传参: "-aom-params"
+                , CRF参数: new Num参数(key: "-crf", "12bit.crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 8, my_max: 40, my_value: 26)
+                , b多线程优先: false, value内参单线程: "row-mt=0:fp-mt=0", value外参单线程: "-threads 1", i默认线程数: 3);
+
+            //libEnc.Add所有预设(dic显示_aomenc预设);
+            libEnc.Add所有预设("2 (慢速二挡↓)", dic显示_aomenc预设);
+
+            libEnc.Set使用位深(12);
+
+            libEnc.Noise去除参数 = new USHORT内参带显示(key: "denoise-noise-level={0}:enable-dnl-denoising=1", str最小提示: "微微一降", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 1, max: 50, use: 4);
+
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 9 }, { 170, 8 }, { 115, 7 }, { 57, 5 }, { 40, 3 }, { 28, 1 } };
+
+            //int i视觉无损 = 23, i轻损 = 28, i忍损 = 35;//aomenc,crf固定，cpu-used不同，质量区别无法肉眼察觉，速度、体积可观测。
+            libEnc.str画质参考 = "aomenc.u2画质范围参考↓\r\n蓝光原盘：CRF=10\r\n视觉无损：CRF=18\r\n超清：\tCRF=25\r\n高清：\tCRF=30（推荐）\r\n标清：\tCRF=32（默认）";
+
+            dic_编码库_初始设置.Add("低兼容 av1.12bit @aomenc", libEnc);
+        }
         public class 预设 {
             float _crf偏移;
             string _value;
