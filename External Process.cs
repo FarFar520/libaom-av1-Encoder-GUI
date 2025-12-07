@@ -40,12 +40,9 @@ namespace 破片压缩器 {
 
         public static Regex regexFrame = new Regex(@"frame=\s*(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        public static Regex regex时长 = new Regex(@"Duration:\s*((?:\d{2}:){2,}\d{2}(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//视频时长
-
-        //Regex regex帧时长 = new Regex(@"time=\s*((?:\d{2}:){2,}\d{2}(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         Regex regexSize = new Regex(@"size=\s*(\d+(?:\.\d+)?)KiB", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         Regex regexBitrate = new Regex(@"bitrate=\s*(\d+(?:\.\d+)?)kbits/s", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        Regex regexTime = new Regex(@"time=\s*(\d{2}:\d{2}:\d{2}(?:\.\d{2})?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        Regex regexTime = new Regex(@"time=\s*(\d+[\d:\.]+\d+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public VTimeBase.Span偏移 span偏移;
 
@@ -192,6 +189,16 @@ namespace 破片压缩器 {
                     }
                 } else if (double.TryParse(regexSize.Match(ffmpeg_Pace).Groups[1].Value, out double KiB)) {
                     sum_Span += span;
+                    sum_KBit += KiB * 8;
+                }
+            } else {
+                double sec = Subtitle.match日时分秒_to_秒(time);
+                sum_Span += TimeSpan.FromSeconds(sec);
+                if (double.TryParse(regexBitrate.Match(ffmpeg_Pace).Groups[1].Value, out double kbits_sec)) {
+                    if (kbits_sec > 9) {
+                        sum_KBit += kbits_sec * span.TotalSeconds;
+                    }
+                } else if (double.TryParse(regexSize.Match(ffmpeg_Pace).Groups[1].Value, out double KiB)) {
                     sum_KBit += KiB * 8;
                 }
             }
@@ -626,16 +633,9 @@ namespace 破片压缩器 {
                             span输入时长 = TimeSpan.FromSeconds(span偏移.f持续秒);
                             break;
                         }
-                        if (subProcess(EXE.ffprobe, "-v error -show_entries format=duration " + fi源.Name, fi源.Directory.FullName, out string Output, out string Error)) {
-                            builder日志.AppendLine(Output);
-
-                            Match matchSec = Video_Roadmap.regex秒长.Match(Output);
-                            if (matchSec.Success) {
-                                span输入时长 = TimeSpan.FromSeconds(double.Parse(matchSec.Groups[1].Value));
-                            } else
-                                builder日志.AppendLine(Error);
-
-                            builder日志.AppendLine("------------------------------------------");
+                        if (get_ffprobe读取视频时长(fi源.FullName, out double sec)) {
+                            span输入时长 = TimeSpan.FromSeconds(sec);
+                            builder日志.Append("[FORMAT]\r\nduration=").Append(sec).Append("\r\n[/FORMAT]\r\n------------------------------------------");
                         }
                         break;
                     } else {
@@ -722,6 +722,22 @@ namespace 破片压缩器 {
             process.Dispose( );
         }
 
+        public static bool get_ffprobe读取视频时长(string filePath, out double sec) {
+            sec = 0;
+            using (Process p = new Process( )) {
+                p.StartInfo.FileName = EXE.ffprobe;
+                p.StartInfo.Arguments = "-show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -v error " + filePath;
+                p.StartInfo.CreateNoWindow = true;
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.RedirectStandardError = false;
+                p.StartInfo.RedirectStandardOutput = true;
+                try { p.Start( ); } catch { return false; }
+                if (double.TryParse(p.StandardOutput.ReadToEnd( ), out sec)) {
+                    return true;
+                }
+                return false;
+            }
+        }
         public static bool subProcess(string FileName, string Arguments, string WorkingDirectory, out string Output, out string Error) {
             bool Success = false;
             using (Process p = new Process( )) {

@@ -78,7 +78,7 @@ namespace 破片压缩器 {
         public static Regex regex音频信息 = new Regex(@"Stream #(?<map>\d+:\d+)(?<轨道码>\[0x[^]]+\])?(?:\((?<语言>\w+)\))?: Audio: (?<编码>[^,]+), (?<采样率>\d+ Hz), (?<声道>[^,]+)(?:, (?<位深>[^,]+))?(?:, (?<码率Kbps>\d+) kb/s[^,]*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public static Regex regex隔行扫描 = new Regex(@"(top|bottom)\s+first", RegexOptions.IgnoreCase | RegexOptions.Compiled);//交错视频
-        public static Regex regex时长 = new Regex(@"Duration:\s*(?:(?:(?:(?:(?<D>\d+)\s*[\.:]\s*)?(?<H>\d+)\s*:\s*)?(?<M>\d+)\s*:\s*)?(?<S>\d+))?(?:\s*\.\s*(?<MS>\d+))?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public static Regex regexDuration = new Regex(@"Duration:\s*(?:(?:(?:(?:(?<D>\d+)\s*[\.:]\s*)?(?<H>\d+)\s*:\s*)?(?<M>\d+)\s*:\s*)?(?<S>\d+))?(?:\s*\.\s*(?<MS>\d+))?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public 输出 OUT = new 输出( );
         public 输入 IN = new 输入( );
@@ -215,7 +215,8 @@ namespace 破片压缩器 {
             public string ffmpeg单线程解码 = EXE.ffmpeg单线程;
         }
 
-        public VideoInfo(FileInfo fileInfo) {
+        public VideoInfo(FileInfo fileInfo, double sec视频时长) {
+            time视频时长 = TimeSpan.FromSeconds(sec视频时长);
             this.fileInfo = fileInfo;
             str视频名无后缀 = fileInfo.Name.Substring(0, fileInfo.Name.LastIndexOf("."));
         }
@@ -258,26 +259,6 @@ namespace 破片压缩器 {
                         list字幕轨.Add(i轨道号);
                     } else {
                         list其它轨.Add(i轨道号);
-                    }
-                } else if (line.StartsWith("Duration: ", StringComparison.OrdinalIgnoreCase)) {
-                    Match match = regex时长.Match(line);
-                    double Sec = 0;
-                    if (int.TryParse(match.Groups["D"].Value, out int day)) Sec += day * 86400;
-                    if (int.TryParse(match.Groups["H"].Value, out int Hour)) Sec += Hour * 3600;
-                    if (int.TryParse(match.Groups["M"].Value, out int Minute)) Sec += Minute * 60;
-                    if (int.TryParse(match.Groups["S"].Value, out int Second)) Sec += Second;
-                    if (int.TryParse(match.Groups["MS"].Value, out int MS)) Sec += 0.001 * MS;
-                    if (Sec > 0) {
-                        time视频时长 = TimeSpan.FromSeconds(Sec);
-                    } else {
-                        int len = line.IndexOf(',', 11) - 11;
-                        if (len > 0) {
-                            if (TimeSpan.TryParse(line.Substring(11, len), out TimeSpan timeSpan)) {
-                                if (timeSpan > TimeSpan.Zero) {
-                                    time视频时长 = timeSpan;
-                                }
-                            }
-                        }
                     }
                 }
             }

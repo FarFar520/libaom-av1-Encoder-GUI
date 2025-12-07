@@ -272,7 +272,7 @@ namespace 破片压缩器 {
                 return true;
             }
             if (process切片 != null) {
-                info = process切片.sb输出数据流.ToString( );
+                try { info = process切片.sb输出数据流.ToString( ); } catch { }
                 return true;
             }
             return false;

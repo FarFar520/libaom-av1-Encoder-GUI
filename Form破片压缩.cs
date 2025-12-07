@@ -1235,6 +1235,7 @@ namespace 破片压缩器 {
                 add日志("刷新输出信息间隔调整为一分钟");
         }
         private void Form破片压缩_Load(object sender, EventArgs e) {
+
             CPUNum( );
             //Extract_EXE.resources_to_exe( );
             comboBox_lib.SelectedIndex = 0;

@@ -32,36 +32,50 @@ namespace 破片压缩器 {
             return encoding;
         }
 
-        public static Regex regex时间戳 = new Regex(@"(?<Day>\d+[\.:])?(?<Hour>\d{1,2})[:：](?<Min>\d{1,2})[:：](?<Sec>\d{1,2})(?:[\., ](?<MS>\d{1,3}))?", RegexOptions.Compiled);
+        public static Regex regex日时分秒 = new Regex(@"(?<Day>\d+[\.:])?(?<Hour>\d{1,2})[:：](?<Min>\d{1,2})[:：](?<Sec>\d{1,2})(?:[\., ](?<MS>\d+))?", RegexOptions.Compiled);
+
+        public static double match日时分秒_to_秒(string text) {
+            Match matchStart = regex日时分秒.Match(text);
+            if (matchStart.Success) {
+                double.TryParse(matchStart.Groups["Sec"].Value, out double Sec);
+                if (int.TryParse(matchStart.Groups["Day"].Value, out int day)) Sec += day + 86400;
+                if (int.TryParse(matchStart.Groups["Hour"].Value, out int hour)) Sec += hour * 3600;
+                if (int.TryParse(matchStart.Groups["Min"].Value, out int min)) Sec += min * 60;
+                if (float.TryParse("0." + matchStart.Groups["MS"].Value, out float ms)) Sec += ms;//ASS毫秒单位保留两位数字，整除100
+
+                return Sec;
+            }
+            return 0;
+        }
 
         public class SRT {
 
             static Regex regexLines = new Regex(@"\d+\s+(?<Hour1>\d{2,})[:：](?<Min1>\d{2})[:：](?<Sec1>\d{2})(?:[\.,](?<MS1>\d{1,3}))\s*-->\s*(?<Hour2>\d{2,})[:：](?<Min2>\d{2})[:：](?<Sec2>\d{2})(?:[\.,](?<MS2>\d{1,3}))\s+(?<txt>.+?)", RegexOptions.RightToLeft | RegexOptions.Compiled);
 
-            Dictionary<float, List<Line>> _dic_sec时间戳_内容 = new Dictionary<float, List<Line>>( );
+            Dictionary<double, List<Line>> _dic_sec时间戳_内容 = new Dictionary<double, List<Line>>( );
 
-            float[] sec排序时间戳;
+            double[] sec排序时间戳;
 
             public class Line {
-                public float sec开始显示 = 0, sec结束显示 = 0;
+                public double sec开始显示, sec结束显示;
                 public string txt;
                 public Line(Match match, string txt) {
                     this.txt = txt.Trim( );
                     if (!string.IsNullOrEmpty(this.txt)) {
+                        double.TryParse(match.Groups["Sec1"].Value, out sec开始显示);
                         if (int.TryParse(match.Groups["Hour1"].Value, out int hour1)) sec开始显示 += hour1 * 3600;
                         if (int.TryParse(match.Groups["Min1"].Value, out int Min1)) sec开始显示 += Min1 * 60;
-                        if (int.TryParse(match.Groups["Sec1"].Value, out int Sec1)) sec开始显示 += Sec1;
                         if (float.TryParse("0." + match.Groups["MS1"].Value, out float sec_ms1)) sec开始显示 += sec_ms1;
 
+                        double.TryParse(match.Groups["Sec2"].Value, out sec结束显示);
                         if (int.TryParse(match.Groups["Hour2"].Value, out int hour2)) sec结束显示 += hour2 * 3600;
                         if (int.TryParse(match.Groups["Min2"].Value, out int Min2)) sec结束显示 += Min2 * 60;
-                        if (int.TryParse(match.Groups["Sec2"].Value, out int Sec2)) sec结束显示 += Sec2;
                         if (float.TryParse("0." + match.Groups["MS2"].Value, out float sec_ms2)) sec结束显示 += sec_ms2;
                     }
                 }
-                public void append切片秒时间戳(ref StringBuilder sb, int index, float sec切片开始, float sec切片结束) {
-                    float sec切片开始显示 = sec开始显示 - sec切片开始;
-                    float sec切片结束显示 = sec结束显示 - sec切片开始;
+                public void append切片秒时间戳(ref StringBuilder sb, int index, double sec切片开始, double sec切片结束) {
+                    double sec切片开始显示 = sec开始显示 - sec切片开始;
+                    double sec切片结束显示 = sec结束显示 - sec切片开始;
 
                     if (sec切片开始显示 < 0) sec切片开始显示 = 0;
                     if (sec切片结束显示 > sec切片结束) sec切片结束显示 = sec切片结束;
@@ -93,7 +107,7 @@ namespace 破片压缩器 {
                 if (_dic_sec时间戳_内容.Count > 0) {
                     sec排序时间戳 = _dic_sec时间戳_内容.Keys.OrderBy(k => k).ToArray( );
                 } else {
-                    sec排序时间戳 = new float[0];
+                    sec排序时间戳 = new double[0];
                 }
             }
             void Add(Line line) {
@@ -136,7 +150,7 @@ namespace 破片压缩器 {
             }
 
             int index = 0;
-            public void fx顺序分割并保存(DirectoryInfo di, float sec开始时间戳, float sec结束时间戳, string name) {
+            public void fx顺序分割并保存(DirectoryInfo di, double sec开始时间戳, double sec结束时间戳, string name) {
                 int i开始 = -1, i结束 = -1;
                 if (sec排序时间戳.Length > 0) {
                     if (index >= sec排序时间戳.Length) index = sec排序时间戳.Length - 1;
@@ -185,9 +199,9 @@ namespace 破片压缩器 {
 
             int iStart = 0, iEnd = 0;
 
-            Dictionary<float, List<Line>> _dic_sec时间戳_内容 = new Dictionary<float, List<Line>>( );
+            Dictionary<double, List<Line>> _dic_sec时间戳_内容 = new Dictionary<double, List<Line>>( );
 
-            float[] sec排序时间戳;
+            double[] sec排序时间戳;
             public string Extension;
             public ASS(FileInfo file) {
                 if (file.Length < 104857600) {
@@ -233,7 +247,7 @@ namespace 破片压缩器 {
                         if (_dic_sec时间戳_内容.Count > 0)
                             sec排序时间戳 = _dic_sec时间戳_内容.Keys.OrderBy(k => k).ToArray( );
                         else
-                            sec排序时间戳 = new float[0];
+                            sec排序时间戳 = new double[0];
                     }
                 }
 
@@ -241,35 +255,20 @@ namespace 破片压缩器 {
 
             public class Line {
                 List<string> list = new List<string>( );
-                public float sec开始显示 = 0, sec结束显示 = 0;
+                public double sec开始显示, sec结束显示;
                 public Line(string str, int iStart, int iEnd) {
                     string[] arr = str.Substring(9).Split(',');
                     for (int i = 0; i < arr.Length; i++) {
                         list.Add(arr[i].Trim( ));
                     }
                     if (iStart < list.Count && iEnd < list.Count) {
-                        Match matchStart = regex时间戳.Match(arr[iStart]);
-                        if (matchStart.Success) {
-                            if (int.TryParse(matchStart.Groups["Day"].Value, out int day)) sec开始显示 += day + 86400;
-                            if (int.TryParse(matchStart.Groups["Hour"].Value, out int hour)) sec开始显示 += hour * 3600;
-                            if (int.TryParse(matchStart.Groups["Min"].Value, out int min)) sec开始显示 += min * 60;
-                            if (int.TryParse(matchStart.Groups["Sec"].Value, out int Sec)) sec开始显示 += Sec;
-                            if (float.TryParse("0." + matchStart.Groups["MS"].Value, out float sec_ms)) sec开始显示 += sec_ms;//ASS毫秒单位保留两位数字，整除100
-                        }
-
-                        Match matchEnd = regex时间戳.Match(arr[iEnd]);
-                        if (matchEnd.Success) {
-                            if (int.TryParse(matchEnd.Groups["Day"].Value, out int day)) sec结束显示 += day + 86400;
-                            if (int.TryParse(matchEnd.Groups["Hour"].Value, out int hour)) sec结束显示 += hour * 3600;
-                            if (int.TryParse(matchEnd.Groups["Min"].Value, out int min)) sec结束显示 += min * 60;
-                            if (int.TryParse(matchEnd.Groups["Sec"].Value, out int Sec)) sec结束显示 += Sec;
-                            if (float.TryParse("0." + matchEnd.Groups["MS"].Value, out float sec_ms)) sec结束显示 += sec_ms;
-                        }
+                        sec开始显示 = match日时分秒_to_秒(arr[iStart]);
+                        sec结束显示 = match日时分秒_to_秒(arr[iEnd]);
                     }
                 }
-                public void append切片秒时间戳(ref StringBuilder sb, int iStart, int iEnd, float sec切片开始, float sec切片结束) {
-                    float ms切片开始显示 = sec开始显示 - sec切片开始;
-                    float ms切片结束显示 = sec结束显示 - sec切片开始;
+                public void append切片秒时间戳(ref StringBuilder sb, int iStart, int iEnd, double sec切片开始, double sec切片结束) {
+                    double ms切片开始显示 = sec开始显示 - sec切片开始;
+                    double ms切片结束显示 = sec结束显示 - sec切片开始;
 
                     if (ms切片开始显示 < 0) ms切片开始显示 = 0;
                     if (ms切片结束显示 > sec切片结束) ms切片结束显示 = sec切片结束;
@@ -333,7 +332,7 @@ namespace 破片压缩器 {
 
 
             int index = 0;
-            public void fx顺序分割并保存(DirectoryInfo di, float sec开始时间戳, float sec结束时间戳, string name) {
+            public void fx顺序分割并保存(DirectoryInfo di, double sec开始时间戳, double sec结束时间戳, string name) {
                 int i开始 = -1, i结束 = -1;
                 if (sec排序时间戳.Length > 0) {
                     if (index >= sec排序时间戳.Length) index = sec排序时间戳.Length - 1;
