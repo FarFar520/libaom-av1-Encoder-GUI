@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -37,12 +38,7 @@ namespace 破片压缩器 {
         object obj切片队列 = new object( );
 
         string get_加水印滤镜(string num) {
-            StringBuilder stringBuilder = new StringBuilder(lavfi全局值);
-
-            if (_b切片序号水印) {
-                stringBuilder.Replace("{切片序号水印}", $"drawtext=text='{str视频名无后缀} - {num}'{str水印字体参数}: fontsize={fontsize}: fontcolor=white@0.618: x=(w-text_w): y=0");
-            }
-
+            StringBuilder builder = new StringBuilder(lavfi全局值);
             if (_b硬字幕) {
                 string lavfi硬字幕 = string.Empty;
                 FileInfo fi_分段字幕 = new FileInfo(string.Format("{0}\\{1}.ass", di切片文件夹.FullName, num));
@@ -59,17 +55,27 @@ namespace 破片压缩器 {
                         }
                     }
                 }
-                stringBuilder.Replace("{硬字幕}", lavfi硬字幕);
-            } 
 
-            if (stringBuilder.Length > 0) {
-                stringBuilder.Insert(0, "  -lavfi \"");
-                stringBuilder.Append('"');
-            } 
+                if (string.IsNullOrEmpty(lavfi硬字幕)) {
+                    builder.Replace("{硬字幕},", "");
+                    builder.Replace(",{硬字幕}", "");
+                    builder.Replace("{硬字幕}", "");
+                } else
+                    builder.Replace("{硬字幕}", lavfi硬字幕);
+            }
 
-            stringBuilder.Append(" -fps_mode ").Append(_b转可变帧率 ? "vfr" : "passthrough");
+            if (_b切片序号水印) {
+                builder.Replace("{切片序号水印}", $"drawtext=text='{str视频名无后缀} - {num}'{str水印字体参数}:fontsize={fontsize}:fontcolor=white@0.618:x=(w-text_w):y=0");
+            }
 
-            return stringBuilder.ToString( );
+            if (builder.Length > 0) {
+                builder.Insert(0, "  -lavfi \"");
+                builder.Append('"');
+            }
+
+            builder.Append(" -fps_mode ").Append(_b转可变帧率 ? "vfr" : "passthrough");
+
+            return builder.ToString( );
         }
 
         public Encoding_Node(FileInfo fi任务配置) {

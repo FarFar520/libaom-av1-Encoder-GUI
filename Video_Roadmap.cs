@@ -55,7 +55,12 @@ namespace 破片压缩器 {
                     } else lavfi硬字幕 = string.Empty;
                 } else lavfi硬字幕 = string.Empty;
 
-                builder.Replace("{硬字幕}", lavfi硬字幕);
+                if (string.IsNullOrEmpty(lavfi硬字幕)) {
+                    builder.Replace("{硬字幕},", "");
+                    builder.Replace(",{硬字幕}", "");
+                    builder.Replace("{硬字幕}", "");
+                } else
+                    builder.Replace("{硬字幕}", lavfi硬字幕);
             }
 
             if (builder.Length > 0) {
@@ -71,10 +76,6 @@ namespace 破片压缩器 {
         string get_切片模式文字滤镜(string num) {
             StringBuilder builder = new StringBuilder(lavfi全局值);
 
-            if (_b切片序号水印) {
-                builder.Replace("{切片序号水印}", $"drawtext=text='{info.str视频名无后缀} - {num}'{str水印字体参数}:fontsize={fontsize}:fontcolor=white@0.618:x=(w-text_w):y=0");
-            }
-
             if (_b硬字幕) {
                 string lavfi硬字幕;
                 if (aSS != null) {
@@ -87,8 +88,18 @@ namespace 破片压缩器 {
                     } else lavfi硬字幕 = string.Empty;
                 } else lavfi硬字幕 = string.Empty;
 
-                builder.Replace("{硬字幕}", lavfi硬字幕);
+                if (string.IsNullOrEmpty(lavfi硬字幕)) {
+                    builder.Replace("{硬字幕},", "");
+                    builder.Replace(",{硬字幕}", "");
+                    builder.Replace("{硬字幕}", "");
+                } else
+                    builder.Replace("{硬字幕}", lavfi硬字幕);
             }
+
+            if (_b切片序号水印) {
+                builder.Replace("{切片序号水印}", $"drawtext=text='{info.str视频名无后缀} - {num}'{str水印字体参数}:fontsize={fontsize}:fontcolor=white@0.618:x=(w-text_w):y=0");
+            }
+
 
             if (builder.Length > 0) {
                 builder.Insert(0, " -lavfi \"");
@@ -142,7 +153,9 @@ namespace 破片压缩器 {
             StringBuilder builder = new StringBuilder( );
             if (list.Count > 0) {
                 lavfi全局值 = list[0];
-                builder.Append(" -lavfi \"").Append(list[0]);
+
+                if (list[0] != "{硬字幕}" && list[0] != "{切片序号水印}")
+                    builder.Append("").Append(list[0]);
 
                 for (int i = 1; i < list.Count; i++) {
                     lavfi全局值 += ',' + list[i];
@@ -150,7 +163,10 @@ namespace 破片压缩器 {
                     if (list[i] != "{硬字幕}" && list[i] != "{切片序号水印}")
                         builder.Append(',').Append(list[i]);
                 }
-                builder.Append('"');
+                if (builder.Length > 0) {
+                    builder.Insert(0, " -lavfi \"");
+                    builder.Append('"');
+                }
             }
 
             builder.Append(" -fps_mode ").Append(_b转可变帧率 ? "vfr" : "passthrough");
@@ -180,7 +196,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             StringBuilder builder = new StringBuilder( );
             if (info.list音频轨.Count > 0) {
                 if (_b音轨同时切片) {
-                    builder.Append(" -map 0:a");
+                    builder.Append(" -map 0:a?");
                     if (_b_opus) {
                         str音频摘要 = ".opus";
                         if (info.list音频轨.Count == 1 && Settings.i声道 > 0) {
@@ -315,6 +331,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             _b硬字幕 = Settings.b硬字幕;
 
+            try { File.Delete(str切片路径 + "\\任务配置.ini"); } catch { }
 
             if (b无缓转码) {
                 vTimeBase = new VTimeBase(info, di切片);
@@ -1351,7 +1368,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             转码队列.process切片 = null;
 
             if (b完成切片) {
-                查找并按体积降序切片( );                
+                查找并按体积降序切片( );
                 字幕切片( );//不判断硬字幕设置，切片完成后，片段时间连续，尝试直接割字幕。
 
                 if (list_切片体积降序.Count > 0) {

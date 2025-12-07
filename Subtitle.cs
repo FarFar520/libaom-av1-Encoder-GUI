@@ -33,6 +33,7 @@ namespace 破片压缩器 {
         }
 
         public static Regex regex时间戳 = new Regex(@"(?<Day>\d+[\.:])?(?<Hour>\d{1,2})[:：](?<Min>\d{1,2})[:：](?<Sec>\d{1,2})(?:[\., ](?<MS>\d{1,3}))?", RegexOptions.Compiled);
+
         public class SRT {
 
             static Regex regexLines = new Regex(@"\d+\s+(?<Hour1>\d{2,})[:：](?<Min1>\d{2})[:：](?<Sec1>\d{2})(?:[\.,](?<MS1>\d{1,3}))\s*-->\s*(?<Hour2>\d{2,})[:：](?<Min2>\d{2})[:：](?<Sec2>\d{2})(?:[\.,](?<MS2>\d{1,3}))\s+(?<txt>.+?)", RegexOptions.RightToLeft | RegexOptions.Compiled);
