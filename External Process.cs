@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace 破片压缩器 {
     internal class External_Process {
@@ -181,25 +182,27 @@ namespace 破片压缩器 {
 
         public void CountSpan_BitRate(ref TimeSpan sum_Span, ref double sum_KBit) {
             string time = regexTime.Match(ffmpeg_Pace).Groups[1].Value;
-            if (TimeSpan.TryParse(time, out TimeSpan span)) {
-                if (double.TryParse(regexBitrate.Match(ffmpeg_Pace).Groups[1].Value, out double kbits_sec)) {
-                    if (kbits_sec > 9) {
+            if (time.Length > 7) {
+                if (TimeSpan.TryParse(time, out TimeSpan span)) {
+                    if (double.TryParse(regexBitrate.Match(ffmpeg_Pace).Groups[1].Value, out double kbits_sec)) {
+                        if (kbits_sec > 9) {
+                            sum_Span += span;
+                            sum_KBit += kbits_sec * span.TotalSeconds;
+                        }
+                    } else if (double.TryParse(regexSize.Match(ffmpeg_Pace).Groups[1].Value, out double KiB)) {
                         sum_Span += span;
-                        sum_KBit += kbits_sec * span.TotalSeconds;
+                        sum_KBit += KiB * 8;
                     }
-                } else if (double.TryParse(regexSize.Match(ffmpeg_Pace).Groups[1].Value, out double KiB)) {
-                    sum_Span += span;
-                    sum_KBit += KiB * 8;
-                }
-            } else {
-                double sec = Subtitle.match日时分秒_to_秒(time);
-                sum_Span += TimeSpan.FromSeconds(sec);
-                if (double.TryParse(regexBitrate.Match(ffmpeg_Pace).Groups[1].Value, out double kbits_sec)) {
-                    if (kbits_sec > 9) {
-                        sum_KBit += kbits_sec * span.TotalSeconds;
+                } else {
+                    double sec = Subtitle.match日时分秒_to_秒(time);
+                    sum_Span += TimeSpan.FromSeconds(sec);
+                    if (double.TryParse(regexBitrate.Match(ffmpeg_Pace).Groups[1].Value, out double kbits_sec)) {
+                        if (kbits_sec > 9) {
+                            sum_KBit += kbits_sec * span.TotalSeconds;
+                        }
+                    } else if (double.TryParse(regexSize.Match(ffmpeg_Pace).Groups[1].Value, out double KiB)) {
+                        sum_KBit += KiB * 8;
                     }
-                } else if (double.TryParse(regexSize.Match(ffmpeg_Pace).Groups[1].Value, out double KiB)) {
-                    sum_KBit += KiB * 8;
                 }
             }
         }
@@ -632,12 +635,13 @@ namespace 破片压缩器 {
                         if (b无缓转码) {
                             span输入时长 = TimeSpan.FromSeconds(span偏移.f持续秒);
                             break;
+                        } else {
+                            if (get_ffprobe读取视频时长(fi源.FullName, out double sec)) {
+                                span输入时长 = TimeSpan.FromSeconds(sec);
+                                builder日志.Append("[FORMAT]\r\nduration=").Append(sec).Append("\r\n[/FORMAT]\r\n------------------------------------------");
+                            }
+                            break;
                         }
-                        if (get_ffprobe读取视频时长(fi源.FullName, out double sec)) {
-                            span输入时长 = TimeSpan.FromSeconds(sec);
-                            builder日志.Append("[FORMAT]\r\nduration=").Append(sec).Append("\r\n[/FORMAT]\r\n------------------------------------------");
-                        }
-                        break;
                     } else {
                         builder日志.AppendLine(StandardError);
                     }
@@ -726,7 +730,7 @@ namespace 破片压缩器 {
             sec = 0;
             using (Process p = new Process( )) {
                 p.StartInfo.FileName = EXE.ffprobe;
-                p.StartInfo.Arguments = "-show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -v error " + filePath;
+                p.StartInfo.Arguments = "-show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -v error \"" + filePath + '"';
                 p.StartInfo.CreateNoWindow = true;
                 p.StartInfo.UseShellExecute = false;
                 p.StartInfo.RedirectStandardError = false;
