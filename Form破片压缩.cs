@@ -348,7 +348,6 @@ namespace 破片压缩器 {
 
         void fn协同视频编码( ) {//0号线程想设计为局域网多分机读取切片，转未处理的不同碎片，转完汇入主机合并。
                           //2。通过尝试移动碎片各自工作文件夹，分机自主处理各自任务，存在任务碎片化加剧问题。等待合并过程拉长。
-
             if (list缓存路径.Count == 0) try { autoReset协转.WaitOne( ); } catch { }
             thread编码节点.Priority = ThreadPriority.Highest;//协同转码线程优先级高，保证能及时响应新任务。
 
@@ -397,7 +396,11 @@ namespace 破片压缩器 {
                         arr等待合并队列[i].b更新OPUS音轨( );//音轨设置可以在视频转码过程中更改，即刻生效。
                     }
                     if (arr等待合并队列[i].b文件夹下还有切片) {
-                        continue;
+                        if (!arr等待合并队列[i].b无缓转码) {
+                            add日志($"扫描协同任务：{arr等待合并队列[i].str切片路径}");
+                            arr等待合并队列[i].b协同切片尝试回调( );
+                            continue;
+                        }
                     } else if (set已合并文件夹.Add(arr等待合并队列[i].di编码成功.FullName.ToLower( ))) {//只尝试合并一次。
                         add日志($"开始合并：{arr等待合并队列[i].str切片路径}");
                         string str合并结果;

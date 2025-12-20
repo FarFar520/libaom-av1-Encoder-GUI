@@ -18,8 +18,8 @@ namespace 破片压缩器 {
             , lavfi全局值 = string.Empty
             , str视频名无后缀 = string.Empty
             , str水印字体参数 = string.Empty
-            , str编码指令 = string.Empty, str多线程编码指令 = string.Empty, ffmpeg单线程解码 = string.Empty;
-        //待优化单线程解码可以降低解码并发损耗：1.跑解码能力测试 2.开启编码，获得编码速度，3决定单线程解码
+            , str编码指令 = string.Empty, str多线程编码指令 = string.Empty;
+
 
         bool _b转可变帧率 = false, _b使用全局滤镜 = true;
 
@@ -72,7 +72,6 @@ namespace 破片压缩器 {
         public Encoding_Node(FileInfo fi任务配置) {
             di切片文件夹 = fi任务配置.Directory;
             str切片路径 = di切片文件夹.FullName;
-            ffmpeg单线程解码 = EXE.ffmpeg单线程解码;
 
             string[] lines;
             try { lines = File.ReadAllLines(fi任务配置.FullName); } catch { return; }
@@ -210,10 +209,11 @@ namespace 破片压缩器 {
 
                 string str命令行;
 
+                //待优化单线程解码可以降低解码并发损耗：1.跑解码能力测试 2.开启编码，获得编码速度，3决定单线程解码
                 if (Settings.b多线程)
-                    str命令行 = $"{ffmpeg单线程解码} -i {fi切片.Name} {str滤镜} {str多线程编码指令} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{EXE.ffmpeg单线程解码}-i {fi切片.Name} {str滤镜} {str多线程编码指令} \"{str编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                 else {
-                    str命令行 = $"{EXE.ffmpeg单线程} -i {fi切片.Name} {str滤镜} {str编码指令} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{EXE.ffmpeg单线程解码}-i {fi切片.Name} {str滤镜} {str编码指令} \"{str编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                 }
                 external_Process = new External_Process(ffmpeg, str命令行, !Settings.b多线程, name, fi切片, di编码成功);
                 external_Process.fi编码 = new FileInfo($"{fi切片.DirectoryName}\\{str编码后切片}");//fi切片设计为局域网编码时移动到另外文件夹，防止多机处理相同切片

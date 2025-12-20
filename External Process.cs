@@ -41,9 +41,9 @@ namespace 破片压缩器 {
 
         public static Regex regexFrame = new Regex(@"frame=\s*(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        Regex regexSize = new Regex(@"size=\s*(\d+(?:\.\d+)?)KiB", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        Regex regexBitrate = new Regex(@"bitrate=\s*(\d+(?:\.\d+)?)kbits/s", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        Regex regexTime = new Regex(@"time=\s*(\d+[\d:\.]+\d+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public static Regex regexSize = new Regex(@"size=\s*(\d+(?:\.\d+)?)KiB", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public static Regex regexBitrate = new Regex(@"bitrate=\s*(\d+(?:\.\d+)?)kbits/s", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public static Regex regexTime = new Regex(@"time=\s*(\d+[\d:\.]+\d+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public VTimeBase.Span偏移 span偏移;
 
@@ -530,7 +530,6 @@ namespace 破片压缩器 {
         }
 
         public bool sync_MKVmerge保存消息(string str日志目录, string str日志文件名, out string[] arrLogs, ref StringBuilder builder) {
-            sb输出数据流 = builder;
             builder.AppendLine( );
             arrLogs = null;
             try {
@@ -546,7 +545,7 @@ namespace 破片压缩器 {
             List<string> listWarning = new List<string>( ), listMergeErr = new List<string>( );
             while (!process.StandardOutput.EndOfStream) {
                 string line = process.StandardOutput.ReadLine( ).TrimStart( );
-                builder.AppendLine(line);
+                sb输出数据流.AppendLine(line);
                 if (!string.IsNullOrEmpty(line) && !line.StartsWith("Progress")) {
                     if (line.StartsWith("Warning")) {
                         listWarning.Add(line);

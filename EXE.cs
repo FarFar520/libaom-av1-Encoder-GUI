@@ -4,10 +4,12 @@ using System.IO;
 
 namespace 破片压缩器 {
     internal static class EXE {
-        public const string ffmpeg单线程 = "-threads 1 -filter_threads 1 -filter_complex_threads 1 ";
-        public const string ffmpeg单线程解码 = "-threads 1 ";
         public const string ffmpeg不显库 = " -hide_banner";
-
+        public const string ffmpeg单线程解码 = "-threads 1 ";
+        public const string ffmpeg单线程滤镜 = " -filter_threads 1 -filter_complex_threads 1";
+        public const string ffmpeg单线程 = "-threads 1 -filter_threads 1 -filter_complex_threads 1 ";
+        
+       
         static DateTime time上次查找ffmpeg = DateTime.Now.AddDays(1);
         public static string ffmpeg = "ffmpeg", ffprobe = "ffprobe", mkvmerge = "mkvmerge", mkvextract = "mkvextract";//运行库默认
         public static bool find最新版ffmpeg(out string exe) {

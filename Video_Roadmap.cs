@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using static 破片压缩器.Subtitle;
 using static 破片压缩器.VTimeBase;
 
@@ -901,14 +902,12 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                 string lavfi滤镜 = _b使用全局滤镜 ? str滤镜lavfi : get_分段模式文字滤镜(span偏移);
 
-
-
                 if (Settings.b多线程) {
                     string encV = v命令行.format_CRF多线程编码库(b全黑场, span偏移.f指定画质CRF);
                     str命令行 = $"{dec_1th}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}";
                 } else {
                     string encV = v命令行.format_CRF编码指令(b全黑场, span偏移.f指定画质CRF);
-                    str命令行 = $"{EXE.ffmpeg单线程}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{EXE.ffmpeg单线程解码}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                 }
                 external_Process = new External_Process(span偏移, ffmpeg, str命令行, !Settings.b多线程, fi输入视频, di切片, di编码成功);
 
@@ -1496,45 +1495,68 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             bool b成功重算 = false;
             if (File.Exists(path切片日志)) {
-                string timestamps;
-                try { timestamps = File.ReadAllText(path切片日志); } catch { timestamps = string.Empty; }
-                int i开始 = timestamps.IndexOf("--split timestamps:") + 19;
-
-                if (i开始 > 19) {
-                    int i结束 = timestamps.IndexOf(" --disable-track-statistics-tags", i开始);//生成的日志本文紧跟禁用标记参数
-                    if (i结束 > i开始 + 2) {
-                        timestamps = "0s," + timestamps.Substring(i开始, i结束 - i开始);//补齐第一个切片时间偏移0秒
-                        string[] arr指定秒 = timestamps.Split(',');
-                        if (arr指定秒.Length > 1) {//最少有两个切片时间戳
-                            bool b中段缺失 = false;
-                            for (int i = 0; i < arr指定秒.Length; i++) {
-                                if (float.TryParse(arr指定秒[i].TrimEnd('s'), out float f开始秒)) {//生成的切片时间戳格式 123.45s,234.56s
-                                    string path时间码 = string.Format("{0}\\{1}_timestamp.txt", path转码完成, i + 1);
-                                    if (File.Exists(path时间码)) {
-                                        if (b中段缺失) return false;//前一个读取失败代表缺失一整段，直接退出。
-                                        string[] arr时间码;
-                                        try { arr时间码 = File.ReadAllLines(path时间码); } catch { arr时间码 = null; b中段缺失 = true; }
-                                        if (arr时间码 != null && arr时间码.Length > 2) {//经分析：第一行版本，第二行→第一帧起始时间戳，最后一行→最后一帧结束时间戳（最后一行有BUG，出现全片时长）
-                                            int end = arr时间码.Length - 1;//不要最后一行截止时间戳，和下一个分片起始时间冲突。
-                                            float f开始毫秒 = f开始秒 * 1000;
-                                            float f当前毫秒 = f开始毫秒;
-                                            for (int t = 1; t < end; t++) {
-                                                if (float.TryParse(arr时间码[t], out float f偏移毫秒)) {
-                                                    f当前毫秒 = f开始毫秒 + f偏移毫秒;//切片起始时间戳+帧起始时间戳（偏移毫秒）
-                                                } else {
-                                                    f当前毫秒 += f帧毫秒;
-                                                }
-                                                list_timestamp.Add(f当前毫秒);
+                string[] arrLog = null;
+                try { arrLog = File.ReadAllLines(path切片日志); } catch { }
+                if (arrLog != null) {
+                    int last = arrLog.Length - 1;
+                    Dictionary<int, float> dic_name_sec = new Dictionary<int, float>( ) { { 1, 0 } };
+                    for (int i = 0; i < last; i++) {
+                        if (arrLog[i].StartsWith("Timestamp used in split decision:", StringComparison.OrdinalIgnoreCase)) {
+                            Match matchTime = regex日时分秒.Match(arrLog[i].Substring(33));
+                            if (matchTime.Success) {
+                                if (float.TryParse(matchTime.Groups["Sec"].Value, out float sec)) {
+                                    if (int.TryParse(matchTime.Groups["Day"].Value, out int day)) sec += day + 86400;
+                                    if (int.TryParse(matchTime.Groups["Hour"].Value, out int hour)) sec += hour * 3600;
+                                    if (int.TryParse(matchTime.Groups["Min"].Value, out int min)) sec += min * 60;
+                                    if (float.TryParse("0." + matchTime.Groups["MS"].Value, out float sec_ms)) sec += sec_ms;//ASS毫秒单位保留两位数字，整除100 
+                                    for (++i; i < arrLog.Length; i++) {
+                                        if (arrLog[i].StartsWith("The file", StringComparison.OrdinalIgnoreCase)) {
+                                            if (int.TryParse(regex切片号.Match(arrLog[i]).Groups[1].Value, out int n)) {
+                                                if (!dic_name_sec.ContainsKey(n)) dic_name_sec.Add(n, sec);
                                             }
-                                        }//允许无帧切片，可变帧率视频数秒内无新帧，但被独立切片。
-                                    } else { b中段缺失 = true; }//缺失时间戳文件则不能继续，一个切片无法正确则全片时间不重算。（完美计算则允许删除末尾片段。）
-                                } else { b成功重算 = false; break; }//秒数据不规范
-                            }//遍历
-                            b成功重算 = true;
-                        } else b成功重算 = false;//时间戳过少
-                    } else b成功重算 = false; //时间戳末尾不匹配
-                } else b成功重算 = false; //无法匹配以时间参数
-            } else b成功重算 = false;  //找不到切片日志
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    List<KeyValuePair<int, float>> list_name_sec = dic_name_sec.OrderBy(x => x.Key).ToList( );
+                    foreach (var ns in list_name_sec) {
+                        string path时间码 = string.Format("{0}\\{1}_timestamp.txt", path转码完成, ns.Key);
+                        string path转码日志 = string.Format("{0}\\{1}_转码完成.log", path转码完成, ns.Key);
+
+                        string str转码日志 = null;
+                        string[] arr时间码 = null;
+                        try { arr时间码 = File.ReadAllLines(path时间码); } catch { }
+                        try { str转码日志 = File.ReadAllText(path转码日志); } catch { }
+
+                        if (str转码日志 != null && arr时间码 != null && arr时间码.Length > 2) {//经分析：第一行版本，第二行→第一帧起始时间戳，最后一行→最后一帧结束时间戳（最后一行有BUG，出现全片时长）
+                            int end = arr时间码.Length - 1;
+                            int.TryParse(External_Process.regexFrame.Match(str转码日志).Groups[1].Value, out int frame);
+                            for (; end >= 0; end--) {
+                                if (!string.IsNullOrEmpty(arr时间码[end]) && float.TryParse(arr时间码[end], out _)) { break; }//最后一行时间戳代表最后一帧截止时间，跳过
+                            }
+                            int count = list_timestamp.Count;
+                            float f开始毫秒 = ns.Value * 1000;
+                            float f当前毫秒 = f开始毫秒;
+                            for (int t = 1; t < end; t++) {
+                                if (float.TryParse(arr时间码[t], out float f偏移毫秒)) {
+                                    f当前毫秒 = f开始毫秒 + f偏移毫秒;//切片起始时间戳+帧起始时间戳（偏移毫秒）
+                                } else {
+                                    f当前毫秒 += f帧毫秒;
+                                }
+                                list_timestamp.Add(f当前毫秒);
+                            }
+                            if (list_timestamp.Count - count != frame) {
+                                try { File.AppendAllText(path转码日志, "\r\n时间码和帧数量不相等"); } catch { }
+                            }
+
+                        }//允许无帧切片，可变帧率视频数秒内无新帧，但被独立切片。
+                    }
+                    if (list_timestamp.Count > 1) b成功重算 = true;
+                }
+            }
 
             if (!b成功重算) {
                 list_timestamp.Clear( );
@@ -1561,10 +1583,12 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                                 int.TryParse(External_Process.regexFrame.Match(log).Groups[1].Value, out end);
 
                             if (f切片时长 <= 0) {
-                                if (regex秒长.IsMatch(log))
-                                    f切片时长 = float.Parse(VideoInfo.regexDuration.Match(log).Groups[1].Value) * 1000;
-                                else if (!log.Contains("-ss ") && !log.Contains(" -to "))
-                                    f切片时长 = (float)TimeSpan.Parse(regex日时分秒.Match(log).Groups[1].Value).TotalMilliseconds;
+                                if (regex秒长.IsMatch(log) && float.TryParse(regex秒长.Match(log).Groups[1].Value, out float sec)) {
+                                    f切片时长 = sec * 1000;
+                                } else if (!log.Contains("-ss ") && !log.Contains(" -to ")) {
+                                    if (TimeSpan.TryParse(regex日时分秒.Match(log).Groups[1].Value, out TimeSpan ts))
+                                        f切片时长 = (float)ts.TotalMilliseconds;
+                                }
                             }
                         }
 
@@ -1631,16 +1655,17 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     }
                 }
             }
-            if (!_b音轨同时切片) {
-                if (_b无缓转码) vTimeBase.is重算时间码(path转码完成, str编码摘要);
-                else b重算时间码(path转码完成, list_SerialName);
-            }
 
             if (fi连接后视频.Exists) {
                 return true;
             } else {
                 if (list_SerialName.Count < 1) return false;
                 else list_SerialName.Sort( );
+
+                if (!_b音轨同时切片) {
+                    if (_b无缓转码) vTimeBase.is重算时间码(path转码完成, str编码摘要);
+                    else b重算时间码(path转码完成, list_SerialName);
+                }
 
                 StringBuilder builder = new StringBuilder( );
 

@@ -343,7 +343,7 @@ namespace 破片压缩器 {
                 string[] arr;
                 try { arr = File.ReadAllLines(path); } catch { return false; }
                 if (arr.Length > 1) {
-                    for (int end = arr.Length - 1; end > 1; end--) {
+                    for (int end = arr.Length - 1; end > 0; end--) {
                         if (float.TryParse(arr[end], out _)) {
                             float ms本场起始 = item.Value.f转场 * 1000;
                             for (int i = 1; i < end; i++) {//最后一帧是结束时间戳，不需要计算
@@ -1013,6 +1013,9 @@ namespace 破片压缩器 {
                 if (end_time >= 0) {
                     if (TimeSpan.TryParse(StandarError.Substring(index_time, end_time - index_time), out TimeSpan timeSpan)) {
                         span = timeSpan;
+                    } else {//超过24小时的视频，无法用Pass转换
+                        double sec = match日时分秒_to_秒(StandarError);
+                        span = TimeSpan.FromSeconds(sec);
                     }
                 }
             }

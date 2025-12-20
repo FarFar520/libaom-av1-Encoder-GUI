@@ -35,13 +35,13 @@ namespace 破片压缩器 {
         public static Regex regex日时分秒 = new Regex(@"(?<Day>\d+[\.:])?(?<Hour>\d{1,2})[:：](?<Min>\d{1,2})[:：](?<Sec>\d{1,2})(?:[\., ](?<MS>\d+))?", RegexOptions.Compiled);
 
         public static double match日时分秒_to_秒(string text) {
-            Match matchStart = regex日时分秒.Match(text);
-            if (matchStart.Success) {
-                double.TryParse(matchStart.Groups["Sec"].Value, out double Sec);
-                if (int.TryParse(matchStart.Groups["Day"].Value, out int day)) Sec += day + 86400;
-                if (int.TryParse(matchStart.Groups["Hour"].Value, out int hour)) Sec += hour * 3600;
-                if (int.TryParse(matchStart.Groups["Min"].Value, out int min)) Sec += min * 60;
-                if (float.TryParse("0." + matchStart.Groups["MS"].Value, out float ms)) Sec += ms;//ASS毫秒单位保留两位数字，整除100
+            Match match = regex日时分秒.Match(text);
+            if (match.Success) {
+                double.TryParse(match.Groups["Sec"].Value, out double Sec);
+                if (int.TryParse(match.Groups["Day"].Value, out int day)) Sec += day + 86400;
+                if (int.TryParse(match.Groups["Hour"].Value, out int hour)) Sec += hour * 3600;
+                if (int.TryParse(match.Groups["Min"].Value, out int min)) Sec += min * 60;
+                if (float.TryParse("0." + match.Groups["MS"].Value, out float ms)) Sec += ms;//ASS毫秒单位保留两位数字，整除100
 
                 return Sec;
             }
@@ -374,9 +374,5 @@ namespace 破片压缩器 {
                 }
             }
         }
-
-
-
-
     }
 }
