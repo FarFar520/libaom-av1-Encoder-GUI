@@ -1491,7 +1491,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         bool b重算时间码(string path转码完成, List<int> list_SerialName) {
             float f帧毫秒 = 1000 / info.f输出帧率;
             string path切片日志 = string.Format("{0}\\视频切片_{1}.log", di切片.FullName, di切片.Name.Substring(3));
-            List<float> list_timestamp = new List<float>( ) { };
+            List<double> list_timestamp = new List<double>( ) { };
 
             bool b成功重算 = false;
             if (File.Exists(path切片日志)) {
@@ -1564,14 +1564,14 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 string[] arr_时间码 = Directory.GetFiles(path转码完成, "*_timestamp.txt");
 
                 if (arr_转码完成.Length == arr_时间码.Length) {
-                    float f汇总毫秒 = 0;
+                    double f汇总毫秒 = 0;
                     bool b中段缺失 = false;
                     for (int i = 1; i <= arr_转码完成.Length; i++) {
                         string log;
                         try { log = File.ReadAllText(path转码完成 + "\\" + i + "_转码完成.log"); } catch { log = null; }
 
                         int end = 0;
-                        float f切片时长 = 0;
+                        double f切片时长 = 0;
 
                         if (_b无缓转码 && vTimeBase.GetSpan偏移(i, out Span偏移 span)) {
                             f切片时长 = span.f持续秒;
@@ -1587,7 +1587,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                                     f切片时长 = sec * 1000;
                                 } else if (!log.Contains("-ss ") && !log.Contains(" -to ")) {
                                     if (TimeSpan.TryParse(regex日时分秒.Match(log).Groups[1].Value, out TimeSpan ts))
-                                        f切片时长 = (float)ts.TotalMilliseconds;
+                                        f切片时长 = ts.TotalMilliseconds;
                                 }
                             }
                         }
@@ -1602,7 +1602,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                             if (end == 0 || end >= arr时间码.Length)
                                 end = arr时间码.Length - 2;
 
-                            float f当前毫秒 = f汇总毫秒;
+                            double f当前毫秒 = f汇总毫秒;
                             for (int t = 1; t <= end; t++) {
                                 if (float.TryParse(arr时间码[t], out float f偏移毫秒)) {
                                     f当前毫秒 = f汇总毫秒 + f偏移毫秒; //切片起始时间戳+帧起始时间戳（偏移毫秒）
@@ -1617,7 +1617,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 }
             }
 
-            float f全片时长 = (float)info.time视频时长.TotalSeconds;
+            double f全片时长 = info.time视频时长.TotalSeconds;
 
             if (list_timestamp.Count > 1) {
                 if (list_timestamp[list_timestamp.Count - 1] > f全片时长)
