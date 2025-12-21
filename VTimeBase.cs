@@ -476,7 +476,7 @@ namespace 破片压缩器 {
                     if (end < list转场.Count) {
                         for (; end >= start && list转场[end] > sec止步; end--) ;//结束范围必须小于等于最大秒或者末尾。 
                         if (list转场[end] >= secMax) {
-                            list分段秒.Add(list转场[start]);//时段内只有一个镜头切换
+                            if (list转场[start] - list分段秒.Last( ) >= sec分割至少) list分段秒.Add(list转场[start]);//时段内只有一个镜头切换
                             index转场 = start + 1;
                             return;
                         } else {
@@ -494,10 +494,10 @@ namespace 破片压缩器 {
                                 index转场 = i最大画面方差 + 1;
                                 secMin = f转场秒 + sec分割至少;
 
-                                list分段秒.Add(f转场秒);
+                                if (f转场秒 - list分段秒.Last( ) >= sec分割至少) list分段秒.Add(f转场秒);
 
                             } else if (end == start) {
-                                list分段秒.Add(list转场[start]);//时段内只有一个镜头切换
+                                if (list转场[start] - list分段秒.Last( ) >= sec分割至少) list分段秒.Add(list转场[start]);//时段内只有一个镜头切换
                                 index转场 = start + 1;
                                 return;
                             } else
@@ -505,7 +505,7 @@ namespace 破片压缩器 {
                         }
 
                     } else {
-                        list分段秒.Add(list转场[start]);//时段内只有一个镜头切换
+                        if (list转场[start] - list分段秒.Last( ) >= sec分割至少) list分段秒.Add(list转场[start]);//时段内只有一个镜头切换
 
                         secMin = list转场[start] + sec分割至少;
                         index转场 = start + 1;
@@ -551,7 +551,7 @@ namespace 破片压缩器 {
             DateTime timeStart = DateTime.Now.AddMinutes(-1);
             if (!is扫描完成) Thread.Sleep(6666);
             int index黑场 = 1, index转场 = 1, index关键帧 = 0;
-            List<float> list分段秒 = new List<float>( ) { 0 };
+            List<float> list分段秒 = new List<float>( ) { 0 };//初始化一个值，当做切割第一场起始，同时取Last不报异常
             float f后6组 = 0;
 
             do {
@@ -567,12 +567,12 @@ namespace 破片压缩器 {
 
                 //if ((index黑场 < list黑场.Count - 1 || (index黑场 < list黑场.Count && list黑场.Last( ) < Duration)) && list黑场[index黑场] <= f后6组) {
                 if (index黑场 < list黑场.Count && list黑场[index黑场] <= f后6组) {
-                    list分段秒.Add(list黑场[index黑场]);
+                    if (list黑场[index黑场] > list分段秒.Last( )) list分段秒.Add(list黑场[index黑场]);//黑场添加优先级高于场景转换，编码后易于切割视频
                     for (++index黑场; index黑场 < list黑场.Count && list黑场[index黑场] < f后6组; index黑场++) {//步时长6图组内寻找下一黑场。
                         if (list黑场[index黑场] - list分段秒.Last( ) > sec分段 * 3) {//两个黑场之间超过3个图组尝试寻找插入转场。
                             fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, list黑场[index黑场] - sec分割至少, ref index转场, ref list分段秒);
                         }
-                        list分段秒.Add(list黑场[index黑场]);
+                        if (list黑场[index黑场] > list分段秒.Last( )) list分段秒.Add(list黑场[index黑场]);
                     }
                 } else if (index转场 < list转场.Count && list转场[index转场] <= f后6组) { //时段内无黑场，可能有转场
                     fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, f后6组, ref index转场, ref list分段秒);//每次后移6组
@@ -589,7 +589,7 @@ namespace 破片压缩器 {
                 }
             } while (f后6组 < Duration);//分段结束
 
-            list分段秒.Add(Duration加一帧);
+            if (Duration加一帧 > list分段秒.Last( )) list分段秒.Add(Duration加一帧);
 
             fx匹配关键帧(ref index关键帧, ref list分段秒);
             fx保存有序无缓转码csv(b完成: true, b时长排序: true);
@@ -602,19 +602,18 @@ namespace 破片压缩器 {
                 f后6组 += sec分段 * 6;//每轮
                 if (f后6组 > Duration) f后6组 = Duration;
                 if (index黑场 < list黑场.Count && list黑场[index黑场] <= f后6组) {
-                    list分段秒.Add(list黑场[index黑场]);
+                    list分段秒.Add(list黑场[index黑场]);//黑场添加优先级高于场景转换，编码后易于切割视频
                     for (++index黑场; index黑场 < list黑场.Count && list黑场[index黑场] < f后6组; index黑场++) {//步时长6图组内寻找下一黑场。
                         if (list黑场[index黑场] - list分段秒.Last( ) > sec分段 * 3) {//两个黑场之间超过3个图组尝试寻找插入转场。
                             fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, list黑场[index黑场] - sec分割至少, ref index转场, ref list分段秒);
                         }
-                        list分段秒.Add(list黑场[index黑场]);
+                        list分段秒.Add(list黑场[index黑场]);//黑场添加优先级高于场景转换，编码后易于切割视频
                     }
                 } else if (index转场 < list转场.Count && list转场[index转场] <= f后6组) { //时段内无黑场，可能有转场
                     fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, f后6组, ref index转场, ref list分段秒);//每次后移6组
                 }
             } while (f后6组 < Duration);//分段结束
-
-            list分段秒.Add(Duration加一帧);
+            if (Duration加一帧 > list分段秒.Last( )) list分段秒.Add(Duration加一帧);
 
             list分段秒.Distinct( );
             list分段秒.Sort( );
@@ -1036,12 +1035,6 @@ namespace 破片压缩器 {
         }
 
         void fx保存有序无缓转码csv(bool b完成, bool b时长排序) {
-            ICollection<Span偏移> arr_span = dic_分段_偏移.Values;
-            foreach (Span偏移 span in arr_span) {
-                if (span.f持续秒 < f连续黑场最小秒) {
-                    dic_分段_偏移.TryRemove(span.i分段号, out _);
-                }
-            }
             var dicSort_Sec = b时长排序 ? (from objDic in dic_分段_偏移 orderby objDic.Value.f持续秒 descending select objDic)
                 : (from objDic in dic_分段_偏移 orderby objDic.Key descending select objDic);
 
