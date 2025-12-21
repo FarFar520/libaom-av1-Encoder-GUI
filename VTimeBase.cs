@@ -430,29 +430,21 @@ namespace 破片压缩器 {
         }
         void fx匹配关键帧(ref int index关键帧, ref List<float> list分段秒) {
             for (int index分段 = dic_分段_偏移.Count; index分段 < list分段秒.Count - 1; index分段++) {//找最近的关键帧秒
+
+                while (list关键帧.Last( ) < list分段秒[index分段]) try { event计算.WaitOne(666); } catch { }//异步计算设计，等待关键帧时间戳到位
+
                 if (dic关键帧.ContainsKey(list分段秒[index分段])) {
                     Span偏移 span = new Span偏移(dic_分段_偏移.Count + 1, list分段秒[index分段], list分段秒[index分段], list分段秒[index分段 + 1], info.f输入每帧秒);
                     dic_分段_偏移.TryAdd(span.i分段号, span);
                 } else {
-                    float sec关键帧 = list关键帧[index关键帧];
-                    while (list关键帧.Last( ) < list分段秒[index分段]) try { event计算.WaitOne(666); } catch { }
-
-                    while (index关键帧 < list关键帧.Count - 1) {
-                        if (list关键帧[index关键帧] <= list分段秒[index分段] && list分段秒[index分段] <= list关键帧[index关键帧 + 1]) {
-                            sec关键帧 = list关键帧[index关键帧];
-                            Span偏移 span = new Span偏移(dic_分段_偏移.Count + 1, sec关键帧, list分段秒[index分段], list分段秒[index分段 + 1], info.f输入每帧秒);
-                            dic_分段_偏移.TryAdd(span.i分段号, span);
-                            break;
-                        } else {
-                            if (list关键帧[index关键帧] > list分段秒[index分段]) {
-                                if (index关键帧 > 1) index关键帧--;
-                            } else if (list关键帧[index分段] < list分段秒[index分段 + 1]) {
-                                if (index关键帧 < list关键帧.Count - 1) index关键帧++;
-                            } else {
-                                break;
-                            }
-                        }
+                    if (list关键帧[index关键帧] > list分段秒[index分段]) {
+                        for (; index关键帧 >= 0 && list关键帧[index关键帧] > list分段秒[index分段]; index关键帧--) ;//更大时索引往小移动
+                    } else {
+                        for (; index关键帧 < list关键帧.Count && list关键帧[index关键帧] < list分段秒[index分段]; index关键帧++) ;//更小时关键帧索引往右移动， 到超出分段时间。
+                        for (; index关键帧 >= 0 && list关键帧[index关键帧] > list分段秒[index分段]; index关键帧--) ;//大于等于的关键帧，找前一帧。
                     }
+                    Span偏移 span = new Span偏移(dic_分段_偏移.Count + 1, list关键帧[index关键帧], list分段秒[index分段], list分段秒[index分段 + 1], info.f输入每帧秒);
+                    dic_分段_偏移.TryAdd(span.i分段号, span);
                 }
             }
         }

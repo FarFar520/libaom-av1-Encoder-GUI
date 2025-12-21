@@ -791,10 +791,10 @@ namespace 破片压缩器 {
             list极压内参 = new List<string>(list传递内参);
             if (GOP跃秒 != null) {
                 GOP跃秒.get(Settings.sec_gop, ref list传递内参);
-                GOP跃秒.get(short.MaxValue, ref list极压内参);
+                GOP跃秒.get((int)info.time视频时长.TotalSeconds, ref list极压内参);//可能会引起vvencBUG，黑场快速闪烁画面合并后卡住
             } else if (GOP跃帧 != null) {
                 GOP跃帧.get(Settings.sec_gop * info.f输出帧率, ref list传递内参);
-                GOP跃帧.get(int.MinValue, ref list极压内参);
+                GOP跃帧.get(info.outSumFrames, ref list极压内参);
             }
 
             string str限缩位深格式化 = _byte位深 == 0 ? string.Empty : ("-pix_fmt " + dic_位深_限缩参数[_byte位深]);
