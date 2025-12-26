@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
+using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
     internal class External_Process {
@@ -39,11 +38,7 @@ namespace 破片压缩器 {
 
         public StringBuilder sb输出数据流 = new StringBuilder( );//全局变量有调用，直接初始化。
 
-        public static Regex regexFrame = new Regex(@"frame=\s*(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        public static Regex regexSize = new Regex(@"size=\s*(\d+(?:\.\d+)?)KiB", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        public static Regex regexBitrate = new Regex(@"bitrate=\s*(\d+(?:\.\d+)?)kbits/s", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        public static Regex regexTime = new Regex(@"time=\s*(\d+[\d:\.]+\d+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public VTimeBase.Span偏移 span偏移;
 
@@ -616,8 +611,6 @@ namespace 破片压缩器 {
         }
 
         void ffmpeg_读编码消息直到结束( ) {//一条子线程          
-            //time编码开始 = DateTime.Now;
-            stopwatch.Start( );
             StringBuilder builder日志 = new StringBuilder( );
             for (int i = 0; i < listError.Count; i++) builder日志.AppendLine(listError[i]);
             builder日志.AppendLine( );

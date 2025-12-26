@@ -5,17 +5,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 using static 破片压缩器.Subtitle;
 
 
 namespace 破片压缩器 {
 
     internal class VTimeBase {
-        public static Regex regex秒长 = new Regex(@"\[FORMAT\]\s+duration=(\d+\.\d+)\s+\[/FORMAT\]", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
         SynchronizedCollection<double> list关键帧 = new SynchronizedCollection<double>( ) { 0 }, list所有帧 = new SynchronizedCollection<double>( ) { 0 }
            , list转场 = new SynchronizedCollection<double>( ) { 0 }
            , list黑场 = new SynchronizedCollection<double>( ) { 0 }
@@ -43,13 +41,13 @@ namespace 破片压缩器 {
             ;
         Dictionary<double, HashSet<double>> dic_连续黑场 = new Dictionary<double, HashSet<double>>( ) { };//连续黑场可以用最低画质压缩
 
-        string str单线程 = string.Empty;
-        double scene = 0.11f, sec分割至少 = 2, sec分段 = 30, Duration = 0, Duration加一帧, f连续黑场最小秒 = 0.5f;
-
+        string str单线程解码 = string.Empty,ffmpeg单线程滤镜=string.Empty;
+        double sec分割至少 = 2, sec分段 = 30, Duration = 0, Duration加一帧;
+        float scene = 0.11f, f连续黑场最小秒 = 0.5f;
         public AutoResetEvent event计算 = new AutoResetEvent(false);
         public AutoResetEvent reset再次获取 = new AutoResetEvent(false);
 
-        bool b读取关键帧 = false, b读取转场 = false, b读取黑场 = false, b读取白场 = false, b正在计算 = true;
+        bool b读取csv=false,b读取关键帧 = false, b读取转场 = false, b读取黑场 = false, b读取白场 = false, b正在计算 = true;
 
         string path输出目录关键帧时间戳, path输出目录转场时间戳, path输出目录黑场时间戳, path输出目录白场时间戳;
 
@@ -109,31 +107,31 @@ namespace 破片压缩器 {
             public string get二次跳转_SS_i_SS_T(FileInfo fi输入文件) {
                 string cmd;
                 if (f关键帧 > 0)
-                    cmd = $"-ss {f关键帧} -i \"{fi输入文件.Name}\"";
+                    cmd = $"-ss {f关键帧:F3} -i \"{fi输入文件.Name}\"";
                 else
                     cmd = $"-i \"{fi输入文件.Name}\"";
 
-                if (f偏移转场 > 0) cmd += $" -ss {f偏移转场}";
-                if (f偏移结束 > 0) cmd += $" -t {f持续秒}";
+                if (f偏移转场 > 0) cmd += $" -ss {f偏移转场:F3}";
+                if (f偏移结束 > 0) cmd += $" -t {f持续秒:F3}";
 
                 return cmd;
             }
             public string get二次跳转_SS_i_SS_TO(FileInfo fi输入文件) {
                 string cmd;
                 if (f关键帧 > 0)
-                    cmd = $"-ss {f关键帧} -i \"{fi输入文件.Name}\"";
+                    cmd = $"-ss {f关键帧:F3} -i \"{fi输入文件.Name}\"";
                 else
                     cmd = $"-i \"{fi输入文件.Name}\"";
 
-                if (f偏移转场 > 0) cmd += $" -ss {f偏移转场}";
-                if (f偏移结束 > 0) cmd += $" -to {f偏移结束}";
+                if (f偏移转场 > 0) cmd += $" -ss {f偏移转场:F3}";
+                if (f偏移结束 > 0) cmd += $" -to {f偏移结束:F3}";
 
                 return cmd;
             }
             public string get精确跳转_i_SS_TO(FileInfo fi输入文件) {
                 string cmd = $"-i \"{fi输入文件.Name}\"";
-                if (f转场 > 0) cmd += $" -ss {f转场}";
-                if (f结束 > 0) cmd += $" -to {f结束}";
+                if (f转场 > 0) cmd += $" -ss {f转场:F3}";
+                if (f结束 > 0) cmd += $" -to {f结束:F3}";
                 return cmd;
             }
         }
@@ -142,12 +140,13 @@ namespace 破片压缩器 {
         public int i剩余分段 => set体积降序编码序列.Count;
         public int i总分段 => dic_分段_偏移.Count;
         public VTimeBase(VideoInfo vinfo, DirectoryInfo di输出目录) {
-            fi输入视频 = vinfo.fileInfo;
+            info = vinfo;
+
+            fi输入视频 = info.fileInfo;
             this.di输出目录 = di输出目录;
 
-            this.info = vinfo;
-            if (vinfo.time视频时长 > TimeSpan.Zero)
-                Duration = (double)vinfo.time视频时长.TotalSeconds;
+            Duration = info.time视频时长.TotalSeconds;
+            Duration加一帧 = Duration + +info.f输入每帧秒;
 
             path输出目录关键帧时间戳 = di输出目录.FullName + "\\关键帧时间戳.info";
 
@@ -155,13 +154,11 @@ namespace 破片压缩器 {
 
         public bool is扫描完成 {
             get {
-                if (list关键帧.Count == 0) return true;
+                if (b读取csv) 
+                    return true;
+                else if (b读取关键帧 && b读取黑场 && b读取转场)
+                    return true;
 
-                if (list关键帧.Last( ) == Duration加一帧
-                    //&& list白场.Last( ) == Duration加一帧
-                    && list黑场.Last( ) == Duration加一帧
-                    && list转场.Last( ) == Duration加一帧
-                    ) return true;
 
                 return false;
             }
@@ -200,6 +197,7 @@ namespace 破片压缩器 {
                         Span偏移 spanLast = dic_分段_偏移.Last( ).Value;
                         if (spanLast.f结束 >= sec || spanLast.f结束 < 0) spanLast.f偏移结束 = spanLast.f结束 = 0;
 
+                        b读取csv = true;
                         b正在计算 = false;
                         return true;
                     }
@@ -209,8 +207,6 @@ namespace 破片压缩器 {
         }
 
         public void Start按关键帧(double sec分段, double sec分割至少) {
-            fx获取时长( );
-
             if (sec分割至少 < sec分段) {
                 this.sec分段 = sec分段 < 1 ? 1 : sec分段;
             } else {
@@ -218,7 +214,7 @@ namespace 破片压缩器 {
             }
 
             fx读取关键帧( );
-            if (!b读取关键帧) 转码队列.Add_VTimeBase(this);
+            if (th扫关键帧 != null) 转码队列.Add_VTimeBase(this);
 
             if (th循环计算 == null) {
                 th循环计算 = new Thread(fn循环计算关键帧并存盘) { IsBackground = true, Name = "循环计算关键帧并存盘" + fi输入视频.Name };
@@ -226,8 +222,7 @@ namespace 破片压缩器 {
             }
         }
 
-        public void Start按转场(bool b单线程, double scene, double sec_gop, double sec分割至少, double f连续黑场最小秒) {
-            fx获取时长( );
+        public void Start按转场(bool b单线程, float scene, double sec_gop, double sec分割至少, float f连续黑场最小秒) {
             if (scene <= 0.001) this.scene = 0.001f;
             else if (scene >= 0.999) this.scene = 0.999f;
             else this.scene = scene;
@@ -236,7 +231,10 @@ namespace 破片压缩器 {
             this.sec分割至少 = sec分割至少;
             this.f连续黑场最小秒 = f连续黑场最小秒;
 
-            str单线程 = b单线程 ? EXE.ffmpeg单线程 : string.Empty;
+            if (b单线程) {
+                str单线程解码 = EXE.ffmpeg单线程解码;
+                ffmpeg单线程滤镜 = EXE.ffmpeg单线程滤镜;
+            } 
 
             fx检测转场( );
             fx读取关键帧( );
@@ -296,7 +294,8 @@ namespace 破片压缩器 {
             if (!b读取关键帧) {
                 string path视频同目录关键帧时间戳 = $"{fi输入视频.DirectoryName}\\关键帧时间戳_{fi输入视频.Name}.info";
                 b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span);
-                if (!b读取关键帧 && th扫关键帧 == null) {
+
+                if ((!b读取关键帧 || list关键帧.Count < 1) && th扫关键帧 == null) {
                     list关键帧 = new SynchronizedCollection<double>( ) { 0 };
                     th扫关键帧 = new Thread(fn扫关键帧) { IsBackground = true, Name = "扫关键帧" + fi输入视频.Name };
                     th扫关键帧.Start( );
@@ -324,20 +323,19 @@ namespace 破片压缩器 {
             else return false;
         }
         public bool is重算时间码(string path转码完成, string str编码摘要) {
-            fx获取时长( );
-            string timestamp_v2 = "# timestamp format v2";
-            StringBuilder @string = new StringBuilder(timestamp_v2);
+            StringBuilder timestamp_v2 = new StringBuilder("# timestamp format v2");
             var dicSort_Part = from objDic in dic_分段_偏移 orderby objDic.Key ascending select objDic;
             foreach (var item in dicSort_Part) {
                 string path = $"{path转码完成}\\{item.Key}_timestamp.txt";
                 string[] arr;
-                try { arr = File.ReadAllLines(path); } catch { return false; }
+                try { arr = File.ReadAllLines(path); } catch { 
+                    continue; }
                 if (arr.Length > 1) {
                     for (int end = arr.Length - 1; end > 0; end--) {
                         if (double.TryParse(arr[end], out _)) {
                             double ms本场起始 = item.Value.f转场 * 1000;
                             for (int i = 1; i < end; i++) {//最后一帧是结束时间戳，不需要计算
-                                @string.AppendLine( ).AppendFormat("{0:F0}", ms本场起始 + double.Parse(arr[i]));
+                                timestamp_v2.AppendLine( ).AppendFormat("{0:F0}", ms本场起始 + double.Parse(arr[i]));
                             }
                             goto 下一个;
                         }
@@ -345,11 +343,12 @@ namespace 破片压缩器 {
                 }
                 下一个:;
             }
-            @string.AppendLine( ).AppendFormat("{0:F0}", Duration * 1000);
-            timestamp_v2 = @string.ToString( );
+            timestamp_v2.AppendLine( );
+            //原本还需要添加最后一帧结束播放时间戳，刻意不添加，当转码表手工去段，跳过片尾编码，空屏播放到最后。
+
             DirectoryInfo di成功目录 = new DirectoryInfo(path转码完成);//合成函数会尝试合成切片目录下不同参数的文件
             try {
-                File.WriteAllText($"{di成功目录.Parent.FullName}\\重算时间码_{str编码摘要}.txt", timestamp_v2);
+                File.WriteAllText($"{di成功目录.Parent.FullName}\\重算时间码_{str编码摘要}.txt", timestamp_v2.ToString( ));
                 return true;
             } catch { }
             return false;
@@ -369,7 +368,7 @@ namespace 破片压缩器 {
                 } else { break; }
             }
 
-            while (set体积降序编码序列.Count < 1 && b正在计算) {//如果没有等待转码，，并且扫描线程还在工作则无限等待
+            while (set体积降序编码序列.Count < 1 && b正在计算) {//如果没有等待转码，并且扫描线程还在工作则无限等待
                 try { reset再次获取.WaitOne(666); } catch { }
                 event计算.Set( );
                 if (set体积降序编码序列.Count > 0) goto 再次检查; //延迟后，新计算出的分段需再次检查文件已存在。
@@ -648,20 +647,6 @@ namespace 破片压缩器 {
             }
         }
 
-        void fx获取时长( ) {
-            using (Process p = new Process( )) {
-                string cmd = "-v error -show_entries format=duration \"" + fi输入视频.FullName + '"';
-                p.StartInfo = get_StartInfo(EXE.ffprobe, cmd);
-                try { p.Start( ); } catch { return; }
-                string Output = p.StandardOutput.ReadToEnd( );
-                if (double.TryParse(regex秒长.Match(Output).Groups[1].Value, out double sec)) {
-                    info.time视频时长 = TimeSpan.FromSeconds(sec);
-                    Duration = sec;
-                    Duration加一帧 = sec + +info.f输入每帧秒;
-                }
-            }
-        }
-
         void fn扫关键帧( ) {
             using (Process process = new Process( )) {
                 //string cmd= $"-select_streams v:0 -show_entries frame=pts_time,duration_time,pict_type -of csv \"{fi输入文件.FullName}\""; //单线程解码速度过慢，只取关键帧时间戳做偏移量。
@@ -690,17 +675,21 @@ namespace 破片压缩器 {
                     string txt = @stringErr.AppendLine( ).Append(@string).ToString( );
 
                     string path视频同目录关键帧时间戳 = fi输入视频.FullName + "_关键帧时间戳.info";
-                    //try { File.WriteAllText(path视频同目录关键帧时间戳, txt); } catch { }//调试禁用
                     try { File.WriteAllText(path输出目录关键帧时间戳, txt); } catch { }
+                  //try { File.WriteAllText(path视频同目录关键帧时间戳, txt); } catch { }//调试禁用
+                } else {
+                    string pathErrLog = fi输入视频.FullName + "_关键帧扫描失败.errlog";
+                    try { File.WriteAllText(pathErrLog, @string.ToString()); } catch { }
                 }
                 list关键帧.Add(Duration加一帧);//队列末用于计算完成时刻，同时判断扫描线程结束。
+                b读取关键帧 = true;
                 if (is扫描完成) fx同步计算分段点并存盘( );//所有扫描线程完毕后，触发同步计算
             }
         }
         void fn扫转场( ) {
             span扫转场进度 = TimeSpan.Zero;
             using (Process process = new Process( )) {
-                string cmd = $"{str单线程}-i \"{fi输入视频.FullName}\" -vf \"select='gt(scene,{scene})',showinfo\" -an -sn -f null -";
+                string cmd = $"-i \"{fi输入视频.FullName}\" -vf \"select='gt(scene,{scene})',showinfo\" -an -sn -f null - {ffmpeg单线程滤镜}";
                 process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
                 try { process.Start( ); } catch {
                     return;
@@ -744,13 +733,14 @@ namespace 破片压缩器 {
 
                 span扫转场进度 = TimeSpan.FromSeconds(Duration加一帧);
                 list转场.Add(Duration加一帧);//队列末尾也用于判断进程结束
+                b读取转场 = true;
                 if (is扫描完成) fx同步计算分段点并存盘( );//所有扫描线程完毕后，触发同步计算
             }
         }
         void fn扫黑场( ) {
             span扫黑场进度 = TimeSpan.Zero;
             using (Process process = new Process( )) {
-                string cmd = $"{str单线程}-i \"{fi输入视频.FullName}\" -vf \"blackframe\" -f null -";
+                string cmd = $"-i \"{fi输入视频.FullName}\" -vf \"blackframe\" -f null - {ffmpeg单线程滤镜}";
                 process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
                 try { process.Start( ); } catch {
                     return;
@@ -792,13 +782,14 @@ namespace 破片压缩器 {
 
                 span扫黑场进度 = TimeSpan.FromSeconds(Duration加一帧);
                 list黑场.Add(Duration加一帧);//队列末尾也用于判断进程结束
+                b读取黑场 = true;
                 if (is扫描完成) fx同步计算分段点并存盘( );//所有扫描线程完毕后，触发同步计算
             }
         }
         void fn扫白场( ) {
             span扫白场进度 = TimeSpan.Zero;
             using (Process process = new Process( )) {
-                string cmd = $"{str单线程} -i \"{fi输入视频.FullName}\" -vf \"signalstats,metadata=print:key=lavfi.signalstats.YAVG,duration_time\" - f null -";
+                string cmd = $"-i \"{fi输入视频.FullName}\" -vf \"signalstats,metadata=print:key=lavfi.signalstats.YAVG,duration_time\" - f null -  {ffmpeg单线程滤镜}";
                 process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
                 try { process.Start( ); } catch {
                     return;
@@ -838,11 +829,12 @@ namespace 破片压缩器 {
 
                 span扫白场进度 = TimeSpan.FromSeconds(Duration加一帧);
                 list白场.Add(Duration加一帧);//队列末尾也用于判断进程结束
+                b读取白场 = true;
                 if (is扫描完成) fx同步计算分段点并存盘( );//所有扫描线程完毕后，触发同步计算
             }
         }
         ProcessStartInfo get_StartInfo(string exe, string cmd) {
-            string full_cmd = str单线程 + cmd + EXE.ffmpeg不显库;
+            string full_cmd = str单线程解码 + cmd + EXE.ffmpeg不显库;
             ProcessStartInfo StartInfo = new ProcessStartInfo(exe, full_cmd);
             StartInfo.CreateNoWindow = true;
             StartInfo.UseShellExecute = false;
@@ -1057,6 +1049,7 @@ namespace 破片压缩器 {
                 dic白场.Clear( );
                 dic转场帧.Clear( );
                 b正在计算 = false;
+                b读取csv = true;
                 转码队列.Remove_VTimeBase(this);
                 Form破片压缩.autoReset转码.Set( );
                 fx分割字幕( );//关键帧分割时

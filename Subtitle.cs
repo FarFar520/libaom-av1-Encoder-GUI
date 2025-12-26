@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
     internal class Subtitle {
@@ -32,7 +33,6 @@ namespace 破片压缩器 {
             return encoding;
         }
 
-        public static Regex regex日时分秒 = new Regex(@"(?<Day>\d+[\.:])?(?<Hour>\d{1,2})[:：](?<Min>\d{1,2})[:：](?<Sec>\d{1,2})(?:[\., ](?<MS>\d+))?", RegexOptions.Compiled);
 
         public static double match日时分秒_to_秒(string text) {
             Match match = regex日时分秒.Match(text);

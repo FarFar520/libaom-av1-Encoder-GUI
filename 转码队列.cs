@@ -243,7 +243,6 @@ namespace 破片压缩器 {
 
         public static bool Get独立进程输出(out string info) {
             info = string.Empty;
-
             if (list扫分段.Count > 0) {
                 for (int i = 0; i < list扫分段.Count; i++) {
                     if (list扫分段[i].GetTxt(out string txt)) {
@@ -252,7 +251,6 @@ namespace 破片压缩器 {
                 }
                 return true;
             }
-
             if (process黑边 != null) {
                 try {
                     info = process黑边.sb输出数据流.ToString( ) + "\r\n"
@@ -275,6 +273,7 @@ namespace 破片压缩器 {
                 try { info = process切片.sb输出数据流.ToString( ); } catch { }
                 return true;
             }
+
             return false;
         }
     }

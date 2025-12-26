@@ -258,8 +258,10 @@ namespace 破片压缩器 {
             if (roadmap.vTimeBase.i总分段 < 1) {
                 while (转码队列.list扫分段.Count > 0) try { Thread.Sleep(999); } catch { }//避免同时启动
                 add日志($"开始扫描视频帧数据：{roadmap.fi输入视频.Name}");
+
                 if (!Settings.b扫描场景) roadmap.vTimeBase.Start按关键帧(i切分间隔秒, Scene.i分割最少秒);
                 else roadmap.vTimeBase.Start按转场(转码队列.b缓存余量充足, (float)d检测镜头精度, Settings.sec_gop, Scene.i分割最少秒, 0.25f);
+
                 autoReset初始信息.Set( );
             } else {
                 add日志($"已读取无缓转码.csv {roadmap.vTimeBase.i总分段} 段：{roadmap.fi输入视频.Name}");
@@ -397,7 +399,7 @@ namespace 破片压缩器 {
                     }
                     if (arr等待合并队列[i].b文件夹下还有切片) {
                         if (!arr等待合并队列[i].b无缓转码) {
-                            add日志($"扫描协同任务：{arr等待合并队列[i].str切片路径}");
+                            //add日志($"扫描协同任务：{arr等待合并队列[i].str切片路径}");
                             arr等待合并队列[i].b协同切片尝试回调( );
                             continue;
                         }
@@ -442,26 +444,26 @@ namespace 破片压缩器 {
         void fn初始信息( ) {
             while (true) {
                 try { autoReset初始信息.WaitOne( ); } catch { }
-                if (转码队列.b有任务) {//有任务时不显示扫描、切片、转音轨等日志。
+                if (转码队列.b有任务) {//有编码任务时，计时器持续工作，日志输出交替显示。
                     Invoke(new Action(( ) => timer刷新编码输出.Start( )));
-                    try { Thread.Sleep(999); } catch { }
                 } else {
-                    Invoke(new Action(( ) => timer刷新编码输出.Stop( )));
-                    try { Thread.Sleep(3333); } catch { }
-                    while (转码队列.Get独立进程输出(out string info)) {
-                        if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
-                            info += "\r\n\r\n" + str编码速度;
-                        }
-                        if (info.Length > 0) {
-                            textBox日志.Invoke(new Action(( ) => {
-                                textBox日志.Text = info;
-                                textBox日志.SelectionStart = textBox日志.TextLength - 1;
-                                textBox日志.ScrollToCaret( );
-                            }));
-                        }
-                        try { autoReset初始信息.WaitOne(3333); } catch { }
-                    }
+                    try { Thread.Sleep(6666); } catch { }
+                    Invoke(new Action(( ) => timer刷新编码输出.Stop( )));//无编码任务时，停止计时器，只显示准备信息
                 }
+                while (转码队列.Get独立进程输出(out string info)) {
+                    if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
+                        info += "\r\n\r\n" + str编码速度;
+                    }
+                    if (info.Length > 0) {
+                        textBox日志.Invoke(new Action(( ) => {
+                            textBox日志.Text = info;
+                            textBox日志.SelectionStart = textBox日志.TextLength - 1;
+                            textBox日志.ScrollToCaret( );
+                        }));
+                    }
+                    try { autoReset初始信息.WaitOne(3333); } catch { }
+                }
+                Invoke(new Action(( ) => timer刷新编码输出.Start( )));
             }
         }
 
@@ -1202,7 +1204,6 @@ namespace 破片压缩器 {
 
 
         }
-
         private void checkBox_lavfi_CheckedChanged(object sender, EventArgs e) {
             textBox_lavfi.Visible = checkBox_lavfi.Checked;
         }
@@ -1220,25 +1221,28 @@ namespace 破片压缩器 {
             }
         }
         private void textBox日志_Enter(object sender, EventArgs e) {
-            timer刷新编码输出.Interval = 33333;
+            if (timer刷新编码输出.Enabled)
+                timer刷新编码输出.Interval = 33333;
         }
         private void textBox日志_Leave(object sender, EventArgs e) {
-            timer刷新编码输出.Interval = 8888;
+            if (timer刷新编码输出.Enabled)
+                timer刷新编码输出.Interval = 8888;
         }
         private void Form破片压缩_Activated(object sender, EventArgs e) {
-            timer刷新编码输出.Interval = 6666;
             if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
                 textBox日志.Text = str编码速度;
             }
 
+            timer刷新编码输出.Interval = 6666;
+
         }
         private void Form破片压缩_Deactivate(object sender, EventArgs e) {
-            timer刷新编码输出.Interval = 66666;
-            if (timer刷新编码输出.Enabled && str最后一条信息 != "刷新输出信息间隔调整为一分钟")
+            if (timer刷新编码输出.Enabled && str最后一条信息 != "刷新输出信息间隔调整为一分钟") {
                 add日志("刷新输出信息间隔调整为一分钟");
+            }
+            timer刷新编码输出.Interval = 66666;
         }
         private void Form破片压缩_Load(object sender, EventArgs e) {
-
             CPUNum( );
             //Extract_EXE.resources_to_exe( );
             comboBox_lib.SelectedIndex = 0;

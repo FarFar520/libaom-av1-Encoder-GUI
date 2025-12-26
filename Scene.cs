@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
     public class Scene {
@@ -124,7 +125,7 @@ namespace 破片压缩器 {
             }
 
             public class Some {
-                public static Regex regexNum = new Regex(@"\d+(\.\d+)?", RegexOptions.Compiled);
+
                 public float R, G, B;
                 public bool has = false;
                 public Some(string set) {

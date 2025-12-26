@@ -8,19 +8,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
+using static 破片压缩器.Regex参数;
 using static 破片压缩器.Subtitle;
 using static 破片压缩器.VTimeBase;
 
 namespace 破片压缩器 {
     internal class Video_Roadmap {
-
-        public static Regex regex逗号 = new Regex(@"\s*[,，]+\s*");
-        public static Regex regex秒长 = new Regex(@"\[FORMAT\]\s+duration=(\d+\.\d+)\s+\[/FORMAT\]", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-        public static Regex regex切片号 = new Regex(@"'(\d+)\.mkv'", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        public static Regex regexPTS_Time = new Regex(@"pts_time:(\d+(?:\.\d+)?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
         int fontsize = 19;
 
         string gop {
@@ -305,10 +298,9 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         }
 
         public Video_Roadmap(FileInfo fileInfo, string str正在转码文件夹, bool b无缓转码) {
+            fi输入视频 = fileInfo;
 
             External_Process.get_ffprobe读取视频时长(fileInfo.FullName, out sec视频时长);
-
-            fi输入视频 = fileInfo;
             info = new VideoInfo(fileInfo, sec视频时长);
 
             Task.Run(( ) => fn测试单核解码帧率( ));
@@ -786,7 +778,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             string vfr = _b转可变帧率 ? ".vfr" : string.Empty;
 
             str编码摘要 = $"{info.str长乘宽}{vfr}.{info.OUT.enc}.{info.OUT.str量化名}{info.OUT.adjust_crf}.p{info.OUT.preset}{info.OUT.denoise}";
-            str连接视频名 = $"{info.str视频名无后缀}.{info.get输出Progressive}{vfr}.{info.OUT.enc}.crf{info.OUT.adjust_crf}.p{info.OUT.preset}{info.OUT.denoise}";
+            str连接视频名 = $"{info.str视频名无后缀}.{info.get输出Progressive}{vfr}.{info.OUT.enc}.{info.OUT.str量化名}{info.OUT.adjust_crf}.p{info.OUT.preset}{info.OUT.denoise}";
             if (_b硬字幕 && (_b分段字幕 || _b切片字幕)) str连接视频名 += ".硬字幕";
 
             di编码成功 = new DirectoryInfo($"{str切片路径}\\转码完成.{str编码摘要}");
@@ -897,14 +889,13 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 string path编码后切片 = $"{di切片.FullName}\\{span偏移.i分段号}_{str编码摘要}丨{DateTime.Now:yyyy.MM.dd.HH.mm.ss.fff}{str输出格式}";
 
                 string str命令行;
-                string dec_1th = info.IN.ffmpeg单线程解码;
                 string input = span偏移.get二次跳转_SS_i_SS_TO(fi输入视频);
 
                 string lavfi滤镜 = _b使用全局滤镜 ? str滤镜lavfi : get_分段模式文字滤镜(span偏移);
 
                 if (Settings.b多线程) {
                     string encV = v命令行.format_CRF多线程编码库(b全黑场, span偏移.f指定画质CRF);
-                    str命令行 = $"{dec_1th}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{info.IN.ffmpeg单线程解码}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                 } else {
                     string encV = v命令行.format_CRF编码指令(b全黑场, span偏移.f指定画质CRF);
                     str命令行 = $"{EXE.ffmpeg单线程解码}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
@@ -965,10 +956,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             DirectoryInfo[] di协编们 = di切片.GetDirectories("*协同编码");// 协同编码的子工作目录
             foreach (DirectoryInfo di协编 in di协编们) {
                 FileInfo[] arrFI_MKV协转 = di协编.GetFiles("*.mkv");
-
                 DateTime now = DateTime.Now;
                 string tag = "丨" + now.Year;//转码关键字匹配
-
                 for (int i = 0; i < arrFI_MKV协转.Length; i++) {
                     if (uint.TryParse(arrFI_MKV协转[i].Name.Substring(0, arrFI_MKV协转[i].Name.Length - 4), out uint value)) {
                         try {//尝试移动协同编码文件到切片目录。计算节点灵活下线
@@ -1126,8 +1115,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     bool b有音轨 = false;
                     for (int i = 0; i < arr.Count; i++) {
                         if (arr[i].StartsWith("Stream #") && arr[i].Contains("Audio")) {
-                            if (VideoInfo.regexAudio.IsMatch(arr[i]))
-                                str音频摘要 = '.' + VideoInfo.regexAudio.Match(arr[i]).Groups[1].Value;
+                            if (regexAudio.IsMatch(arr[i]))
+                                str音频摘要 = '.' + regexAudio.Match(arr[i]).Groups[1].Value;
 
                             b有音轨 = true; break;
                         }
@@ -1152,8 +1141,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                             bool b有音轨 = false;
                             for (int j = 0; j < arr.Count; j++) {
                                 if (arr[j].StartsWith("Stream #") && arr[j].Contains("Audio")) {
-                                    if (VideoInfo.regexAudio.IsMatch(arr[j]))
-                                        str音频摘要 = '.' + VideoInfo.regexAudio.Match(arr[j]).Groups[1].Value;
+                                    if (regexAudio.IsMatch(arr[j]))
+                                        str音频摘要 = '.' + regexAudio.Match(arr[j]).Groups[1].Value;
                                     b有音轨 = true; break;
                                 }
                                 ;
@@ -1461,39 +1450,12 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
 
         }
-        void 字幕切片( ) {
-            if (list_切片体积降序.Count > 0) {
-                int count = list_切片体积降序.Count( );
-                float sec_Count = 0;
-                if (aSS != null) {
-                    for (int i = 1; i <= count; i++) {
-                        if (External_Process.get_ffprobe读取视频时长(str切片路径 + "\\" + i + ".mkv", out double sec)) {
-                            float sec_Next = sec_Count + (float)sec;
-                            aSS.fx顺序分割并保存(di切片, sec_Count, sec_Next, i.ToString( ));
-                            sec_Count = sec_Next;
-                        }
-                    }
-                    _b切片字幕 = true;
-                } else if (sRT != null) {
-                    for (int i = 1; i <= count; i++) {
-                        if (External_Process.get_ffprobe读取视频时长(str切片路径 + "\\" + i + ".mkv", out double sec)) {
-                            float sec_Next = sec_Count + (float)sec;
-                            sRT.fx顺序分割并保存(di切片, sec_Count, sec_Next, i.ToString( ));
-                            sec_Count = sec_Next;
-                        }
-                    }
-                    _b切片字幕 = true;
-
-                }
-            }
-        }
 
         bool b重算时间码(string path转码完成, List<int> list_SerialName) {
             float f帧毫秒 = 1000 / info.f输出帧率;
             string path切片日志 = string.Format("{0}\\视频切片_{1}.log", di切片.FullName, di切片.Name.Substring(3));
             List<double> list_timestamp = new List<double>( ) { };
 
-            bool b成功重算 = false;
             if (File.Exists(path切片日志)) {
                 string[] arrLog = null;
                 try { arrLog = File.ReadAllLines(path切片日志); } catch { }
@@ -1533,9 +1495,9 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                         if (str转码日志 != null && arr时间码 != null && arr时间码.Length > 2) {//经分析：第一行版本，第二行→第一帧起始时间戳，最后一行→最后一帧结束时间戳（最后一行有BUG，出现全片时长）
                             int end = arr时间码.Length - 1;
-                            int.TryParse(External_Process.regexFrame.Match(str转码日志).Groups[1].Value, out int frame);
+                            int.TryParse(regexFrame.Match(str转码日志).Groups[1].Value, out int frame);
                             for (; end >= 0; end--) {
-                                if (!string.IsNullOrEmpty(arr时间码[end]) && float.TryParse(arr时间码[end], out _)) { break; }//最后一行时间戳代表最后一帧截止时间，跳过
+                                if (!string.IsNullOrEmpty(arr时间码[end]) && double.TryParse(arr时间码[end], out _)) { break; }//最后一行时间戳代表最后一帧截止时间，跳过
                             }
                             int count = list_timestamp.Count;
                             float f开始毫秒 = ns.Value * 1000;
@@ -1554,78 +1516,52 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                         }//允许无帧切片，可变帧率视频数秒内无新帧，但被独立切片。
                     }
-                    if (list_timestamp.Count > 1) b成功重算 = true;
                 }
             }
 
-            if (!b成功重算) {
-                list_timestamp.Clear( );
-                string[] arr_转码完成 = Directory.GetFiles(path转码完成, "*_转码完成.log");
-                string[] arr_时间码 = Directory.GetFiles(path转码完成, "*_timestamp.txt");
-
-                if (arr_转码完成.Length == arr_时间码.Length) {
-                    double f汇总毫秒 = 0;
-                    bool b中段缺失 = false;
-                    for (int i = 1; i <= arr_转码完成.Length; i++) {
-                        string log;
-                        try { log = File.ReadAllText(path转码完成 + "\\" + i + "_转码完成.log"); } catch { log = null; }
-
-                        int end = 0;
-                        double f切片时长 = 0;
-
-                        if (_b无缓转码 && vTimeBase.GetSpan偏移(i, out Span偏移 span)) {
-                            f切片时长 = span.f持续秒;
-                            end = span.out_frames;
+            if (list_timestamp.Count < 1) {
+                double f汇总毫秒 = 0;
+                foreach (int i in list_SerialName) {
+                    int frames = 0;
+                    double f切片毫秒 = 0;
+                    string log;
+                    try { log = File.ReadAllText(path转码完成 + "\\" + i + "_转码完成.log"); } catch { return false; }
+                    if (!string.IsNullOrEmpty(log)) {
+                        if (regex秒长.IsMatch(log) && double.TryParse(regex秒长.Match(log).Groups[1].Value, out double sec)) {
+                            f切片毫秒 = sec * 1000;
+                        } else if (!log.Contains("-ss ") && !log.Contains(" -to ")) {
+                            double.TryParse(regex秒长.Match(log).Groups[1].Value, out sec);
                         }
 
-                        if (!string.IsNullOrEmpty(log)) {
-                            if (External_Process.regexFrame.IsMatch(log))
-                                int.TryParse(External_Process.regexFrame.Match(log).Groups[1].Value, out end);
-
-                            if (f切片时长 <= 0) {
-                                if (regex秒长.IsMatch(log) && float.TryParse(regex秒长.Match(log).Groups[1].Value, out float sec)) {
-                                    f切片时长 = sec * 1000;
-                                } else if (!log.Contains("-ss ") && !log.Contains(" -to ")) {
-                                    if (TimeSpan.TryParse(regex日时分秒.Match(log).Groups[1].Value, out TimeSpan ts))
-                                        f切片时长 = ts.TotalMilliseconds;
-                                }
-                            }
-                        }
-
-                        string[] arr时间码;
-                        try { arr时间码 = File.ReadAllLines(path转码完成 + "\\" + i + "_timestamp.txt"); } catch { arr时间码 = null; b中段缺失 = true; }//读取时间码失败则标记为中断缺失
-
-                        if (arr时间码 != null && arr时间码.Length > 2) {
-                            if (b中段缺失)
-                                return false;//当遇到有标记缺失，正确读取到下一段则直接退出。
-
-                            if (end == 0 || end >= arr时间码.Length)
-                                end = arr时间码.Length - 2;
-
-                            double f当前毫秒 = f汇总毫秒;
-                            for (int t = 1; t <= end; t++) {
-                                if (float.TryParse(arr时间码[t], out float f偏移毫秒)) {
-                                    f当前毫秒 = f汇总毫秒 + f偏移毫秒; //切片起始时间戳+帧起始时间戳（偏移毫秒）
-                                } else {
-                                    f当前毫秒 += f帧毫秒;
-                                }
-                                list_timestamp.Add(f当前毫秒);
-                            }
-                        }
-                        f汇总毫秒 += f切片时长;
+                        if (regexFrame.IsMatch(log))
+                            int.TryParse(regexFrame.Match(log).Groups[1].Value, out frames);
                     }
+
+                    string[] arr时间码;
+                    try { arr时间码 = File.ReadAllLines(path转码完成 + "\\" + i + "_timestamp.txt"); } catch { return false; }//读取时间码失败则标记为中断缺失
+
+                    if (arr时间码 != null && arr时间码.Length > 2) {
+                        if (frames == 0 || frames >= arr时间码.Length) {//编码帧数与时间戳行下标复用，第二行 arr时间码[1] = 刚好是第一帧 arr时间码[frames]
+                            for (int e = arr时间码.Length - 1; e > 0; e--) if (double.TryParse(arr时间码[e], out _)) {
+                                    frames = e - 1; break;
+                                }
+                        }
+                        double f当前毫秒 = f汇总毫秒;
+                        for (int t = 1; t <= frames; t++) {
+                            if (float.TryParse(arr时间码[t], out float f偏移毫秒)) {
+                                f当前毫秒 = f汇总毫秒 + f偏移毫秒; //切片起始时间戳+帧起始时间戳（偏移毫秒）
+                            } else {
+                                f当前毫秒 += f帧毫秒;
+                            }
+                            list_timestamp.Add(f当前毫秒);
+                        }
+                    }
+                    f汇总毫秒 += f切片毫秒;
                 }
             }
 
-            double f全片时长 = info.time视频时长.TotalSeconds;
-
-            if (list_timestamp.Count > 1) {
-                if (list_timestamp[list_timestamp.Count - 1] > f全片时长)
-                    f全片时长 = list_timestamp[list_timestamp.Count - 1] + f帧毫秒;
-
-                list_timestamp.Add(f全片时长);
-
-                list_timestamp.Sort( );
+            if (list_timestamp.Count > 0) {
+                //原本还需要添加最后一帧结束播放时间戳，刻意不添，手工对散文件去尾操作，空屏自然播放到最后。
 
                 StringBuilder sbTC = new StringBuilder("# timestamp format v2");
                 for (int i = 0; i < list_timestamp.Count; i++)

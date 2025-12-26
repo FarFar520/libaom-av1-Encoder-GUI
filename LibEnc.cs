@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
     public class LibEnc {
@@ -171,7 +171,7 @@ namespace 破片压缩器 {
         }
         static void add_libvvenc_qp( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
-                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 10, my_max: 36, my_value: 19)
+                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 10, my_max: 36, my_value: 23)//qp23≈qpa26(qp/qpa拉开差异档位）  qp19≈qpa23(vmaf 97.5+)  
                 , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
             /*
              * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
@@ -552,7 +552,7 @@ namespace 破片压缩器 {
 
 
         Dictionary<string, 预设> _dic_选择_预设 = new Dictionary<string, 预设>( );
-        static Regex rege多空格 = new Regex(" {2,}", RegexOptions.Compiled);
+
 
         Dictionary<byte, string> dic_位深_限缩参数 = new Dictionary<byte, string>( ) { { 0, "" }, { 8, "yuv420p" }, { 10, "yuv420p10le" }, { 12, "yuv420p12le" }, { 14, "yuv420p14le" }, { 16, "yuv420p16le" } };
 

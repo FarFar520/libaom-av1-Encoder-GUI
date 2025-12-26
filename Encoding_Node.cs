@@ -72,10 +72,8 @@ namespace 破片压缩器 {
         public Encoding_Node(FileInfo fi任务配置) {
             di切片文件夹 = fi任务配置.Directory;
             str切片路径 = di切片文件夹.FullName;
-
             string[] lines;
             try { lines = File.ReadAllLines(fi任务配置.FullName); } catch { return; }
-
             for (int i = 0; i < lines.Length; i++) {
                 int i等号 = lines[i].IndexOf('=');
 

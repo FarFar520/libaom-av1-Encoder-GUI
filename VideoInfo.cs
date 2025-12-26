@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
     public class VideoInfo {
@@ -68,17 +69,6 @@ namespace 破片压缩器 {
                , list图片轨 = new List<int>( )
                , list其它轨 = new List<int>( );
 
-
-        public static Regex regexWH = new Regex(@"(?<w>[1-9]\d+)x(?<h>[1-9]\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        public static Regex regexFPS = new Regex(@"(?<fps>\d+(\.\d+)?) fps", RegexOptions.IgnoreCase | RegexOptions.Compiled);//总帧数÷总时长（平均帧率）
-        public static Regex regexTBR = new Regex(@"(?<tbr>\d+(\.\d+)?) tbr", RegexOptions.IgnoreCase | RegexOptions.Compiled);//基准帧率
-        public static Regex regexDAR = new Regex(@"DAR\s*(?<darW>\d+):(?<darH>\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//备用
-        public static Regex regexAudio = new Regex(@"Audio: (?<code>\w+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-        public static Regex regex音频信息 = new Regex(@"Stream #(?<map>\d+:\d+)(?<轨道码>\[0x[^]]+\])?(?:\((?<语言>\w+)\))?: Audio: (?<编码>[^,]+), (?<采样率>\d+ Hz), (?<声道>[^,]+)(?:, (?<位深>[^,]+))?(?:, (?<码率Kbps>\d+) kb/s[^,]*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-        public static Regex regex隔行扫描 = new Regex(@"(top|bottom)\s+first", RegexOptions.IgnoreCase | RegexOptions.Compiled);//交错视频
-        public static Regex regexDuration = new Regex(@"Duration:\s*(?:(?:(?:(?:(?<D>\d+)\s*[\.:]\s*)?(?<H>\d+)\s*:\s*)?(?<M>\d+)\s*:\s*)?(?<S>\d+))?(?:\s*\.\s*(?<MS>\d+))?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public 输出 OUT = new 输出( );
         public 输入 IN = new 输入( );
@@ -212,7 +202,7 @@ namespace 破片压缩器 {
         public class 输入 {
             public float f最大声道 = 2;
             public float f单核解码能力 = float.MaxValue;//优先使用单线程解码，减少线程间通讯损耗。
-            public string ffmpeg单线程解码 = EXE.ffmpeg单线程;
+            public string ffmpeg单线程解码 = EXE.ffmpeg单线程解码;
         }
 
         public VideoInfo(FileInfo fileInfo, double sec视频时长) {
@@ -251,7 +241,7 @@ namespace 破片压缩器 {
                         list音频轨.Add(i轨道号);
                         Match match = regex音频信息.Match(line);
                         if (match.Success) {
-                            音轨信息 aInfo =new 音轨信息(match);
+                            音轨信息 aInfo = new 音轨信息(match);
                             if (aInfo.采样率 != "48000 Hz") OUT.ar = " -ar 48000";
                             if (aInfo.Ac > IN.f最大声道) IN.f最大声道 = aInfo.Ac;
                         }
