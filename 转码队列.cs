@@ -40,7 +40,7 @@ namespace 破片压缩器 {
         public static SynchronizedCollection<VTimeBase> list扫分段 = new SynchronizedCollection<VTimeBase>( );
 
         public static bool b允许入队 => list.Count < i多进程数量;
-        public static bool b队列满 => i多进程数量 > 0 && list.Count >= i多进程数量;
+        public static bool b队列满 => list.Count >= i多进程数量;
 
         public static bool b缓存余量充足 {
             get {

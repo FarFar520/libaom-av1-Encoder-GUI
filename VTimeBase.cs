@@ -41,16 +41,15 @@ namespace 破片压缩器 {
             ;
         Dictionary<double, HashSet<double>> dic_连续黑场 = new Dictionary<double, HashSet<double>>( ) { };//连续黑场可以用最低画质压缩
 
-        string str单线程解码 = string.Empty,ffmpeg单线程滤镜=string.Empty;
+        string str单线程解码 = string.Empty, ffmpeg单线程滤镜 = string.Empty;
         double sec分割至少 = 2, sec分段 = 30, Duration = 0, Duration加一帧;
         float scene = 0.11f, f连续黑场最小秒 = 0.5f;
         public AutoResetEvent event计算 = new AutoResetEvent(false);
         public AutoResetEvent reset再次获取 = new AutoResetEvent(false);
 
-        bool b读取csv=false,b读取关键帧 = false, b读取转场 = false, b读取黑场 = false, b读取白场 = false, b正在计算 = true;
+        bool  b读取csv = false, b读取关键帧 = false, b读取转场 = false, b读取黑场 = false, b读取白场 = false, b正在计算 = true;
 
         string path输出目录关键帧时间戳, path输出目录转场时间戳, path输出目录黑场时间戳, path输出目录白场时间戳;
-
 
         public class Span偏移 {
             public int i分段号;
@@ -154,7 +153,7 @@ namespace 破片压缩器 {
 
         public bool is扫描完成 {
             get {
-                if (b读取csv) 
+                if (b读取csv)
                     return true;
                 else if (b读取关键帧 && b读取黑场 && b读取转场)
                     return true;
@@ -234,7 +233,7 @@ namespace 破片压缩器 {
             if (b单线程) {
                 str单线程解码 = EXE.ffmpeg单线程解码;
                 ffmpeg单线程滤镜 = EXE.ffmpeg单线程滤镜;
-            } 
+            }
 
             fx检测转场( );
             fx读取关键帧( );
@@ -328,8 +327,9 @@ namespace 破片压缩器 {
             foreach (var item in dicSort_Part) {
                 string path = $"{path转码完成}\\{item.Key}_timestamp.txt";
                 string[] arr;
-                try { arr = File.ReadAllLines(path); } catch { 
-                    continue; }
+                try { arr = File.ReadAllLines(path); } catch {
+                    continue;
+                }
                 if (arr.Length > 1) {
                     for (int end = arr.Length - 1; end > 0; end--) {
                         if (double.TryParse(arr[end], out _)) {
@@ -676,10 +676,10 @@ namespace 破片压缩器 {
 
                     string path视频同目录关键帧时间戳 = fi输入视频.FullName + "_关键帧时间戳.info";
                     try { File.WriteAllText(path输出目录关键帧时间戳, txt); } catch { }
-                  //try { File.WriteAllText(path视频同目录关键帧时间戳, txt); } catch { }//调试禁用
+                    //try { File.WriteAllText(path视频同目录关键帧时间戳, txt); } catch { }//调试禁用
                 } else {
                     string pathErrLog = fi输入视频.FullName + "_关键帧扫描失败.errlog";
-                    try { File.WriteAllText(pathErrLog, @string.ToString()); } catch { }
+                    try { File.WriteAllText(pathErrLog, @string.ToString( )); } catch { }
                 }
                 list关键帧.Add(Duration加一帧);//队列末用于计算完成时刻，同时判断扫描线程结束。
                 b读取关键帧 = true;
@@ -1052,7 +1052,6 @@ namespace 破片压缩器 {
                 b读取csv = true;
                 转码队列.Remove_VTimeBase(this);
                 Form破片压缩.autoReset转码.Set( );
-                fx分割字幕( );//关键帧分割时
             }
 
             try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv", @string.ToString( )); } catch (Exception err) {

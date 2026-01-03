@@ -312,6 +312,7 @@ namespace 破片压缩器 {
 
                     if (roadmap.b无缓转码) {
                         if (File.Exists(roadmap.fi输入视频.FullName)) {//任务有足够时间间隔，检测一次源文件存在情况，当手动删除源文件时跳过任务。
+                            video正在转码文件.fx场景分段字幕切片(Settings.b硬字幕);
                             while (video正在转码文件.b转码下一个分段(out External_Process external_Process)) {
                                 add日志($"开始转码：{external_Process.fi编码.FullName}");
                                 转码队列.ffmpeg等待入队(external_Process);//有队列上限
@@ -365,8 +366,8 @@ namespace 破片压缩器 {
                             if (node.b准备协同任务(out string tips)) {
                                 str正在转码文件夹 = node.di切片文件夹.FullName;
                                 do {
-                                    for (bool hasNext = true; hasNext;) {
-                                        while (!转码队列.b允许入队) try { 转码队列.autoReset入队.WaitOne( ); } catch { }//先等待，再入队，多机协同转码时避免空占文件等待入队
+                                    for (bool hasNext = true; hasNext;) {                                        
+                                        while (转码队列.b队列满) try { 转码队列.autoReset入队.WaitOne( ); } catch { }//先等待，再入队，多机协同转码时避免空占文件等待入队
                                         if (hasNext = node.b转码下一个切片(out External_Process external_Process)) {
                                             add日志($"开始转码：{external_Process.fi编码.FullName}");
                                             转码队列.ffmpeg直接入队(external_Process);//没有队列上限
@@ -1083,6 +1084,7 @@ namespace 破片压缩器 {
 
         private void checkBox_硬字幕_CheckedChanged(object sender, EventArgs e) {
             checkBox_硬字幕.ForeColor = checkBox_硬字幕.Checked ? Color.Red : Color.Black;
+            Settings.b硬字幕 = checkBox_硬字幕.Checked;
         }
 
         private void numericUpDown_Workers_ValueChanged(object sender, EventArgs e) {
@@ -1163,7 +1165,11 @@ namespace 破片压缩器 {
             comboBox预设.DataSource = libEnc选中.dic_选择_预设.Keys.ToArray( );
             comboBox预设.Text = libEnc选中.key显示预设;
 
-            label_CRF.Text = "画质" + libEnc选中.CRF参数.name.ToUpper( );
+            string  crfText= "画质" + libEnc选中.CRF参数.name.ToUpper( );
+            
+            label_CRF.Text = crfText;
+            
+            
 
             numericUpDown_CRF.DecimalPlaces = libEnc选中.CRF参数.i小数位;
             numericUpDown_CRF.Maximum = (decimal)libEnc选中.CRF参数.my_max;

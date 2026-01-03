@@ -7,7 +7,7 @@ using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
     public class VideoInfo {
-        internal class 音轨信息 {
+        public  class 音轨信息 {
             public int Kbps = 0;
             public float Ac = 1.0f;
             public string map, 轨道码, 语言, 编码, 采样率, 声道, 位深, 码率Kbps;
@@ -68,7 +68,6 @@ namespace 破片压缩器 {
                , list字幕轨 = new List<int>( )
                , list图片轨 = new List<int>( )
                , list其它轨 = new List<int>( );
-
 
         public 输出 OUT = new 输出( );
         public 输入 IN = new 输入( );

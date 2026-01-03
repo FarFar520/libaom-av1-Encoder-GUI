@@ -38,7 +38,7 @@ namespace 破片压缩器 {
                 builder.Replace("{切片序号水印}", $"drawtext=text='{info.str视频名无后缀} - {span偏移.i分段号}({span偏移.f转场}~{span偏移.f结束 - info.f输入每帧秒})'{str水印字体参数}:fontsize={fontsize}:fontcolor=white@0.618:x=(w-text_w):y=0");
             }
 
-            if (_b硬字幕) {
+            if (_b分段字幕) {
                 string lavfi硬字幕;
                 if (aSS != null) {
                     FileInfo fi_分段字幕 = new FileInfo(string.Format("{0}\\{1}-{2}{3}", di分段字幕.FullName, span偏移.f关键帧, span偏移.f结束, aSS.Extension));
@@ -73,7 +73,7 @@ namespace 破片压缩器 {
         string get_切片模式文字滤镜(string num) {
             StringBuilder builder = new StringBuilder(lavfi全局值);
 
-            if (_b硬字幕) {
+            if (_b切片字幕) {
                 string lavfi硬字幕;
                 if (aSS != null) {
                     if (File.Exists(string.Format("{0}\\{1}{2}", di切片.FullName, num, aSS.Extension))) {
@@ -196,13 +196,14 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -map 0:a?");
                     if (_b_opus) {
                         str音频摘要 = ".opus";
-                        if (info.list音频轨.Count == 1 && Settings.i声道 > 0) {
-                            if (Settings.i声道 == 2 && info.list信息流[info.list音频轨[0]].Contains("stereo")) {
-                            } else
-                                builder.Append(" -ac ").Append(Settings.i声道);
 
+                        if (info.IN.f最大声道 > Settings.i声道) {
+                            builder.Append(" -ac ").Append(Settings.i声道);
                             str音频摘要 += $"{Settings.i声道}.0";
+                        } else {
+                            str音频摘要 += $"{info.IN.f最大声道:F1}";
                         }
+
                         builder.Append(" -c:a libopus -vbr on -compression_level 10").Append(info.OUT.ar);//-vbr 1~10
                         builder.Append(" -b:a ").Append(Settings.i音频码率).Append("k");
 
@@ -213,7 +214,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                         if (str音频摘要 != ".opus") str最终格式 = ".mkv";
                     }
 
-                    if (info.list字幕轨.Count > 0)
+                    if (!_b硬字幕 && info.list字幕轨.Count > 0)
                         builder.Append(" -map 0:s -c:s copy");
 
                 } else {
@@ -246,7 +247,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         List<float> list_typeI_pts_time = new List<float>( );
 
         bool bVFR = true;
-        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = false, _b硬字幕 = false, _b分段字幕 = false, _b切片字幕 = false, _b切片序号水印 = false, _b转可变帧率 = false, _b使用全局滤镜 = true;
+        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = false, _b硬字幕 = false, _b切片字幕 = false, _b切片序号水印 = false, _b转可变帧率 = false, _b使用全局滤镜 = true, _b分段字幕=false, _b扫描场景=true;
 
         FileInfo fiMKA = null, fiOPUS = null, fi视频头信息 = null, fi拆分日志 = null, fi合并日志 = null;
 
@@ -261,9 +262,9 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         public string str输出文件名 => str转码后MKV名;
         public string strMKA文件名 => strMKA名;
         public string strMKA路径 => str完整路径MKA;
-
-        public bool b有切片记录 => _b有切片记录;
+        public bool b扫描场景 => _b扫描场景;
         public bool b无缓转码 => _b无缓转码;
+        public bool b有切片记录 => _b有切片记录;
 
         Thread th音频转码;
 
@@ -309,6 +310,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             _bGOP传参 = Settings.lib已设置.GOP跃帧 == null && Settings.lib已设置.GOP跃帧 == null;
 
             _b无缓转码 = b无缓转码;
+            _b扫描场景 = Settings.b扫描场景;
             _b转可变帧率 = Settings.b转可变帧率;
 
             if (Settings.b右上角文件名_切片序列号水印) {
@@ -680,8 +682,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             builder.AppendLine( ).Append("按间隔").Append(i切片间隔秒).Append("秒切片：").AppendLine( ).Append(builder切片命令行);
         }
 
-        ASS aSS;
-        SRT sRT;
+        ASS aSS; SRT sRT;
         DirectoryInfo di分段字幕;
         public void fx查找可渲染同名硬字幕文件( ) {
             string path_ASS = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀 + ".ass";
@@ -694,26 +695,24 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     string path_SRT = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀 + ".srt";
                     if (File.Exists(path_SRT)) {
                         sRT = new SRT(new FileInfo(path_SRT));
+                    } else {
+                        _b硬字幕 = false;
                     }
                 }
-            }
+            }//预先匹配一次字幕文件。
 
             if (aSS != null || sRT != null) {
-                di分段字幕 = new DirectoryInfo(fi输入视频.Directory.FullName + "\\" + info.str视频名无后缀);
-                if (!di分段字幕.Exists) {
-                    try {
-                        di分段字幕.Create( );
-                        _b使用全局滤镜 = false;
-                        _b分段字幕 = true;
+                if (_b硬字幕 && _b无缓转码 && !_b扫描场景) { //关键帧分段转码是边扫边转，需提前准备字幕文件夹。
+                    di分段字幕 = new DirectoryInfo(fi输入视频.Directory.FullName + "\\" + info.str视频名无后缀);
+                    if (!di分段字幕.Exists) try { di分段字幕.Create( ); } catch { }
+                    if (Directory.Exists(di分段字幕.FullName)) {
                         if (vTimeBase != null) vTimeBase.setSubtitle(aSS, sRT, di分段字幕);
-                    } catch {
-                        di分段字幕 = null;
+                        _b分段字幕 = true;
+                        _b使用全局滤镜 = false;
+                        str连接视频名 += ".硬字幕";
+                    } else {
                         return;
                     }
-                    vTimeBase.fx分割字幕( );//支持异步分割功能，边扫边分
-                } else {
-                    _b使用全局滤镜 = false;
-                    _b分段字幕 = true;
                 }
             } else {
                 _b硬字幕 = false;//找不到同名字幕文件：标记无需硬字幕
@@ -779,7 +778,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             str编码摘要 = $"{info.str长乘宽}{vfr}.{info.OUT.enc}.{info.OUT.str量化名}{info.OUT.adjust_crf}.p{info.OUT.preset}{info.OUT.denoise}";
             str连接视频名 = $"{info.str视频名无后缀}.{info.get输出Progressive}{vfr}.{info.OUT.enc}.{info.OUT.str量化名}{info.OUT.adjust_crf}.p{info.OUT.preset}{info.OUT.denoise}";
-            if (_b硬字幕 && (_b分段字幕 || _b切片字幕)) str连接视频名 += ".硬字幕";
 
             di编码成功 = new DirectoryInfo($"{str切片路径}\\转码完成.{str编码摘要}");
 
@@ -877,6 +875,47 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                        {
                         try { arrFI_MKV视频[i].Delete( ); } catch { }
                     }
+                }
+            }
+        }
+
+        public void fx场景分段字幕切片(bool b硬字幕) {
+            _b硬字幕 = b硬字幕;
+            aSS = null; sRT = null;
+            if (b硬字幕) {
+                string path_ASS = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀 + ".ass";
+                if (File.Exists(path_ASS)) {
+                    aSS = new ASS(new FileInfo(path_ASS));
+                } else {
+                    string path_SSA = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀 + ".ssa";
+                    if (File.Exists(path_SSA)) {
+                    } else {
+                        string path_SRT = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀 + ".srt";
+                        if (File.Exists(path_SRT)) {
+                            sRT = new SRT(new FileInfo(path_SRT));
+                        }
+                    }
+                }//忽略第一任务重复匹配问题，后续每个任务都有一定时间跨度，考虑文件产生变化重新匹配字幕。
+
+                if (aSS != null || sRT != null) {
+                    if (_b硬字幕 && _b无缓转码 && _b扫描场景) {
+                        di分段字幕 = new DirectoryInfo(fi输入视频.Directory.FullName + "\\" + info.str视频名无后缀);
+                        if (!di分段字幕.Exists) try { di分段字幕.Create( ); } catch { }
+                        if (Directory.Exists(di分段字幕.FullName)) {
+                            if (vTimeBase != null) vTimeBase.setSubtitle(aSS, sRT, di分段字幕);
+                            vTimeBase.fx分割字幕( );
+                            int count = di分段字幕.GetFiles( ).Length;
+                            if (count > 0) {
+                                _b分段字幕 = true;
+                                _b使用全局滤镜 = false;
+                                str连接视频名 += ".硬字幕";
+                            }
+                        } else {
+                            return;
+                        }
+                    }
+                } else {
+                    _b硬字幕 = false;//找不到同名字幕文件：标记无需硬字幕
                 }
             }
         }
@@ -988,7 +1027,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10").Append(info.OUT.ar);//忽略视频轨道，转码全部音轨，字幕轨可能会保留一条。
                     //builder.Append(" -map 0:a:0 -c:a libopus -vbr on -compression_level 10"); //只保留一条音轨
                     //builder.Append(" -c:a libopus -vbr 2.0 -compression_level 10");//vbr 0~2;//vbr不太好用
-                    if (info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
+                    if (!_b硬字幕 && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
                     if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                         //opus默认码率每声道48K码率。多声道自动计算方便。
                     } else
@@ -1025,7 +1064,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10").Append(info.OUT.ar);//忽略视频轨道，转码全部音轨，字幕轨可能会保留一条。
                     //builder.Append(" -map 0:a:0 -c:a libopus -vbr on -compression_level 10"); //只保留一条音轨
                     //builder.Append(" -c:a libopus -vbr 2.0 -compression_level 10");//vbr 0~2;//vbr不太好用
-                    if (info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
+                    if (!_b硬字幕 && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
                     if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                         //opus默认码率每声道48K码率。多声道自动计算方便。
                     } else
@@ -1075,17 +1114,17 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             if (!转码队列.b允许入队) builder.Append(EXE.ffmpeg单线程);
             builder.Append(" -i \"").Append(fiMKA.FullName).Append('"');
             builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10").Append(info.OUT.ar);//-vn不处理视频， -map 0:a 转码全部音轨
-            if (info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
+            if (!_b硬字幕 && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
 
             if (Settings.i音频码率 == 96 && Settings.i声道 == 0) {
                 //opus默认码率每声道48K码率。多声道自动计算方便。
             } else {
                 builder.Append(" -b:a ").Append(Settings.i音频码率).Append('k');
             }
-            if (Settings.i声道 > 0) {
-                if (info.IN.f最大声道 > Settings.i声道)
-                    builder.Append(" -ac ").Append(Settings.i声道);
-            }
+
+            if (info.IN.f最大声道 > Settings.i声道)
+                builder.Append(" -ac ").Append(Settings.i声道);
+
             str音频摘要 = Settings.opus摘要;
             string str临时文件 = $"{di切片.FullName}\\临时{str音频摘要}丨{DateTime.Now:yyyy.MM.dd.HH.mm.ss.fff}.mka";//绝对目录输出音轨
             builder.AppendFormat(" -metadata encoding_tool=\"{0} {1}\" \"{2}\" ", Application.ProductName, Application.ProductVersion, str临时文件);
@@ -1106,7 +1145,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             } else
                 return false;
         }
-
         public bool b转码后混流( ) {//混流线程中有加入是否还有剩余切片判断。
             bool bSuccess = true;
             if (di编码成功 != null && Directory.Exists(di编码成功.FullName)) {//处理正常流程合并任务
@@ -1183,7 +1221,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             return bSuccess;
         }
-
         public void fx删除协编文件( ) {
             if (Directory.Exists(di切片.FullName)) {
                 DirectoryInfo[] arrDI子文件夹 = di切片.GetDirectories("*协同编码");// 协同编码的子工作目录
@@ -1195,7 +1232,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             try { File.Delete(str切片路径 + "\\任务配置.ini"); } catch { }
         }
-
+        
         void fx查找封装字幕文件( ) {
             //可增加语言字幕识别 _cn .En 等
             string path_ASS = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀 + ".ass";
@@ -1231,7 +1268,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             if (!b文件夹下还有切片) Form破片压缩.autoReset合并.Set( );//有时音频转码速度比视频转码慢。
         }
-
         void fx扫描黑边(float ss, float t, ref uint count_Crop, ref Dictionary<string, int> dicCropdetect, ref StringBuilder builder) {
             string commamd = $"-hide_banner -ss {ss} -i \"{fi输入视频.Name}\" -t {t} -vf cropdetect=round=2 -f null -an /dev/null";
 
@@ -1264,7 +1300,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 }
             }
         }
-
         bool b读取场景切片数据(string path) {
             FileInfo fi = new FileInfo(path);
             if (fi.Exists && fi.Length < 31457290) {//读取30MB以内文件。
@@ -1289,7 +1324,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return false;
         }
-
         bool b读取场景切片数据_全部(string path) {
             FileInfo fi = new FileInfo(path);
             if (fi.Exists && fi.Length < 31457290) {//读取30MB以内文件。) {
@@ -1306,7 +1340,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return false;
         }
-
         bool b读取场景大于分割GOP切片数据(string path) {
             FileInfo fi = new FileInfo(path);
             if (fi.Exists && fi.Length < 31457290) {//读取30MB以内文件。
@@ -1316,7 +1349,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return false;
         }
-
         bool b解析场景大于分割GOP切片数据(string[] arr) {
             list_typeI_pts_time.Clear( );
             float last_pts_time = 0.0f;//记录上一段时刻，初始时刻为片头
@@ -1339,7 +1371,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return list_typeI_pts_time.Count > 3;//至少能切3段，片头、片中、片尾。
         }
-
         void fx删除数字名称视频切片( ) {//切片失败的情况，先清空
             string[] arrFile = Directory.GetFiles(str切片路径, "*.mkv");
             for (int i = 0; i < arrFile.Length; i++) {
@@ -1351,7 +1382,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 }
             }
         }
-
         bool b视频切片(ref StringBuilder builder切片命令行与输出结果) {//当机械硬盘为存储盘，SSD为缓存盘时，指定输出到SSD上，提升随机读写优势。
             string str日志文件名 = $"视频切片_{fi输入视频.Name}.log";
             fx删除数字名称视频切片( );
@@ -1364,7 +1394,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             if (b完成切片) {
                 查找并按体积降序切片( );
-                字幕切片(logs);//不判断硬字幕设置，切片完成后，片段时间连续，尝试直接割字幕。
+                fx字幕切片(logs);//不判断硬字幕设置，切片完成后，片段时间连续，尝试直接割字幕。
 
                 if (list_切片体积降序.Count > 0) {
                     return true;
@@ -1374,34 +1404,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return false;
         }
-
-        void 查找并按体积降序切片( ) {
-            string[] arr_MKV视频 = Directory.GetFiles(str切片路径, "*.mkv");
-            int i = 0;
-            lock (obj切片) { list_切片体积降序.Clear( ); }
-
-            for (; i < arr_MKV视频.Length; i++) {
-                FileInfo fi = new FileInfo(arr_MKV视频[i]);
-                if (int.TryParse(fi.Name.Substring(0, fi.Name.Length - 4), out int num)) {
-                    lock (obj切片) { list_切片体积降序.Add(fi); }
-                    break;
-                }
-            }
-            for (++i; i < arr_MKV视频.Length; i++) {
-                FileInfo fi = new FileInfo(arr_MKV视频[i]);
-                if (int.TryParse(fi.Name.Substring(0, fi.Name.Length - 4), out int num)) {
-                    for (int j = 0; j < list_切片体积降序.Count; j++) {
-                        if (fi.Length > list_切片体积降序[j].Length) {
-                            lock (obj切片) { list_切片体积降序.Insert(j, fi); }
-                            goto 下一片;
-                        }
-                    }
-                    lock (obj切片) { list_切片体积降序.Add(fi); }
-                    下一片:;
-                }
-            }
-        }
-        void 字幕切片(string[] arrLog) {
+        void fx字幕切片(string[] arrLog) {
             Dictionary<int, float> dic_name_sec = new Dictionary<int, float>( ) { { 1, 0 } };
             int last = arrLog.Length - 1;
             for (int i = 0; i < last; i++) {
@@ -1436,6 +1439,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     }
                 }
                 _b切片字幕 = true;
+                _b使用全局滤镜 = false;
+                str连接视频名 += ".硬字幕";
             } else if (sRT != null) {
                 for (int i = 1; i < last; i++) {
                     if (dic_name_sec.TryGetValue(i, out float start)) {
@@ -1445,12 +1450,39 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     }
                 }
                 _b切片字幕 = true;
+                _b使用全局滤镜 = false;
+                str连接视频名 += ".硬字幕";
             }
 
 
 
         }
+        void 查找并按体积降序切片( ) {
+            string[] arr_MKV视频 = Directory.GetFiles(str切片路径, "*.mkv");
+            int i = 0;
+            lock (obj切片) { list_切片体积降序.Clear( ); }
 
+            for (; i < arr_MKV视频.Length; i++) {
+                FileInfo fi = new FileInfo(arr_MKV视频[i]);
+                if (int.TryParse(fi.Name.Substring(0, fi.Name.Length - 4), out int num)) {
+                    lock (obj切片) { list_切片体积降序.Add(fi); }
+                    break;
+                }
+            }
+            for (++i; i < arr_MKV视频.Length; i++) {
+                FileInfo fi = new FileInfo(arr_MKV视频[i]);
+                if (int.TryParse(fi.Name.Substring(0, fi.Name.Length - 4), out int num)) {
+                    for (int j = 0; j < list_切片体积降序.Count; j++) {
+                        if (fi.Length > list_切片体积降序[j].Length) {
+                            lock (obj切片) { list_切片体积降序.Insert(j, fi); }
+                            goto 下一片;
+                        }
+                    }
+                    lock (obj切片) { list_切片体积降序.Add(fi); }
+                    下一片:;
+                }
+            }
+        }
         bool b重算时间码(string path转码完成, List<int> list_SerialName) {
             float f帧毫秒 = 1000 / info.f输出帧率;
             string path切片日志 = string.Format("{0}\\视频切片_{1}.log", di切片.FullName, di切片.Name.Substring(3));
@@ -1573,7 +1605,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return false;
         }
-
         bool b连接序列切片(string path转码完成, out FileInfo fi连接后视频) {
             fi连接后视频 = new FileInfo($"{di切片.FullName}\\{str编码摘要}{str输出格式}");
             if (path转码完成.LastIndexOf("\\转码完成.") + 6 < 10) return false;
@@ -1629,7 +1660,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 }
             }
         }
-
         bool b封装视频音频(FileInfo fi连接后视频) {
             if (fi连接后视频 == null) return false;
 
@@ -1733,7 +1763,6 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             return false;
         }
-
         bool b移动带音轨切片合并视频(FileInfo fi连接后视频) {
             if (fi连接后视频 == null) return false;
 

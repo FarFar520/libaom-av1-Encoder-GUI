@@ -179,7 +179,7 @@ namespace 破片压缩器 {
                             }
                         } else {
                             try {
-                                using (FileStream fs = System.IO.File.OpenWrite(list_切片体积降序[0].FullName)) { fs.Close( ); }
+                                using (FileStream fs = File.OpenWrite(list_切片体积降序[0].FullName)) { fs.Close( ); }
                             } catch {
                                 list_切片体积降序.RemoveAt(0);
                                 continue;
