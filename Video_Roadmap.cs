@@ -247,7 +247,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         List<float> list_typeI_pts_time = new List<float>( );
 
         bool bVFR = true;
-        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = false, _b硬字幕 = false, _b切片字幕 = false, _b切片序号水印 = false, _b转可变帧率 = false, _b使用全局滤镜 = true, _b分段字幕=false, _b扫描场景=true;
+        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = false, _b硬字幕 = false, _b切片字幕 = false, _b切片序号水印 = false, _b转可变帧率 = false, _b使用全局滤镜 = true, _b分段字幕 = false, _b扫描场景 = true;
 
         FileInfo fiMKA = null, fiOPUS = null, fi视频头信息 = null, fi拆分日志 = null, fi合并日志 = null;
 
@@ -374,7 +374,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             get {
                 if (_b无缓转码) return vTimeBase.i剩余分段;
 
-                if (DateTime.Now.Subtract(time上次查找剩余切片).TotalSeconds < 10) //限制10秒内只查找一次
+                if (Math.Abs(DateTime.Now.Subtract(time上次查找剩余切片).TotalSeconds) < 10) //限制10秒内只查找一次
                     return i统计剩余切片;
 
                 i统计剩余切片 = 0;
@@ -1232,7 +1232,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
             try { File.Delete(str切片路径 + "\\任务配置.ini"); } catch { }
         }
-        
+
         void fx查找封装字幕文件( ) {
             //可增加语言字幕识别 _cn .En 等
             string path_ASS = fi输入视频.Directory.FullName + '\\' + info.str视频名无后缀 + ".ass";

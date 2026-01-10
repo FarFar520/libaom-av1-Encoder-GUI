@@ -1052,6 +1052,7 @@ namespace 破片压缩器 {
                 b读取csv = true;
                 转码队列.Remove_VTimeBase(this);
                 Form破片压缩.autoReset转码.Set( );
+                Form破片压缩.autoReset切片.Set( );
             }
 
             try { File.WriteAllText(di输出目录.FullName + "\\无缓转码.csv", @string.ToString( )); } catch (Exception err) {

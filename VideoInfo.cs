@@ -7,7 +7,7 @@ using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
     public class VideoInfo {
-        public  class 音轨信息 {
+        public class 音轨信息 {
             public int Kbps = 0;
             public float Ac = 1.0f;
             public string map, 轨道码, 语言, 编码, 采样率, 声道, 位深, 码率Kbps;
@@ -56,7 +56,7 @@ namespace 破片压缩器 {
         public bool b隔行扫描 = false;
         public bool b剪裁滤镜 = false, b缩放滤镜 = false, b改变了尺寸 = false;
 
-        public string str剪裁滤镜, str缩放滤镜;
+        public string str剪裁滤镜 = string.Empty, str缩放滤镜 = string.Empty;
 
         public int inSumFrame = 1, outSumFrames = 1;
         public int sum_interlaced_frame = 0;
@@ -334,25 +334,24 @@ namespace 破片压缩器 {
         }
 
         public void fx输出宽高( ) {
-            i输出宽 = i片源帧宽;
-            i输出高 = i片源帧高;
-            str缩放滤镜 = string.Empty;
-
             if (Settings.b手动剪裁)
                 手动剪裁.判断赋值(i显示帧宽, i片源帧宽, i片源帧高);
 
+            int i_剪后宽, i_剪后高;
+
             if (手动剪裁.b触发) {
                 str剪裁滤镜 = 手动剪裁.crop;
-                i输出宽 = 手动剪裁.width;
-                i输出高 = 手动剪裁.height;
+                i_剪后宽 = i输出宽 = 手动剪裁.width;
+                i_剪后高 = i输出高 = 手动剪裁.height;
             } else if (黑边剪裁.b触发) {
                 str剪裁滤镜 = 黑边剪裁.crop;
+                i_剪后宽 = 黑边剪裁.width;
+                i_剪后高 = 黑边剪裁.height;
                 黑边剪裁.不可查觉恢复宽高(i片源帧宽, i片源帧高, out i输出宽, out i输出高);
-            } else
-                str剪裁滤镜 = string.Empty;
-
-            int i_剪后宽 = i输出宽;
-            int i_剪后高 = i输出高;
+            } else {
+                i_剪后宽 = i输出宽 = i片源帧宽;
+                i_剪后高 = i输出高 = i片源帧高;
+            }
 
             int display_width = i片源帧高 * i显示宽比 / i显示高比 * i输出宽 / i片源帧宽; //46.341K×46.341K视频会溢出。
             if (Settings.b以DAR比例修正) {
