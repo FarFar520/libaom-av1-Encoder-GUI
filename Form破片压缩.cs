@@ -819,7 +819,6 @@ namespace 破片压缩器 {
                         add日志($"需要在工具同目录放入：" + log);
                         textBox日志.Text = txt;
                     }
-                    new UpdateFFmpeg( );
                 }
             } else {
                 add日志($"右侧文本框输入视频存放文件夹路径！");
@@ -970,6 +969,9 @@ namespace 破片压缩器 {
                 numericUpDown_Width.Value = 3840;
                 numericUpDown_Height.Value = 2072;
                 //numericUpDown_Top.Value = 44;
+            } else if (iC == 8) {
+                numericUpDown_Width.Value = 4096;
+                numericUpDown_Height.Value = 1707;
             } else if (iC == 0) {
                 show = false;
                 Settings.b手动剪裁 = false;
