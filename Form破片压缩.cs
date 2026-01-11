@@ -324,7 +324,7 @@ namespace 破片压缩器 {
                             while (video正在转码文件.b转码下一个分段(out External_Process external_Process)) {
                                 add日志($"开始转码：{external_Process.fi编码.FullName}");
                                 转码队列.ffmpeg等待入队(external_Process);//有队列上限
-                                if (video正在转码文件.vTimeBase.i剩余分段 < f保底缓存切片) autoReset切片.Set( );
+                                //if (video正在转码文件.vTimeBase.i剩余分段 < f保底缓存切片) autoReset切片.Set( );//以文件为处理单位，已预先分析准备三个文件。
                             }
                             lock (obj合并队列) {
                                 if (!dic_完成路径_等待合并.ContainsKey(roadmap.lower完整路径_输入视频)) {
