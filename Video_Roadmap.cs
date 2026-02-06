@@ -140,7 +140,7 @@ namespace 破片压缩器 {
             if (info.b缩放滤镜) list.Add(info.str缩放滤镜);
 
             //滤镜顺序6.去重复
-            if (bVFR) list.Add("mpdecimate");//最好置于顺序末.去掉重复帧
+            if (_b转可变帧率) list.Add("mpdecimate");//最好置于顺序末.去掉重复帧
 
             //滤镜顺序7.序号水印滤镜
             if (_b切片序号水印) list.Add("{切片序号水印}");
@@ -193,7 +193,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             StringBuilder builder = new StringBuilder( );
             if (info.list音频轨.Count > 0) {
                 if (_b音轨同时切片) {
-                    builder.Append(" -map 0:a?");
+                    builder.Append(" ");
                     if (_b_opus) {
                         str音频摘要 = ".opus";
 
@@ -215,7 +215,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     }
 
                     if (!_b硬字幕 && info.list字幕轨.Count > 0)
-                        builder.Append(" -map 0:s -c:s copy");
+                        builder.Append(" -c:s copy");
 
                 } else {
                     str音频摘要 = info.get音轨code;//沿用整轨音频格式。
@@ -238,16 +238,13 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
         public static string ffmpeg = "ffmpeg", ffprobe = "ffprobe", mkvmerge = "mkvmerge", mkvextract = "mkvextract";
 
-        public static string str软件标签 = $"-metadata encoding_tool=\"{Application.ProductName} {Application.ProductVersion}\"";
-
         public double sec视频时长 = 0;
 
         public DirectoryInfo di编码成功, di切片;
 
         List<float> list_typeI_pts_time = new List<float>( );
 
-        bool bVFR = true;
-        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = false, _b硬字幕 = false, _b切片字幕 = false, _b切片序号水印 = false, _b转可变帧率 = false, _b使用全局滤镜 = true, _b分段字幕 = false, _b扫描场景 = true;
+        bool _b有切片记录 = false, _b音轨同时切片 = false, _b_opus = false, _bGOP传参, _b无缓转码 = true, _b硬字幕 = false, _b切片字幕 = false, _b切片序号水印 = false, _b转可变帧率 = false, _b使用全局滤镜 = true, _b分段字幕 = false, _b扫描场景 = true;
 
         FileInfo fiMKA = null, fiOPUS = null, fi视频头信息 = null, fi拆分日志 = null, fi合并日志 = null;
 
@@ -259,12 +256,13 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
         string str输出格式 = ".mkv", str最终格式 = ".webm";
 
-        public string str输出文件名 => str转码后MKV名;
-        public string strMKA文件名 => strMKA名;
-        public string strMKA路径 => str完整路径MKA;
-        public bool b扫描场景 => _b扫描场景;
         public bool b无缓转码 => _b无缓转码;
         public bool b有切片记录 => _b有切片记录;
+        public bool b有源视频 => File.Exists(fi输入视频.FullName);
+
+        public string strMKA文件名 => strMKA名;
+        public string str输出文件名 => str转码后MKV名;
+        public string strMKA路径 => str完整路径MKA;
 
         Thread th音频转码;
 
@@ -298,7 +296,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 return true;
         }
 
-        public Video_Roadmap(FileInfo fileInfo, string str正在转码文件夹, bool b无缓转码) {
+        public Video_Roadmap(FileInfo fileInfo, string str正在转码文件夹) {
             fi输入视频 = fileInfo;
 
             External_Process.get_ffprobe读取视频时长(fileInfo.FullName, out sec视频时长);
@@ -306,12 +304,25 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
             Task.Run(( ) => fn测试单核解码帧率( ));
             _b_opus = Settings.opus;
-            _b音轨同时切片 = Settings.b音轨同时切片转码;
+
             _bGOP传参 = Settings.lib已设置.GOP跃帧 == null && Settings.lib已设置.GOP跃帧 == null;
 
-            _b无缓转码 = b无缓转码;
+            _b硬字幕 = Settings.b硬字幕;
             _b扫描场景 = Settings.b扫描场景;
-            _b转可变帧率 = Settings.b转可变帧率;
+            info.OUT.b抽重复帧 = _b转可变帧率 = Settings.b转可变帧率;
+
+            string str音画 = string.Empty;
+            if (Settings.b音轨同时切片转码) {
+                _b音轨同时切片 = true;
+                str音画 = "_音画";
+            }
+            string str模式;
+            if (Settings.b无缓转码) {
+                str模式 = "分段";
+            } else {
+                str模式 = "切片";
+                _b无缓转码 = false;
+            }
 
             if (Settings.b右上角文件名_切片序列号水印) {
                 _b切片序号水印 = true; _b使用全局滤镜 = false;
@@ -321,11 +332,9 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             if (Settings.b自定义滤镜)
                 str自定义滤镜值 = Settings.str自定义滤镜;
 
-            info.OUT.b抽重复帧 = bVFR = _b转可变帧率;
-
             str输入路径 = fileInfo.Directory.FullName;
             lower完整路径_输入视频 = fileInfo.FullName.ToLower( );
-            str切片路径 = $"{str正在转码文件夹.TrimEnd('\\')}\\切片_{fi输入视频.Name}";
+            str切片路径 = $"{str正在转码文件夹.TrimEnd('\\')}\\{str模式}{str音画}_{fi输入视频.Name}";
 
             if (!转码队列.dic_切片路径_剩余.ContainsKey(str切片路径))
                 转码队列.dic_切片路径_剩余.Add(str切片路径, 0);
@@ -333,15 +342,13 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             di切片 = new DirectoryInfo(str切片路径);
             path无缓转码csv = di切片.FullName + "\\无缓转码.csv";
 
-            _b硬字幕 = Settings.b硬字幕;
-
             try { File.Delete(str切片路径 + "\\任务配置.ini"); } catch { }
 
-            if (b无缓转码) {
+            if (_b无缓转码) {
                 vTimeBase = new VTimeBase(info, di切片);
             }
             if (di切片.Exists) {
-                if (!b无缓转码) {
+                if (!_b无缓转码) {
                     string str切片记录 = $"{str切片路径}\\视频切片_{fi输入视频.Name}.log";
                     if (File.Exists(str切片记录)) {//有日志表示切片成功。
                         查找并按体积降序切片( );
@@ -363,7 +370,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 }
             } else {
                 try { Directory.CreateDirectory(str切片路径); } catch { return; }
-                if (b无缓转码) try { File.WriteAllText(path无缓转码csv, "正在查找时间戳……"); } catch { }
+                if (_b无缓转码) try { File.WriteAllText(path无缓转码csv, "正在查找时间戳……"); } catch { }
             }
 
         }
@@ -934,10 +941,10 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                 if (Settings.b多线程) {
                     string encV = v命令行.format_CRF多线程编码库(b全黑场, span偏移.f指定画质CRF);
-                    str命令行 = $"{info.IN.ffmpeg单线程解码}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
+                    str命令行 = $"{info.IN.ffmpeg单线程解码}{input}{lavfi滤镜}{encV} {Form破片压缩.str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                 } else {
                     string encV = v命令行.format_CRF编码指令(b全黑场, span偏移.f指定画质CRF);
-                    str命令行 = $"{EXE.ffmpeg单线程解码}{input}{lavfi滤镜}{encV} {str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
+                    str命令行 = $"{EXE.ffmpeg单线程解码}{input}{lavfi滤镜}{encV} {Form破片压缩.str软件标签} \"{path编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                 }
                 external_Process = new External_Process(span偏移, ffmpeg, str命令行, !Settings.b多线程, fi输入视频, di切片, di编码成功);
 
@@ -976,14 +983,15 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                 if (Settings.b多线程) {
                     //str命令行 = $"-hide_banner -i {fi切片.Name}{str滤镜}{str多线程编码指令} \"{str编码后切片}\"";
-                    str命令行 = $"{info.IN.ffmpeg单线程解码}-i {fi切片.Name}{str滤镜}{v命令行.str多线程编码指令} {str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{info.IN.ffmpeg单线程解码}-i {fi切片.Name}{str滤镜}{v命令行.str多线程编码指令} {Form破片压缩.str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
                     //单线程解码超4K有些跟不上编码速度。
                 } else {
-                    str命令行 = $"{EXE.ffmpeg单线程}-i {fi切片.Name}{str滤镜}{v命令行.str编码指令} {str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{EXE.ffmpeg单线程}-i {fi切片.Name}{str滤镜}{v命令行.str编码指令} {Form破片压缩.str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
                 }
 
                 external_Process = new External_Process(ffmpeg, str命令行, !Settings.b多线程, name, fi切片, di编码成功);
                 external_Process.fi编码 = new FileInfo($"{fi切片.DirectoryName}\\{str编码后切片}");//fi切片设计为局域网编码时移动到另外文件夹，防止多机处理相同切片
+                external_Process.b音轨同时切片 = _b音轨同时切片;
                 return true;
             } else
                 external_Process = null;

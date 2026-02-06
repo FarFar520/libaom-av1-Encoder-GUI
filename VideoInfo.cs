@@ -98,20 +98,31 @@ namespace 破片压缩器 {
                 if (i输出长边 / 1000.0f > 4.096) {
                     progressive = $"{K}K";
                 } else {
-                    if (i输出长边 >= 3840) progressive = "2160p";
-                    else if (i输出长边 >= 2560) progressive = "1440p";
-                    else if (i输出长边 >= 1920) progressive = "1080p";
-                    else if (i输出长边 >= 1440) progressive = "810p";
-                    else if (i输出长边 >= 1280) progressive = "720p";
-                    else if (i输出长边 >= 960) progressive = "540p";
-                    else if (i输出长边 >= 640) progressive = "360p";
-                    else if (i输出长边 >= 480) progressive = "270p";
-                    else if (i输出长边 >= 320) progressive = "240p";
-                    else if (i输出长边 >= 240) progressive = "180p";
-                    else if (i输出长边 >= 180) progressive = "135p";
-                    else if (i输出长边 >= 120) progressive = "90p";
-                    else if (i输出长边 >= 64) progressive = "48p";
-                    else progressive = $"{i输出长边 * 9 / 16}p";
+                    if (i输出长边 >= 3840) progressive = "4K";
+                    else if (i输出长边 >= 2560) progressive = "2.5K";
+                    else if (i输出长边 >= 1800 && i输出短边 >= 700) progressive = "1080p";
+                    else {
+                        if (i输出短边 > 1000) progressive = "1080p";
+                        else if (i输出短边 > 900) progressive = "960p";
+                        else if (i输出短边 > 700) progressive = "720p";
+                        else if (i输出短边 > 600) progressive = "640p";
+                        else if (i输出短边 > 500) progressive = "540p";
+                        else if (i输出短边 > 450) progressive = "480p";
+                        else if (i输出短边 > 300) progressive = "360p";
+                        else if (i输出短边 > 200) progressive = "240p";
+                        else progressive = $"{i输出短边 / 10}0p";
+                    }
+                    //else if (i输出长边 >= 1440) progressive = "810p";
+                    //else if (i输出长边 >= 1280) progressive = "720p";
+                    //else if (i输出长边 >= 960) progressive = "540p";
+                    //else if (i输出长边 >= 640) progressive = "360p";
+                    //else if (i输出长边 >= 480) progressive = "270p";
+                    //else if (i输出长边 >= 320) progressive = "240p";
+                    //else if (i输出长边 >= 240) progressive = "180p";
+                    //else if (i输出长边 >= 180) progressive = "135p";
+                    //else if (i输出长边 >= 120) progressive = "90p";
+                    //else if (i输出长边 >= 64) progressive = "48p";
+                    //else progressive = $"{i输出长边 * 9 / 16}p";
                 }
                 return progressive;
             }

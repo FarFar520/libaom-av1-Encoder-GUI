@@ -34,11 +34,9 @@ namespace 破片压缩器 {
 
         public string str成功文件名 = string.Empty;
 
-        public bool b已结束 = false, b安全退出 = false, b补齐时间戳 = false, b单线程 = true, b无缓转码 = false;
+        public bool b已结束 = false, b安全退出 = false, b单线程 = true, b无缓转码 = false, b音轨同时切片 = false;
 
         public StringBuilder sb输出数据流 = new StringBuilder( );//全局变量有调用，直接初始化。
-
-
 
         public VTimeBase.Span偏移 span偏移;
 
@@ -630,7 +628,7 @@ namespace 破片压缩器 {
                         } else {
                             if (get_ffprobe读取视频时长(fi源.FullName, out double sec)) {
                                 span输入时长 = TimeSpan.FromSeconds(sec);
-                                builder日志.Append("[FORMAT]\r\nduration=").Append(sec).Append("\r\n[/FORMAT]\r\n------------------------------------------");
+                                builder日志.Append("[FORMAT]\r\nduration=").Append(sec).Append("\r\n[/FORMAT]\r\n------------------------------------------\r\n");
                             }
                             break;
                         }
@@ -706,8 +704,10 @@ namespace 破片压缩器 {
                             }
                         }
                     }
-                    string str提取时间码命令行 = string.Format("timestamps_v2 {0} 0:{1}_timestamp.txt", fi编码.Name, str成功文件名);
-                    subProcess(EXE.mkvextract, str提取时间码命令行, fi编码.DirectoryName, out string Output, out string Error);
+                    if (!b音轨同时切片) {
+                        string str提取时间码命令行 = string.Format("timestamps_v2 {0} 0:{1}_timestamp.txt", fi编码.Name, str成功文件名);
+                        subProcess(EXE.mkvextract, str提取时间码命令行, fi编码.DirectoryName, out string Output, out string Error);
+                    }
                 }
 
                 Form破片压缩.autoReset刷新输出.Set( );

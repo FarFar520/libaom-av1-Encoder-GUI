@@ -19,7 +19,7 @@
         public static string str自定义滤镜 = string.Empty;
 
         public static bool b扫描场景 = false;
-        public static bool b无缓转码 = false;
+        public static bool b无缓转码 = true;
 
         public static int i声道 = 2, i音频码率 = 96, i音轨保留;
         public static bool b音轨同时切片转码 = false, opus = false;

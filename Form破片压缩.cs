@@ -31,6 +31,7 @@ namespace 破片压缩器 {
 
         public const string str切片根目录 = "D:\\破片转码";
 
+        public static string str软件标签;
 
         public static AutoResetEvent
             autoReset切片 = new AutoResetEvent(false),
@@ -156,7 +157,7 @@ namespace 破片压缩器 {
                         if (is有效视频(file)) {
                             txt日志($"正在读取{file.FullName}视频信息……");
                             str正在转码文件夹 = $"{str切片根目录}\\{file.DirectoryName.Replace(file.Directory.Root.FullName, "").Trim('\\')}";
-                            Video_Roadmap roadmap = new Video_Roadmap(file, str正在转码文件夹, Settings.b无缓转码);
+                            Video_Roadmap roadmap = new Video_Roadmap(file, str正在转码文件夹);
                             if (!roadmap.b解码60帧判断交错(out StringBuilder builder)) //扫描60帧，出结果较快。
                                 roadmap.b读取视频头(out builder);
 
@@ -300,13 +301,18 @@ namespace 破片压缩器 {
                 }
                 while (list_等待转码队列.Count > 0) {
                     fx设置输出目录为当前时间( );
-                    Video_Roadmap roadmap;
+                    Video_Roadmap roadmap = null;
                     lock (obj转码队列) {
-                        if (list_等待转码队列.Count > 0) {
-                            roadmap = list_等待转码队列[0];
-                            list_等待转码队列.RemoveAt(0);
-                        } else break;
+                        while (list_等待转码队列.Count > 0) {
+                            if (list_等待转码队列[0].b有源视频) {
+                                roadmap = list_等待转码队列[0];
+                                list_等待转码队列.RemoveAt(0);
+                                break;
+                            } else list_等待转码队列.RemoveAt(0);
+                        }
                     }
+                    if (roadmap == null) break;
+
                     autoReset切片.Set( );//队列取出一个，切片增加一个。
                     video正在转码文件 = roadmap;
                     str正在源文件夹 = video正在转码文件.str输入路径;
@@ -319,7 +325,7 @@ namespace 破片压缩器 {
                     this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));//要委托UI线程启动计时器才能正确启动。
 
                     if (roadmap.b无缓转码) {
-                        if (File.Exists(roadmap.fi输入视频.FullName)) {//任务有足够时间间隔，检测一次源文件存在情况，当手动删除源文件时跳过任务。
+                        if (roadmap.b有源视频) {//任务有足够时间间隔，检测一次源文件存在情况，当手动删除源文件时跳过任务。
                             video正在转码文件.fx场景分段字幕切片(Settings.b硬字幕);
                             while (video正在转码文件.b转码下一个分段(out External_Process external_Process)) {
                                 add日志($"开始转码：{external_Process.fi编码.FullName}");
@@ -926,9 +932,17 @@ namespace 破片压缩器 {
                     default: i切分间隔秒 = Settings.sec_gop; return;
                 }
             }
+            checkBoxSplitAudio_CheckedChanged(null, null);
         }
 
         private void checkBoxSplitAudio_CheckedChanged(object sender, EventArgs e) {
+            if (Settings.b无缓转码) {
+                labelSplitAudio.ForeColor = Color.Red;
+                labelSplitAudio.Text = "分段音帧无法与视帧完美同步，合并后段间隙有卡顿音";
+            } else {
+                labelSplitAudio.ForeColor = Color.DodgerBlue;
+                labelSplitAudio.Text = "切片音帧无法与视帧完美同步，合并后总时长差异几秒";
+            }
             labelSplitAudio.Visible = checkBoxSplitAudio.Checked;
         }
 
@@ -1264,6 +1278,7 @@ namespace 破片压缩器 {
         }
         private void Form破片压缩_Load(object sender, EventArgs e) {
             CPUNum( );
+            str软件标签 = $"-metadata encoding_tool=\"{Application.ProductName} {Application.ProductVersion}\"";
             //Extract_EXE.resources_to_exe( );
             comboBox_lib.SelectedIndex = 0;
             comboBox_Crop.SelectedIndex = 0;

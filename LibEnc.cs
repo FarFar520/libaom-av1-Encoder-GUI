@@ -28,7 +28,7 @@ namespace 破片压缩器 {
             { add内参= new string[]{"LMCS=1","LMCSUpdateCtrl=1","FastSearch=3","ReduceFilterME=0","ForceSCC=1", "FastSearchSCC=0"},eFPS_2K=0.006f,eFPS_4K=0.0006f } },
             //--LMCSEnable [2] | --LMCS [2]：启用带色度缩放的亮度映射（LMCS）（0：关闭，1：开启，2：使用屏幕内容编码（SCC）检测，对屏幕编码内容禁用）
             //--LMCSUpdateCtrl [0]：亮度映射与色度缩放（LMCS）模型更新控制（0：随机接入（RA），1：人工智能（AI），2：低延迟 B / 低延迟 P（LDB/LDP））
-            {"placebo (最慢,安慰剂)",new 预设(value预设:"slower" ,crf偏移: 1)
+            {"placebo (最慢,安慰剂)",new 预设(value预设:"slower" ,crf偏移: 2)
             { add内参= new string[]{"LumaLevelToDeltaQPMode=1","LMCS=1", "LMCSUpdateCtrl=1", "ISP=1", "SBT=1", "CIIP=1", "EDO=1", "EncDbOpt=1", "SMVD=1" ,"FastSearch=0", "ReduceFilterME=0", "FastSearchSCC=0"},eFPS_2K=0.009f,eFPS_4K=0.0009f } },
             //--EncDbOpt [2]：带去块滤波器的编码器优化（0：关闭，1：遵循 VTM 标准，2：快速模式）
             //--EDO [2]：带去块滤波器的编码器优化（0：关闭，1：遵循 VTM 标准，2：快速模式）
@@ -149,7 +149,7 @@ namespace 破片压缩器 {
              */
             libEnc.Set使用位深(12);
 
-            libEnc.Set固定内参(new string[] { "SameCQPTablesForAllChroma=0", "CabacZeroWordPaddingEnabled=0" });// "PerceptQPA=1"
+            libEnc.Set固定内参(new string[] { "PerceptQPA=1","SameCQPTablesForAllChroma=0", "CabacZeroWordPaddingEnabled=0" }); 
             /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
             启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
             --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
@@ -280,7 +280,10 @@ namespace 破片压缩器 {
 
 
             libEnc.Add所有预设("veryslow", dic显示_x265预设);
-            libEnc.Set固定内参(new string[] { "fades=1", "no-info=1", "hist-scenecut=1", "no-hevc-aq=0", "tune=ssim" });//"single-sei=1" x265 [warning]: None of the SEI messages are enabled. Disabling Single SEI NAL
+            libEnc.Set固定内参(new string[] { "fades=1", "no-info=1", "hist-scenecut=1", "no-hevc-aq=0" });
+            //"tune=ssim"
+            //"single-sei=1" x265 [warning]: None of the SEI messages are enabled. Disabling Single SEI NAL
+            // 启用hevc-aq QP约降低三档。
 
             //libEnc.lookahead = new BYTE内参("rc-lookahead={0}", 3, 250, 20);//缩小rc-lookahead会降低质量
 
@@ -289,6 +292,7 @@ namespace 破片压缩器 {
             libEnc._arr帧率CRF偏移 = new short[,] { { 210, 5 }, { 170, 4 }, { 115, 3 }, { 57, 2 }, { 40, 1 } };
 
             libEnc.str画质参考 = "x265画质范围参考↓\r\n超清：CRF=14\r\n高清：CRF=17.5（推荐）\r\n标清：CRF=23.5\r\n低清：CRF=28（默认）";
+            //libEnc.str画质参考 = "x265画质范围参考↓\r\n超清：CRF=17.5\r\n高清：CRF=23（推荐）\r\n标清：CRF=25.5\r\n低清：CRF=28（默认）";
             dic_编码库_初始设置.Add("高画质 hevc @x265", libEnc);
         }
         static void add_libx264( ) {
