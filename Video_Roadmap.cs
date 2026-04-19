@@ -236,7 +236,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
         public string str输入路径, str切片路径, lower完整路径_输入视频;
 
-        public static string ffmpeg = "ffmpeg", ffprobe = "ffprobe", mkvmerge = "mkvmerge", mkvextract = "mkvextract";
+        string ffmpeg = "ffmpeg", ffprobe = "ffprobe", mkvmerge = "mkvmerge", mkvextract = "mkvextract";
 
         public double sec视频时长 = 0;
 
@@ -267,38 +267,14 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         Thread th音频转码;
 
         public FileSystemWatcher watcher编码成功文件夹 = null;
-        public static bool b查找可执行文件(out string log, out string txt) {
-            log = string.Empty;
-            txt = string.Empty;
 
-            bool has_ffmpeg = EXE.find最新版ffmpeg(out ffmpeg);
-            bool has_ffprobe = EXE.find最新版ffprobe(out ffprobe);
-            bool has_mkvmerge = EXE.find最新版mkvmerge(out mkvmerge);
-            bool has_mkvextract = EXE.find最新版mkvextract(out mkvextract);
-
-            if (!has_ffprobe || !has_ffmpeg) {
-                if (!has_ffmpeg) log += "“ffmpeg.exe”、";
-                if (!has_ffprobe) log += "“ffprobe.exe”、";
-                txt += "\r\nffmpeg下载链接：\r\nhttps://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z";
-            }
-
-            if (!has_mkvmerge || !has_mkvextract) {
-                if (!has_mkvmerge) log += "“mkvmerge.exe”、";
-                if (!has_mkvextract) log += "“mkvextract.exe”、";
-
-                txt += "\r\nmkvmerge下载链接：\r\nhttps://mkvtoolnix.download/windows/releases/95.0/mkvtoolnix-32-bit-95.0.7z";
-            }
-
-            if (log.Length > 0) {
-                log = log.Substring(0, log.Length - 1);
-                return false;
-            } else
-                return true;
-        }
 
         public Video_Roadmap(FileInfo fileInfo, string str正在转码文件夹) {
             fi输入视频 = fileInfo;
-
+            EXE.find最新版ffmpeg(out ffmpeg);
+            EXE.find最新版ffprobe(out ffprobe);
+            EXE.find最新版mkvmerge(out mkvmerge);
+            EXE.find最新版mkvextract(out mkvextract);
             External_Process.get_ffprobe读取视频时长(fileInfo.FullName, out sec视频时长);
             info = new VideoInfo(fileInfo, sec视频时长);
 
@@ -374,6 +350,8 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
 
         }
+
+
 
         int i统计剩余切片 = 0;
         DateTime time上次查找剩余切片 = DateTime.Now.AddDays(-1);
@@ -927,6 +905,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
         }
 
+
         public bool b转码下一个分段(out External_Process external_Process) {
             if (vTimeBase.hasNext_序列Span偏移(di编码成功, out Span偏移 span偏移, out int i剩余, out bool b全黑场)) {
                 转码队列.dic_切片路径_剩余[str切片路径] = i剩余;
@@ -983,10 +962,10 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
 
                 if (Settings.b多线程) {
                     //str命令行 = $"-hide_banner -i {fi切片.Name}{str滤镜}{str多线程编码指令} \"{str编码后切片}\"";
-                    str命令行 = $"{info.IN.ffmpeg单线程解码}-i {fi切片.Name}{str滤镜}{v命令行.str多线程编码指令} {Form破片压缩.str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{info.IN.ffmpeg单线程解码}-i {fi切片.Name}{str滤镜}{v命令行.str多线程编码指令} {Form破片压缩.str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                     //单线程解码超4K有些跟不上编码速度。
                 } else {
-                    str命令行 = $"{EXE.ffmpeg单线程}-i {fi切片.Name}{str滤镜}{v命令行.str编码指令} {Form破片压缩.str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}";
+                    str命令行 = $"{EXE.ffmpeg单线程解码}-i {fi切片.Name}{str滤镜}{v命令行.str编码指令} {Form破片压缩.str软件标签} \"{str编码后切片}\"{EXE.ffmpeg不显库}{EXE.ffmpeg单线程滤镜}";
                 }
 
                 external_Process = new External_Process(ffmpeg, str命令行, !Settings.b多线程, name, fi切片, di编码成功);
@@ -1150,8 +1129,11 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                 fiOPUS = fi成功音轨;
                 str最终格式 = info.OUT.str视流格式 == "av1" ? ".webm" : ".mkv";
                 return File.Exists(fiOPUS.FullName);
-            } else
+            } else {
+                try { File.WriteAllLines(fi临时音轨.FullName + ".errlog", list); } catch { }
+                //try { fi临时音轨.Delete( ); } catch { }
                 return false;
+            }
         }
         public bool b转码后混流( ) {//混流线程中有加入是否还有剩余切片判断。
             bool bSuccess = true;
@@ -1626,7 +1608,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
                     if (!_b音轨同时切片) {
                         string timeCodeFile = $"{path转码完成}\\{num}_timestamp.txt";
                         if (!File.Exists(timeCodeFile))
-                            External_Process.subProcess(EXE.mkvextract, $"timestamps_v2 {num}{str输出格式} 0:{num}_timestamp.txt", path转码完成, out string Output, out string Error);
+                            External_Process.subProcess(mkvextract, $"timestamps_v2 {num}{str输出格式} 0:{num}_timestamp.txt", path转码完成, out string Output, out string Error);
                     }
                 }
             }

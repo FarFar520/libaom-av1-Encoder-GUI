@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using static 破片压缩器.Regex参数;
 
 namespace 破片压缩器 {
@@ -25,9 +27,11 @@ namespace 破片压缩器 {
             //--ForceSCC [0]：强制屏幕内容编码（SCC）处理，而非自动检测（≤0：使用自动检测，1：将所有帧视为非屏幕内容编码（SCC）帧，2：将所有帧视为弱屏幕内容编码（SCC）帧，3：将所有帧视为强屏幕内容编码（SCC）帧）
             //--FastSearchSCC [2]：屏幕内容编码（SCC）的搜索模式（0：使用非屏幕内容编码（SCC）搜索模式，1：已废弃，2：屏幕内容编码菱形搜索（DiamondSCC），3：屏幕内容编码快速菱形搜索（FastDiamondSCC））
             {"slower+ (特慢+小参)",new 预设(value预设:"slower" ,crf偏移: 1)
-            { add内参= new string[]{"LMCS=1","LMCSUpdateCtrl=1","FastSearch=3","ReduceFilterME=0","ForceSCC=1", "FastSearchSCC=0"},eFPS_2K=0.006f,eFPS_4K=0.0006f } },
+            { add内参= new string[]{"LMCS=1","LMCSUpdateCtrl=1", "SameCQPTablesForAllChroma=0", "CabacZeroWordPaddingEnabled=0", "FastSearch=3","ReduceFilterME=0","ForceSCC=1", "FastSearchSCC=0"},eFPS_2K=0.006f,eFPS_4K=0.0006f } },
             //--LMCSEnable [2] | --LMCS [2]：启用带色度缩放的亮度映射（LMCS）（0：关闭，1：开启，2：使用屏幕内容编码（SCC）检测，对屏幕编码内容禁用）
             //--LMCSUpdateCtrl [0]：亮度映射与色度缩放（LMCS）模型更新控制（0：随机接入（RA），1：人工智能（AI），2：低延迟 B / 低延迟 P（LDB/LDP））
+            //--SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
+            //--CabacZeroWordPaddingEnabled [1]：为码流添加符合标准的上下文自适应二进制算术编码（CABAC）零字填充（0：不添加，1：按需添加）
             {"placebo (最慢,安慰剂)",new 预设(value预设:"slower" ,crf偏移: 2)
             { add内参= new string[]{"LumaLevelToDeltaQPMode=1","LMCS=1", "LMCSUpdateCtrl=1", "ISP=1", "SBT=1", "CIIP=1", "EDO=1", "EncDbOpt=1", "SMVD=1" ,"FastSearch=0", "ReduceFilterME=0", "FastSearchSCC=0"},eFPS_2K=0.009f,eFPS_4K=0.0009f } },
             //--EncDbOpt [2]：带去块滤波器的编码器优化（0：关闭，1：遵循 VTM 标准，2：快速模式）
@@ -95,7 +99,8 @@ namespace 破片压缩器 {
             {"faster (快+)",new 预设(value预设:"faster" ,crf偏移: -2.5f,min_判定帧型:5){eFPS_2K=3.5f,eFPS_4K=1 }},
             {"veryfast (特快)",new 预设(value预设:"veryfast" ,crf偏移: -3, min_判定帧型 : 5){eFPS_2K=4,eFPS_4K=1 }},
             {"superfast (特快+)",new 预设(value预设:"superfast" ,crf偏移: -3.5f,min_判定帧型:4){eFPS_2K=4.5f,eFPS_4K=1.5f }},
-            {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -4f,min_判定帧型:4){eFPS_2K=5,eFPS_4K=2 }}
+            {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -4f,min_判定帧型:4){eFPS_2K=5,eFPS_4K=2 }},
+            //{"medium (录屏源)",new 预设(value预设:"medium",crf偏移: -1.5f,min_判定帧型:5){eFPS_2K=3,eFPS_4K=0.9f,add内参=new string[]{ "scc=2" }}},
         };
         public static readonly Dictionary<string, 预设> dic显示_x264预设 = new Dictionary<string, 预设>( ) {
             //--preset <string>  Trade off performance for compression efficiency. Default medium,
@@ -113,7 +118,6 @@ namespace 破片压缩器 {
             {"ultrafast (最快)",new 预设(value预设:"ultrafast" ,crf偏移: -1.5f,min_判定帧型:1){eFPS_2K=16,eFPS_4K=4 }}
         };
 
-
         public static Dictionary<string, LibEnc> dic_编码库_初始设置 = new Dictionary<string, LibEnc>( );
 
         public static void fx编码库初始化( ) {
@@ -126,10 +130,14 @@ namespace 破片压缩器 {
             add_libx264( );
             add_libx264_10bit( );
             add_libaom_av1_12bit( );
+            add_libaom_av1_10bit_yuv444( );//画面色彩观感收益不大，不如降低CRF提升码率来的直接
+            add_libaom_av1_12bit_yuv444( );
+            //add_libvvenc_qpa_10bit_yuv422( );//编码器未加入
+            //add_libvvenc_qpa_10bit_yuv444( );
         }
         static void add_libvvenc_qpa( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
-                , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 13, my_max: 33, my_value: 27)
+                , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 13, my_max: 33, my_value: 27)
                 , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
             /*
              * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
@@ -147,13 +155,14 @@ namespace 破片压缩器 {
              *--WaveFrontSynchro [auto]`        Enable entropy coding sync (WPP) (-1: auto, 0: off, 1: on)
              *启用熵编码同步 (WPP) (-1: 自动, 0: 关闭, 1: 开启)*
              */
-            libEnc.Set使用位深(12);
+            libEnc.Set使用位深(10);
 
-            libEnc.Set固定内参(new string[] { "PerceptQPA=1","SameCQPTablesForAllChroma=0", "CabacZeroWordPaddingEnabled=0" }); 
+            libEnc.Set固定内参(new string[] { "SIMD=AVX512","PerceptQPA=1"});
             /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
             启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
             --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
             --CabacZeroWordPaddingEnabled [1]：为码流添加符合标准的上下文自适应二进制算术编码（CABAC）零字填充（0：不添加，1：按需添加）
+            "SIMD=AVX512",
             */
 
             libEnc.Noise去除参数 = new USHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0);
@@ -171,7 +180,7 @@ namespace 破片压缩器 {
         }
         static void add_libvvenc_qp( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
-                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 10, my_max: 36, my_value: 23)//qp23≈qpa26(qp/qpa拉开差异档位）  qp19≈qpa23(vmaf 97.5+)  
+                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 10, my_max: 36, my_value: 23)//qp23≈qpa26(qp/qpa拉开差异档位）  qp19≈qpa23(vmaf 97.5+)  
                 , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
             /*
              * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
@@ -189,12 +198,14 @@ namespace 破片压缩器 {
              *--WaveFrontSynchro [auto]`        Enable entropy coding sync (WPP) (-1: auto, 0: off, 1: on)
              *启用熵编码同步 (WPP) (-1: 自动, 0: 关闭, 1: 开启)*
              */
-            libEnc.Set使用位深(12);
+            libEnc.Set使用位深(10);
 
-            libEnc.Set固定内参(new string[] { "PerceptQPA=0", "SameCQPTablesForAllChroma=0" });
+            libEnc.Set固定内参(new string[] { "SIMD=AVX512", "PerceptQPA=0" });//"SameCQPTablesForAllChroma=0", "CabacZeroWordPaddingEnabled=0"
             /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
             启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
             --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
+            --CabacZeroWordPaddingEnabled [1]：为码流添加符合标准的上下文自适应二进制算术编码（CABAC）零字填充（0：不添加，1：按需添加）
+            "SIMD=AVX512",
             */
 
             libEnc.Noise去除参数 = new USHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0) { str关闭 = "MCTF=0" };
@@ -211,7 +222,7 @@ namespace 破片压缩器 {
         }
         static void add_libaom_av1( ) {
             LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libaom-av1", key预设: "-cpu-used", key编码器传参: "-aom-params"
-                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 8, my_max: 40, my_value: 28)
+                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 8, my_max: 40, my_value: 28)
                 , b多线程优先: false, value内参单线程: "row-mt=0:fp-mt=0", value外参单线程: "-threads 1", i默认线程数: 3);
 
             //libEnc.Add所有预设("2 (慢速二挡↓)", dic显示_aomenc预设);
@@ -227,9 +238,8 @@ namespace 破片压缩器 {
         }
         static void add_libsvtav1( ) {
             LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libsvtav1", key预设: "-preset", key编码器传参: "-svtav1-params"
-                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 63, def: 35, i小数位: 0, my_min: 8, my_max: 43, my_value: 31)
+                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 75, def: 35, i小数位: 2, i步长: 25, my_min: 8, my_max: 43, my_value: 31)
                 , b多线程优先: true, value内参单线程: "lp=1", value外参单线程: string.Empty, i默认线程数: 16);
-
 
             libEnc.Add所有预设("2", dic显示_SvtAv1EncApp预设);
             libEnc.Set固定内参(new string[] { "tune=0" });//"scd=1"
@@ -251,9 +261,9 @@ namespace 破片压缩器 {
 
             dic_编码库_初始设置.Add("多线程 av1 @svtav1", libEnc);
         }
-        static void add_librav1e( ) {
+        static void add_librav1e( ) {//压缩率过低，末位淘汰
             LibEnc libEnc = new LibEnc(code: "av1", value编码库: "librav1e", key预设: "-speed", key编码器传参: "-rav1e-params"
-                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 255, def: 100, i小数位: 0, my_min: 8, my_max: 180, my_value: 100)
+                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 255, def: 100, i小数位: 0, i步长: 1, my_min: 8, my_max: 180, my_value: 100)
                 , b多线程优先: false, value内参单线程: "", value外参单线程: "-threads 1", i默认线程数: 1);
 
             //--scd-speed <SCD_SPEED>
@@ -275,7 +285,7 @@ namespace 破片压缩器 {
         static void add_libx265( ) {
             string str内参单线程 = "pools=none:frame-threads=1:lookahead-threads=1:no-wpp=1:lookahead-slices=0"; //rc-lookahead最小值=b帧+1
             LibEnc libEnc = new LibEnc(code: "hevc", value编码库: "libx265", key预设: "-preset", key编码器传参: "-x265-params"
-                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 51, def: 28, i小数位: 1, my_min: 8, my_max: 30, my_value: 17.5f)
+                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 51, def: 28, i小数位: 1, i步长: 1, my_min: 8, my_max: 30, my_value: 17.5f)
                 , b多线程优先: false, value内参单线程: str内参单线程, value外参单线程: "-threads 1", i默认线程数: 16);
 
 
@@ -297,7 +307,7 @@ namespace 破片压缩器 {
         }
         static void add_libx264( ) {
             LibEnc libEnc = new LibEnc(code: "avc", value编码库: "libx264", key预设: "-preset", key编码器传参: "-x264-params"
-                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 51, def: 23, i小数位: 1, my_min: 0, my_max: 30, my_value: 22.5f)
+                , CRF参数: new Num参数(key: "-crf", "crf", range_min: 0, range_max: 51, def: 23, i小数位: 1, i步长: 1, my_min: 0, my_max: 30, my_value: 22.5f)
                 , b多线程优先: false, value内参单线程: "lookahead-threads=1:sliced-threads=1", value外参单线程: "-threads 1", i默认线程数: 16);
 
 
@@ -317,7 +327,7 @@ namespace 破片压缩器 {
         }
         static void add_libx264_10bit( ) {
             LibEnc libEnc = new LibEnc(code: "avc", value编码库: "libx264", key预设: "-preset", key编码器传参: "-x264-params"
-                , CRF参数: new Num参数(key: "-crf", "10bit.crf", range_min: 0, range_max: 51, def: 23, i小数位: 1, my_min: 0, my_max: 30, my_value: 23f)
+                , CRF参数: new Num参数(key: "-crf", "10bit.crf", range_min: 0, range_max: 51, def: 23, i小数位: 1, i步长: 1, my_min: 0, my_max: 30, my_value: 23f)
                 , b多线程优先: false, value内参单线程: "lookahead-threads=1:sliced-threads=1", value外参单线程: "-threads 1", i默认线程数: 16);
 
             libEnc.Add所有预设("placebo", dic显示_x264预设);
@@ -337,11 +347,11 @@ namespace 破片压缩器 {
 
         static void add_libaom_av1_12bit( ) {
             LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libaom-av1", key预设: "-cpu-used", key编码器传参: "-aom-params"
-                , CRF参数: new Num参数(key: "-crf", "12bit.crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, my_min: 8, my_max: 40, my_value: 26)
+                , CRF参数: new Num参数(key: "-crf", "12bit.crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 8, my_max: 40, my_value: 26)
                 , b多线程优先: false, value内参单线程: "row-mt=0:fp-mt=0", value外参单线程: "-threads 1", i默认线程数: 3);
 
             //libEnc.Add所有预设(dic显示_aomenc预设);
-            libEnc.Add所有预设("2 (慢速二挡↓)", dic显示_aomenc预设);
+            libEnc.Add所有预设("5", dic显示_aomenc预设);
 
             libEnc.Set使用位深(12);
 
@@ -354,6 +364,133 @@ namespace 破片压缩器 {
 
             dic_编码库_初始设置.Add("低兼容 av1.12bit @aomenc", libEnc);
         }
+
+        static void add_libaom_av1_10bit_yuv444( ) {
+            LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libaom-av1", key预设: "-cpu-used", key编码器传参: "-aom-params"
+                , CRF参数: new Num参数(key: "-crf", "10b444.crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 8, my_max: 40, my_value: 26)
+                , b多线程优先: false, value内参单线程: "row-mt=0:fp-mt=0", value外参单线程: "-threads 1", i默认线程数: 3);
+
+            //libEnc.Add所有预设(dic显示_aomenc预设);
+            libEnc.Add所有预设("5", dic显示_aomenc预设);
+
+            libEnc.Set使用位深(40);
+
+            libEnc.Noise去除参数 = new USHORT内参带显示(key: "denoise-noise-level={0}:enable-dnl-denoising=1", str最小提示: "微微一降", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 1, max: 50, use: 4);
+
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 9 }, { 170, 8 }, { 115, 7 }, { 57, 5 }, { 40, 3 }, { 28, 1 } };
+
+            //int i视觉无损 = 23, i轻损 = 28, i忍损 = 35;//aomenc,crf固定，cpu-used不同，质量区别无法肉眼察觉，速度、体积可观测。
+            libEnc.str画质参考 = "aomenc.u5画质范围参考↓\r\n蓝光原盘：CRF=7\r\n视觉无损：CRF=15\r\n超清：\tCRF=22\r\n高清：\tCRF=27（推荐）\r\n标清：\tCRF=32（默认）";
+
+            dic_编码库_初始设置.Add("低兼容 av1.10b444 @aomenc", libEnc);
+        }
+        static void add_libaom_av1_12bit_yuv444( ) {
+            LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libaom-av1", key预设: "-cpu-used", key编码器传参: "-aom-params"
+                , CRF参数: new Num参数(key: "-crf", "10b444.crf", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 8, my_max: 40, my_value: 26)
+                , b多线程优先: false, value内参单线程: "row-mt=0:fp-mt=0", value外参单线程: "-threads 1", i默认线程数: 3);
+
+            //libEnc.Add所有预设(dic显示_aomenc预设);
+            libEnc.Add所有预设("5", dic显示_aomenc预设);
+
+            libEnc.Set使用位深(42);
+
+            libEnc.Noise去除参数 = new USHORT内参带显示(key: "denoise-noise-level={0}:enable-dnl-denoising=1", str最小提示: "微微一降", str最大提示: "最大降噪", str摘要: ".dn", b默启: false, min: 1, max: 50, use: 4);
+
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 9 }, { 170, 8 }, { 115, 7 }, { 57, 5 }, { 40, 3 }, { 28, 1 } };
+
+            //int i视觉无损 = 23, i轻损 = 28, i忍损 = 35;//aomenc,crf固定，cpu-used不同，质量区别无法肉眼察觉，速度、体积可观测。
+            libEnc.str画质参考 = "aomenc.u5画质范围参考↓\r\n蓝光原盘：CRF=7\r\n视觉无损：CRF=15\r\n超清：\tCRF=22\r\n高清：\tCRF=27（推荐）\r\n标清：\tCRF=32（默认）";
+
+            dic_编码库_初始设置.Add("低兼容 av1.12b444 @aomenc", libEnc);
+        }
+
+        static void add_libvvenc_qpa_10bit_yuv422( ) {
+            LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
+                , CRF参数: new Num参数(key: "-qp", "10b422.qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 13, my_max: 33, my_value: 27)
+                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
+            /*
+             * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
+             * 设置自动多线程设置 (-1: 自动, 0: 关闭, 1,2,3: 开启，根据线程数自动启用 Tile, IFP 和 WPP)
+             
+             * --MaxParallelFrames [-1] Maximum number of frames to be processed in parallel(0:off, >=2: enable parallel frames)
+             * 并行处理的最大帧数(0:关闭, >=2: 启用并行帧处理)
+            
+             * --IFPLines [-1] Inter-Frame Parallelization(IFP) explicit CTU-lines synchronization offset (-1: default mode with two lines, 0: off)
+             * 帧间并行化 (IFP) 显式 CTU 行同步偏移 (-1: 默认模式带两行偏移, 0: 关闭)
+             
+             * --IFP [auto] Inter-Frame Parallelization(IFP) (-1: auto, 0: off, 1: on, with default setting of IFPLines)
+             * 帧间并行化 (IFP) (-1: 自动, 0: 关闭, 1: 开启，使用 IFPLines 的默认设置)
+             
+             *--WaveFrontSynchro [auto]`        Enable entropy coding sync (WPP) (-1: auto, 0: off, 1: on)
+             *启用熵编码同步 (WPP) (-1: 自动, 0: 关闭, 1: 开启)*
+             */
+            libEnc.Set使用位深(20);
+
+            libEnc.Set固定内参(new string[] { "SIMD=AVX512", "PerceptQPA=1" });
+            /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
+            启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
+            --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
+            --CabacZeroWordPaddingEnabled [1]：为码流添加符合标准的上下文自适应二进制算术编码（CABAC）零字填充（0：不添加，1：按需添加）
+            "SIMD=AVX512",
+            */
+
+            libEnc.Noise去除参数 = new USHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0);
+
+            libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
+            libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
+            //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 9 }, { 170, 8 }, { 115, 7 }, { 88, 6 }, { 55, 5 }, { 50, 4 }, { 45, 3 }, { 40, 2 }, { 35, 1 } };
+
+            libEnc.Add所有预设("medium", dic显示_VVenC预设);
+
+            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=27（推荐）\r\n标清：\tQPA=30\r\n低清：\tQPA=32(默认)";
+
+            dic_编码库_初始设置.Add("h266.10b422 @VVenC-QPA", libEnc);
+        }
+        static void add_libvvenc_qpa_10bit_yuv444( ) {
+            LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
+                , CRF参数: new Num参数(key: "-qp", "qpa", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 13, my_max: 33, my_value: 27)
+                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
+            /*
+             * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
+             * 设置自动多线程设置 (-1: 自动, 0: 关闭, 1,2,3: 开启，根据线程数自动启用 Tile, IFP 和 WPP)
+             
+             * --MaxParallelFrames [-1] Maximum number of frames to be processed in parallel(0:off, >=2: enable parallel frames)
+             * 并行处理的最大帧数(0:关闭, >=2: 启用并行帧处理)
+            
+             * --IFPLines [-1] Inter-Frame Parallelization(IFP) explicit CTU-lines synchronization offset (-1: default mode with two lines, 0: off)
+             * 帧间并行化 (IFP) 显式 CTU 行同步偏移 (-1: 默认模式带两行偏移, 0: 关闭)
+             
+             * --IFP [auto] Inter-Frame Parallelization(IFP) (-1: auto, 0: off, 1: on, with default setting of IFPLines)
+             * 帧间并行化 (IFP) (-1: 自动, 0: 关闭, 1: 开启，使用 IFPLines 的默认设置)
+             
+             *--WaveFrontSynchro [auto]`        Enable entropy coding sync (WPP) (-1: auto, 0: off, 1: on)
+             *启用熵编码同步 (WPP) (-1: 自动, 0: 关闭, 1: 开启)*
+             */
+            libEnc.Set使用位深(40);
+
+            libEnc.Set固定内参(new string[] { "SIMD=AVX512", "PerceptQPA=1" });
+            /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
+            启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
+            --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
+            --CabacZeroWordPaddingEnabled [1]：为码流添加符合标准的上下文自适应二进制算术编码（CABAC）零字填充（0：不添加，1：按需添加）
+            "SIMD=AVX512",
+            */
+
+            libEnc.Noise去除参数 = new USHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0);
+
+            libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
+            libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
+            //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 9 }, { 170, 8 }, { 115, 7 }, { 88, 6 }, { 55, 5 }, { 50, 4 }, { 45, 3 }, { 40, 2 }, { 35, 1 } };
+
+            libEnc.Add所有预设("medium", dic显示_VVenC预设);
+
+            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=27（推荐）\r\n标清：\tQPA=30\r\n低清：\tQPA=32(默认)";
+
+            dic_编码库_初始设置.Add("h266.10b444 @VVenC-QPA", libEnc);
+        }
+
         public class 预设 {
             float _crf偏移;
             string _value;
@@ -374,6 +511,8 @@ namespace 破片压缩器 {
                 if (_list补充内参.Count > 0) list.AddRange(_list补充内参);
             }
             public float get_CRF(bool b微调crf, float crf, Num参数 CRF) {
+                if (CRF.i小数位 > 1) crf = (float)(Math.Round(crf * CRF.i分母) / CRF.i分母);
+
                 if (b微调crf) {
                     crf += _crf偏移;
                 }
@@ -383,6 +522,8 @@ namespace 破片压缩器 {
                 return crf;
             }
             public float get_CRF(bool b微调crf, float crf, Num参数 CRF, float fps, short[,] fps偏移) {
+                if (CRF.i小数位 > 0) crf = (float)(Math.Round(crf * CRF.i分母) / CRF.i分母);
+
                 if (b微调crf) {
                     crf += _crf偏移;
                     int len = fps偏移.GetLength(0);
@@ -410,12 +551,13 @@ namespace 破片压缩器 {
 
             short _range_min, _range_max, _my_min, _my_max;
 
-            byte _i小数位;
-
-            public Num参数(string key, string name, short range_min, short range_max, float def, byte i小数位
+            byte _i小数位, _i步长, _i分母 = 1;
+            public Num参数(string key, string name, short range_min, short range_max, float def, byte i小数位, byte i步长
                 , short my_min, short my_max, float my_value) {
-                _key = key; _name = name; _range_min = range_min; _range_max = range_max; _def = def; _i小数位 = i小数位;
+                _key = key; _name = name; _range_min = range_min; _range_max = range_max; _def = def; _i小数位 = i小数位; _i步长 = i步长;
                 _my_min = my_min; _my_max = my_max; _set_value = _my_value = my_value;
+
+                if (i小数位 > 0) _i分母 = (byte)(Math.Pow(10, i小数位) / _i步长);
             }
 
             public void setValue(float value) {
@@ -434,7 +576,8 @@ namespace 破片压缩器 {
 
             public float def => _def;
             public byte i小数位 => _i小数位;
-
+            public byte i步长 => _i步长;
+            public byte i分母 => _i分母;
             public float my_value => _my_value;
 
         }
@@ -557,8 +700,14 @@ namespace 破片压缩器 {
 
         Dictionary<string, 预设> _dic_选择_预设 = new Dictionary<string, 预设>( );
 
+        Dictionary<byte, string> dic_位深_限缩参数 = new Dictionary<byte, string>( ) { { 0, "" }
+            , { 8, "yuv420p" }, { 28, "yuv422p" }, { 48, "yuv444p" }
+            , { 10, "yuv420p10le" }, { 20, "yuv422p10le" }, { 40, "yuv444p10le" }
+            , { 12, "yuv420p12le" }, { 22, "yuv420p22le" }, { 42, "yuv444p12le" }
+            , { 14, "yuv420p14le" }, { 24, "yuv422p14le" }, { 44, "yuv444p14le" }
+            , { 16, "yuv420p16le" }, { 26, "yuv422p16le" }, { 46, "yuv444p16le" }
+             };
 
-        Dictionary<byte, string> dic_位深_限缩参数 = new Dictionary<byte, string>( ) { { 0, "" }, { 8, "yuv420p" }, { 10, "yuv420p10le" }, { 12, "yuv420p12le" }, { 14, "yuv420p14le" }, { 16, "yuv420p16le" } };
 
         public Num参数 CRF参数 = null;
         public INT内参 GOP跃帧 = null;
@@ -756,10 +905,8 @@ namespace 破片压缩器 {
 
                 if (f单核编码帧率 * i并行 > info.IN.f单核解码能力) {//(假定单线程能实时解码）简单判断编码帧率是否超过解码速度
                     info.IN.ffmpeg单线程解码 = string.Empty;
-                } else {
-                    if (Settings.b自定义滤镜 && !string.IsNullOrEmpty(Settings.str自定义滤镜))
-                        info.IN.ffmpeg单线程解码 = EXE.ffmpeg单线程;
                 }
+
             } else {
                 if (b微调CRF && !_b多线程优先) crf++;
 

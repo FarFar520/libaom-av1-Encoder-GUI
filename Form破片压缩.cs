@@ -109,15 +109,12 @@ namespace 破片压缩器 {
         }
 
         bool is有效视频(FileInfo file) {
-            if (mapVideoExt.Contains(file.Extension.ToLower( )) && File.Exists(file.FullName)) {
+            if (map已切片文件小写路径.Add(file.FullName.ToLower( )) && mapVideoExt.Contains(file.Extension.ToLower( )) && File.Exists(file.FullName)) {
                 string name = file.Name.ToLower( );
                 if (name.Contains("svtav1") || name.Contains("aomav1") || name.Contains("vvenc")) return false;
 
-                if (map已切片文件小写路径.Add(file.FullName.ToLower( ))) {
-                    return true;
-                }
+                return true;
             }
-
             return false;
         }
 
@@ -141,7 +138,6 @@ namespace 破片压缩器 {
         void fn后台切片( ) {
             while (true) {
                 更改过文件夹: b更改过输入路径 = b需要重扫输入 = false;
-                lock (obj转码队列) { list_等待转码队列.Clear( ); }
                 DirectoryInfo[] arrDir = list输入路径.ToArray( );
                 foreach (DirectoryInfo dir in arrDir) {
                     FileInfo[] arrFileInfo;
@@ -172,7 +168,7 @@ namespace 破片压缩器 {
                             if (roadmap.b无缓转码) {//有无缓转码.info文件时，代表未完成任务为无缓模式
                                 roadmap.b查找MKA音轨( );
                                 Task.Run(( ) => fn无缓参数(roadmap));
-                                try { Thread.Sleep(999); } catch { } //最快每秒开启一次扫描任务。
+                                try { Thread.Sleep(99); } catch { } //最快每0.1秒开启一次扫描任务。
                                 while (Settings.b无缓转码 && (list_等待转码队列.Count > 2 || 转码队列.list扫分段.Count > 0)) try { autoReset切片.WaitOne( ); } catch { }
                                 //最多储备3个等待转码任务、只开一个扫描任务，参数调整生效更及时。核心较多时，单扫描任务无法使用全部核心性能，按需可多扫描任务。
                             } else {
@@ -321,7 +317,7 @@ namespace 破片压缩器 {
                         add日志($"转码音轨：{video正在转码文件.strMKA路径}");
                     }
 
-                    while (转码队列.i多进程数量 == 0) try { autoReset转码.WaitOne( ); } catch { }
+                    while (转码队列.i多进程数量 == 0) try { autoReset转码.WaitOne( ); } catch { }//启动时只扫描场景，0编码任务等待。
                     this.Invoke(new Action(( ) => timer刷新编码输出.Start( )));//要委托UI线程启动计时器才能正确启动。
 
                     if (roadmap.b无缓转码) {
@@ -329,7 +325,7 @@ namespace 破片压缩器 {
                             video正在转码文件.fx场景分段字幕切片(Settings.b硬字幕);
                             while (video正在转码文件.b转码下一个分段(out External_Process external_Process)) {
                                 add日志($"开始转码：{external_Process.fi编码.FullName}");
-                                转码队列.ffmpeg等待入队(external_Process);//有队列上限
+                                转码队列.ffmpeg入队后等待(external_Process);//有队列上限
                                 //if (video正在转码文件.vTimeBase.i剩余分段 < f保底缓存切片) autoReset切片.Set( );//以文件为处理单位，已预先分析准备三个文件。
                             }
                             lock (obj合并队列) {
@@ -347,7 +343,7 @@ namespace 破片压缩器 {
                                 }
                                 if (hasNext = video正在转码文件.b转码下一个切片(out External_Process external_Process)) {
                                     add日志($"开始转码：{external_Process.fi源.FullName}");
-                                    转码队列.ffmpeg直接入队(external_Process);//没有队列上限
+                                    转码队列.ffmpeg直接入队(external_Process);//没有队列上限，降低多机协同编码重复操作同一个切片概率。
                                 }
                             }
                         }
@@ -769,6 +765,35 @@ namespace 破片压缩器 {
             Settings.i分割GOP = Scene.i分割最少秒 = (int)numericUpDown_分割最小秒.Value;
         }
 
+        bool b查找可执行文件(out string log, out string txt) {
+            log = string.Empty;
+            txt = string.Empty;
+
+            bool has_ffmpeg = EXE.find最新版ffmpeg(out _);
+            bool has_ffprobe = EXE.find最新版ffprobe(out _);
+            bool has_mkvmerge = EXE.find最新版mkvmerge(out _);
+            bool has_mkvextract = EXE.find最新版mkvextract(out _);
+
+            if (!has_ffprobe || !has_ffmpeg) {
+                if (!has_ffmpeg) log += "“ffmpeg.exe”、";
+                if (!has_ffprobe) log += "“ffprobe.exe”、";
+                txt += "\r\nffmpeg下载链接：\r\nhttps://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z";
+            }
+
+            if (!has_mkvmerge || !has_mkvextract) {
+                if (!has_mkvmerge) log += "“mkvmerge.exe”、";
+                if (!has_mkvextract) log += "“mkvextract.exe”、";
+
+                txt += "\r\nmkvmerge下载链接：\r\nhttps://mkvtoolnix.download/windows/releases/95.0/mkvtoolnix-32-bit-95.0.7z";
+            }
+
+            if (log.Length > 0) {
+                log = log.Substring(0, log.Length - 1);
+                return false;
+            } else
+                return true;
+        }
+
         private void 新增成功视频检查合并(object sender, FileSystemEventArgs e) {
             string lowerFullPath = e.FullPath.Substring(0, e.FullPath.Length - e.Name.Length - 1);
             if (dic_完成路径_等待合并.TryGetValue(lowerFullPath, out Video_Roadmap roadmap)) {
@@ -802,12 +827,12 @@ namespace 破片压缩器 {
                     if (list缓存路径.Count > 0) {
                         autoReset协转.Set( );
                     }
+                    autoReset合并.Set( );
+                    autoReset转码.Set( );
                     转码队列.autoReset入队.Set( );
                     if (list输入路径.Count > 0) {
                         autoReset初始信息.Set( );
                         autoReset切片.Set( );
-                        autoReset转码.Set( );
-                        autoReset合并.Set( );
                     }
 
                     if (转码队列.b有任务 && 转码队列.Has汇总输出信息(out string str编码速度)) {
@@ -815,7 +840,7 @@ namespace 破片压缩器 {
                     }
 
                 } else {
-                    if (Video_Roadmap.b查找可执行文件(out string log, out string txt)) {
+                    if (b查找可执行文件(out string log, out string txt)) {
                         button刷新.Text = "刷新(&R)";
                         thread切片.Start( );
                         thread转码.Start( );
@@ -1099,7 +1124,7 @@ namespace 破片压缩器 {
             if (e.KeyChar == 13) {
                 if (crf上次 != value) {
                     crf上次 = value;
-                    add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, b多线程: checkBox多线程.Checked, crf: numericUpDown_CRF.Value));
+                    add日志(libEnc选中.get参数_编码器预设画质(key选择预设: comboBox预设.Text, b微调CRF: checkBox_DriftCRF.Checked, b多线程: checkBox多线程.Checked, crf: value));
                 }
             }
         }
@@ -1134,6 +1159,7 @@ namespace 破片压缩器 {
                 转码队列.i多进程数量 = (int)numericUpDown_Workers.Value;
                 numericUpDown_Workers.ForeColor = Color.Black;
                 转码队列.autoReset入队.Set( );
+                autoReset转码.Set( );
             }
         }
 

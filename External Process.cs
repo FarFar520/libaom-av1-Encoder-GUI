@@ -235,7 +235,7 @@ namespace 破片压缩器 {
                                             if (ffmpeg_Pace[i + 5] >= '0' && ffmpeg_Pace[i + 5] <= '9') {
                                                 float enc_sec = 0;
 
-                                                char hh_1 = ffmpeg_Pace[i + 5], hh_2 = ffmpeg_Pace[i + 6];
+                                                char hh_1 = ffmpeg_Pace[i + 5], hh_2 = ffmpeg_Pace[i + 6];//压制超过99小时时长则触发BUG
                                                 char mm_1 = ffmpeg_Pace[i + 8], mm_2 = ffmpeg_Pace[i + 9];
                                                 char ss_1 = ffmpeg_Pace[i + 11], ss_2 = ffmpeg_Pace[i + 12];
                                                 char ms_1 = ffmpeg_Pace[i + 14], ms_2 = ffmpeg_Pace[i + 15];
@@ -301,19 +301,7 @@ namespace 破片压缩器 {
                 } catch (Exception err) { listError.Add(err.Message); }
             }
         }
-        public bool sync( ) {
-            process.OutputDataReceived += new DataReceivedEventHandler(OutputData);
-            process.ErrorDataReceived += new DataReceivedEventHandler(ErrorData);
-            try {
-                process.Start( );
-                process.BeginOutputReadLine( );
-                process.BeginErrorReadLine( );//异步读取缓冲无法和直接读取共同工作
-            } catch {
-                return false;
-            }
-            process.WaitForExit( );
-            return process.ExitCode == 0;
-        }//重定向读取错误输出和标准输出，函数可以阻塞原有进程；
+
         public bool sync(out List<string> OutputDataReceived, out List<string> ErrorDataReceived) {
             OutputDataReceived = listOutput;
             ErrorDataReceived = listError;

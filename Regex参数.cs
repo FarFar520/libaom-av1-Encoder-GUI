@@ -25,7 +25,7 @@ namespace 破片压缩器 {
         public static Regex regexDAR = new Regex(@"DAR\s*(?<darW>\d+):(?<darH>\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);//备用
         public static Regex regexAudio = new Regex(@"Audio: (?<code>\w+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         public static Regex regex隔行扫描 = new Regex(@"(top|bottom)\s+first", RegexOptions.IgnoreCase | RegexOptions.Compiled);//交错视频
-        public static Regex regex音频信息 = new Regex(@"Stream #(?<map>\d+:\d+)(?<轨道码>\[0x[^]]+\])?(?:\((?<语言>\w+)\))?: Audio: (?<编码>[^,]+), (?<采样率>\d+ Hz), (?<声道>[^,]+)(?:, (?<位深>[^,]+))?(?:, (?<码率Kbps>\d+) kb/s[^,]*)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public static Regex regex音频信息 = new Regex(@"Stream #(?<map>\d+:\d+)(?<轨道码>\[0x[^]]+\])?(?:\((?<语言>\w+)\))?: Audio: (?<编码>[^,]+), (?<采样率>\d+ Hz), (?<声道>[^,]+)(?:, (?<位深>[^,]+))?(?:, (?<码率Kbps>\d+) kb/s[^,]*)?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
        
     }

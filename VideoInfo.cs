@@ -91,11 +91,11 @@ namespace 破片压缩器 {
         }
         public string get输出Progressive {
             get {
-                double K = Math.Round(i输出长边 / 1000.0f, 1);
-                if (i输出长边 % 960 == 0) K = i输出长边 / 960;
-                else if (i输出长边 % 1024 == 0) K = i输出长边 / 1024;
                 string progressive = string.Empty;
-                if (i输出长边 / 1000.0f > 4.096) {
+                if (i输出长边 / 1000.0f > 4.096 && i输出短边 > 1500) {
+                    double K = Math.Round(i输出长边 / 1000.0f, 1);
+                    if (i输出长边 % 960 == 0) K = i输出长边 / 960;
+                    else if (i输出长边 % 1024 == 0) K = i输出长边 / 1024;
                     progressive = $"{K}K";
                 } else {
                     if (i输出长边 >= 3840) progressive = "4K";
@@ -107,7 +107,7 @@ namespace 破片压缩器 {
                         else if (i输出短边 > 700) progressive = "720p";
                         else if (i输出短边 > 600) progressive = "640p";
                         else if (i输出短边 > 500) progressive = "540p";
-                        else if (i输出短边 > 450) progressive = "480p";
+                        else if (i输出短边 > 410) progressive = "480p";
                         else if (i输出短边 > 300) progressive = "360p";
                         else if (i输出短边 > 200) progressive = "240p";
                         else progressive = $"{i输出短边 / 10}0p";

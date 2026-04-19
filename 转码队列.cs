@@ -68,13 +68,13 @@ namespace 破片压缩器 {
                         }
                     }
                 }
-                if (b队列满) Form破片压缩.autoReset刷新输出.Set( );
+                if (list.Count >= i多进程数量) Form破片压缩.autoReset刷新输出.Set( );
                 return true;
             }
             return false;
         }
 
-        public static bool ffmpeg等待入队(External_Process p) {
+        public static bool ffmpeg入队后等待(External_Process p) {
             if (p.async_FFmpeg编码( )) {
                 lock (obj增删排锁) {
                     list.Add(p);
@@ -127,8 +127,7 @@ namespace 破片压缩器 {
                 }
             }
 
-            bool b等待入队 = autoReset入队.Set( );//移除、增加转码队列，在文件处理逻辑之前，合并信号由文件处理线程发起。
-
+            autoReset入队.Set( );//移除、增加转码队列，在文件处理逻辑之前，合并信号由文件处理线程发起。
             Thread.Sleep(3333);//挂起的3秒钟内，有可能成功入队，队列计数有增长 。
 
             if (i进程数 > list.Count) {//收尾工作队列，程序主动管理内核分配。

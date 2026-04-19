@@ -250,54 +250,75 @@ namespace 破片压缩器 {
         }
         void fx检测转场( ) {
             path输出目录转场时间戳 = di输出目录.FullName + $"\\检测镜头({scene:F3}).info";
-            b读取转场 = is成功读取(ref list转场, "转场", path输出目录转场时间戳, ref span扫转场进度);
+            b读取转场 = is成功读取(ref list转场, "转场", path输出目录转场时间戳, ref span扫转场进度,false);
             if (!b读取转场) {
-                string path视频同目录转场时间戳 = $"{fi输入视频.DirectoryName}\\检测镜头({scene:F3}).{fi输入视频.Name}.info";
-                b读取转场 = is成功读取(ref list转场, "转场", path视频同目录转场时间戳, ref span扫转场进度);
-                if (!b读取转场 && th扫转场 == null) {
-                    th扫转场 = new Thread(fn扫转场) { IsBackground = true, Name = "扫转场" + fi输入视频.Name };
-                    th扫转场.Start( );
+                string path视频同目录转场时间戳 = $"{fi输入视频.DirectoryName}\\检测镜头({scene:F3}).{fi输入视频.Name}.info";//info是整理后的文件
+                b读取转场 = is成功读取(ref list转场, "转场", path视频同目录转场时间戳, ref span扫转场进度, true);
+                if (!b读取转场) {
+                    path视频同目录转场时间戳 = $"{fi输入视频.DirectoryName}\\检测镜头({scene:F3}).{fi输入视频.Name}.log";//原始ffmpeg输出日志
+                    b读取转场 = is成功读取(ref list转场, "转场", path视频同目录转场时间戳, ref span扫转场进度, true);
+
+                    if (!b读取转场 && th扫转场 == null) {
+                        th扫转场 = new Thread(fn扫转场) { IsBackground = true, Name = "扫转场" + fi输入视频.Name };
+                        th扫转场.Start( );
+                    }
                 }
             }
         }
         void fx读取黑场Info(bool b需要扫描) {
             int x黑度 = 98, x像素黑阈 = 32;
             path输出目录黑场时间戳 = di输出目录.FullName + $"\\检测黑场({x黑度},{x像素黑阈}).info";
-            b读取黑场 = is成功读取(ref list黑场, "黑场", path输出目录黑场时间戳, ref span扫黑场进度);
+            b读取黑场 = is成功读取(ref list黑场, "黑场", path输出目录黑场时间戳, ref span扫黑场进度,false);
             if (!b读取黑场) {
                 string path视频同目录黑场时间戳 = $"{fi输入视频.DirectoryName}\\检测黑场({x黑度},{x像素黑阈}).{fi输入视频.Name}.info";
-                b读取黑场 = is成功读取(ref list黑场, "黑场", path视频同目录黑场时间戳, ref span扫黑场进度);
-                if (b需要扫描 && !b读取黑场 && th扫黑场 == null) {
-                    list黑场 = new SynchronizedCollection<double>( ) { 0 };
-                    th扫黑场 = new Thread(fn扫黑场) { IsBackground = true, Name = "扫黑场" + fi输入视频.Name };
-                    th扫黑场.Start( );
+                b读取黑场 = is成功读取(ref list黑场, "黑场", path视频同目录黑场时间戳, ref span扫黑场进度, true);
+                if (!b读取黑场) {
+                     path视频同目录黑场时间戳 = $"{fi输入视频.DirectoryName}\\检测黑场({x黑度},{x像素黑阈}).{fi输入视频.Name}.log";
+                    b读取黑场 = is成功读取(ref list黑场, "黑场", path视频同目录黑场时间戳, ref span扫黑场进度, true);
+
+                    if (b需要扫描 && !b读取黑场 && th扫黑场 == null) {
+                        list黑场 = new SynchronizedCollection<double>( ) { 0 };
+                        th扫黑场 = new Thread(fn扫黑场) { IsBackground = true, Name = "扫黑场" + fi输入视频.Name };
+                        th扫黑场.Start( );
+                    }
                 }
             }
         }
         void fx读取白场Info( ) {
             int x白度 = 98, x像素白阈 = 250;
             path输出目录白场时间戳 = di输出目录.FullName + $"\\检测白场({x白度},{x像素白阈}).info";
-            b读取白场 = is成功读取(ref list白场, "白场", path输出目录白场时间戳, ref span扫白场进度);
+            b读取白场 = is成功读取(ref list白场, "白场", path输出目录白场时间戳, ref span扫白场进度,false);
             if (!b读取白场) {
                 string path视频同目录白场时间戳 = $"{fi输入视频.DirectoryName}\\检测白场({x白度},{x像素白阈}).{fi输入视频.Name}.info";
-                b读取白场 = is成功读取(ref list白场, "白场", path视频同目录白场时间戳, ref span扫黑场进度);
+                b读取白场 = is成功读取(ref list白场, "白场", path视频同目录白场时间戳, ref span扫黑场进度, true);
+
                 if (!b读取白场) {
-                    th扫白场 = new Thread(fn扫白场) { IsBackground = true, Name = "扫白场" + fi输入视频.Name };
-                    th扫白场.Start( );
+                    path视频同目录白场时间戳 = $"{fi输入视频.DirectoryName}\\检测白场({x白度},{x像素白阈}).{fi输入视频.Name}.log";
+                    b读取白场 = is成功读取(ref list白场, "白场", path视频同目录白场时间戳, ref span扫黑场进度, true);
+
+                    if (!b读取白场) {
+                        th扫白场 = new Thread(fn扫白场) { IsBackground = true, Name = "扫白场" + fi输入视频.Name };
+                        th扫白场.Start( );
+                    }
                 }
             }
         }
         void fx读取关键帧( ) {
             TimeSpan span = TimeSpan.Zero;
-            b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path输出目录关键帧时间戳, ref span);
+            b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path输出目录关键帧时间戳, ref span,false);
             if (!b读取关键帧) {
                 string path视频同目录关键帧时间戳 = $"{fi输入视频.DirectoryName}\\关键帧时间戳_{fi输入视频.Name}.info";
-                b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span);
+                b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span,true);
+                
+                if (!b读取关键帧) {
+                    path视频同目录关键帧时间戳 = $"{fi输入视频.DirectoryName}\\关键帧时间戳_{fi输入视频.Name}.log";
+                    b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span, true);
 
-                if ((!b读取关键帧 || list关键帧.Count < 1) && th扫关键帧 == null) {
-                    list关键帧 = new SynchronizedCollection<double>( ) { 0 };
-                    th扫关键帧 = new Thread(fn扫关键帧) { IsBackground = true, Name = "扫关键帧" + fi输入视频.Name };
-                    th扫关键帧.Start( );
+                    if ((!b读取关键帧 || list关键帧.Count < 1) && th扫关键帧 == null) {
+                        list关键帧 = new SynchronizedCollection<double>( ) { 0 };
+                        th扫关键帧 = new Thread(fn扫关键帧) { IsBackground = true, Name = "扫关键帧" + fi输入视频.Name };
+                        th扫关键帧.Start( );
+                    }
                 }
             }
         }
@@ -651,7 +672,13 @@ namespace 破片压缩器 {
             using (Process process = new Process( )) {
                 //string cmd= $"-select_streams v:0 -show_entries frame=pts_time,duration_time,pict_type -of csv \"{fi输入文件.FullName}\""; //单线程解码速度过慢，只取关键帧时间戳做偏移量。
                 string cmd = $"-select_streams v:0 -skip_frame nokey -show_entries frame=pts_time,duration_time,pict_type -of csv \"{fi输入视频.FullName}\"";
-                process.StartInfo = get_StartInfo(EXE.ffprobe, cmd);
+
+                if (File.Exists(EXE.ffprobe)) {
+                    process.StartInfo = get_StartInfo(EXE.ffprobe, cmd);
+                } else {
+                    EXE.find最新版ffprobe(out string ffprobe);
+                    process.StartInfo = get_StartInfo(ffprobe, cmd);
+                }
 
                 try {
                     process.Start( );
@@ -690,7 +717,14 @@ namespace 破片压缩器 {
             span扫转场进度 = TimeSpan.Zero;
             using (Process process = new Process( )) {
                 string cmd = $"-i \"{fi输入视频.FullName}\" -vf \"select='gt(scene,{scene})',showinfo\" -an -sn -f null - {ffmpeg单线程滤镜}";
-                process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
+
+                if (File.Exists(EXE.ffmpeg)) {
+                    process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
+                } else {
+                    EXE.find最新版ffmpeg(out string ffmpeg);
+                    process.StartInfo = get_StartInfo(ffmpeg, cmd);
+                }
+
                 try { process.Start( ); } catch {
                     return;
                 }
@@ -741,7 +775,14 @@ namespace 破片压缩器 {
             span扫黑场进度 = TimeSpan.Zero;
             using (Process process = new Process( )) {
                 string cmd = $"-i \"{fi输入视频.FullName}\" -vf \"blackframe\" -f null - {ffmpeg单线程滤镜}";
-                process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
+
+                if (File.Exists(EXE.ffmpeg)) {
+                    process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
+                } else {
+                    EXE.find最新版ffmpeg(out string ffmpeg);
+                    process.StartInfo = get_StartInfo(ffmpeg, cmd);
+                }
+
                 try { process.Start( ); } catch {
                     return;
                 }
@@ -790,7 +831,12 @@ namespace 破片压缩器 {
             span扫白场进度 = TimeSpan.Zero;
             using (Process process = new Process( )) {
                 string cmd = $"-i \"{fi输入视频.FullName}\" -vf \"signalstats,metadata=print:key=lavfi.signalstats.YAVG,duration_time\" - f null -  {ffmpeg单线程滤镜}";
-                process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
+                if (File.Exists(EXE.ffmpeg)) {
+                    process.StartInfo = get_StartInfo(EXE.ffmpeg, cmd);
+                } else {
+                    EXE.find最新版ffmpeg(out string ffmpeg);
+                    process.StartInfo = get_StartInfo(ffmpeg, cmd);
+                }
                 try { process.Start( ); } catch {
                     return;
                 }
@@ -845,11 +891,11 @@ namespace 破片压缩器 {
             return StartInfo;
         }
 
-        bool is成功读取(ref SynchronizedCollection<double> list, string type, string path, ref TimeSpan span) {
+        bool is成功读取(ref SynchronizedCollection<double> list, string type, string path, ref TimeSpan span,bool b外部生成) {
             if (File.Exists(path)) {
                 string[] lines;
                 try { lines = File.ReadAllLines(path); } catch { lines = null; }
-                if (lines != null && lines.Length > 3 && lines.Last( ).TrimEnd( ).EndsWith("安全退出")) {
+                if (lines != null && lines.Length > 3 && (b外部生成 || lines.Last( ).TrimEnd( ).EndsWith("安全退出"))) {
                     if (type == "转场") {
                         for (int i = 0; i < lines.Length; i++) is转场(lines[i]);
                     } else if (type == "黑场") {
