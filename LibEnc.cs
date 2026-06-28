@@ -123,6 +123,7 @@ namespace 破片压缩器 {
         public static void fx编码库初始化( ) {
             add_libvvenc_qpa( );
             add_libvvenc_qp( );
+            add_libvvenc_q_fgs( );
             add_libaom_av1( );
             add_libsvtav1( );
             //add_librav1e( ); //硬实力弱于svt-av1 、aomenc，已去除
@@ -134,6 +135,7 @@ namespace 破片压缩器 {
             add_libaom_av1_12bit_yuv444( );
             //add_libvvenc_qpa_10bit_yuv422( );//编码器未加入
             //add_libvvenc_qpa_10bit_yuv444( );
+            
         }
         static void add_libvvenc_qpa( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
@@ -171,16 +173,17 @@ namespace 破片压缩器 {
             libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
             //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
             libEnc._arr帧率CRF偏移 = new short[,] { { 210, 9 }, { 170, 8 }, { 115, 7 }, { 88, 6 }, { 55, 5 }, { 50, 4 }, { 45, 3 }, { 40, 2 }, { 35, 1 } };
+            //60帧qpa32与qpa28有明显画质差异，偏移量稍大
 
             libEnc.Add所有预设("slower", dic显示_VVenC预设);
 
-            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=27（推荐）\r\n标清：\tQPA=30\r\n低清：\tQPA=32(默认)";
+            libEnc.str画质参考 = "vvenc medium qpa 画质范围参考↓\r\n蓝光原盘：QPA=13\r\n视觉无损：QPA=18\r\n超清：\tQPA=23\r\n高清：\tQPA=27（推荐）\r\n标清：\tQPA=30\r\n低清：\tQPA=32(默认)";
 
             dic_编码库_初始设置.Add("高压缩 h266 @VVenC-QPA", libEnc);
         }
         static void add_libvvenc_qp( ) {
             LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
-                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 10, my_max: 36, my_value: 23)//qp23≈qpa26(qp/qpa拉开差异档位）  qp19≈qpa23(vmaf 97.5+)  
+                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 10, my_max: 36, my_value: 22)//qp23≈qpa26(qp/qpa拉开差异档位）  qp19≈qpa23(vmaf 97.5+)  
                 , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
             /*
              * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
@@ -212,13 +215,56 @@ namespace 破片压缩器 {
 
             libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
             libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
-            //libEnc._arr帧率CRF偏移 = new short[,] { { 210, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
-            libEnc._arr帧率CRF偏移 = new short[,] { { 210, 7 }, { 170, 6 }, { 115, 5 }, { 88, 4 }, { 55, 4 }, { 45, 3 }, { 35, 2 } };
+            libEnc._arr帧率CRF偏移 = new short[,] { { 230, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
             libEnc.Add所有预设(dic显示_VVenC预设);
 
-            libEnc.str画质参考 = "vvenc画质范围参考↓\r\n蓝光原盘：QP=10\r\n视觉无损：QP=15\r\n超清：\tQP=20\r\n高清：\tQP=23（推荐）\r\n标清：\tQP=27\r\n低清：\tQP=32(默认)";
+            libEnc.str画质参考 = "vvenc medium qp画质范围参考↓\r\n蓝光原盘：QP=10\r\n视觉无损：QP=15\r\n超清：\tQP=20\r\n高清：\tQP=23（推荐）\r\n标清：\tQP=27\r\n低清：\tQP=32(默认)";
 
             dic_编码库_初始设置.Add("中压缩 h266 @VVenC-QP", libEnc);
+        }
+        static void add_libvvenc_q_fgs( ) {
+            LibEnc libEnc = new LibEnc(code: "vvc", value编码库: "libvvenc", key预设: "-preset", key编码器传参: "-vvenc-params"
+                , CRF参数: new Num参数(key: "-qp", "qp", range_min: 0, range_max: 63, def: 32, i小数位: 0, i步长: 1, my_min: 8, my_max: 25, my_value: 17)//qp23≈qpa26(qp/qpa拉开差异档位）  qp19≈qpa23(vmaf 97.5+)  
+                , b多线程优先: true, value内参单线程: "MaxParallelFrames=1:IFPLines=0:IFP=0:WaveFrontSynchro=0", value外参单线程: "-threads 1", i默认线程数: 5);
+            /*
+             * --MTProfile [off] set automatic multi-threading setting (-1: auto, 0: off, 1,2,3: on, enables tiles, IFP and WPP automatically depending on the number of threads)
+             * 设置自动多线程设置 (-1: 自动, 0: 关闭, 1,2,3: 开启，根据线程数自动启用 Tile, IFP 和 WPP)
+             
+             * --MaxParallelFrames [-1] Maximum number of frames to be processed in parallel(0:off, >=2: enable parallel frames)
+             * 并行处理的最大帧数(0:关闭, >=2: 启用并行帧处理)
+            
+             * --IFPLines [-1] Inter-Frame Parallelization(IFP) explicit CTU-lines synchronization offset (-1: default mode with two lines, 0: off)
+             * 帧间并行化 (IFP) 显式 CTU 行同步偏移 (-1: 默认模式带两行偏移, 0: 关闭)
+             
+             * --IFP [auto] Inter-Frame Parallelization(IFP) (-1: auto, 0: off, 1: on, with default setting of IFPLines)
+             * 帧间并行化 (IFP) (-1: 自动, 0: 关闭, 1: 开启，使用 IFPLines 的默认设置)
+             
+             *--WaveFrontSynchro [auto]`        Enable entropy coding sync (WPP) (-1: auto, 0: off, 1: on)
+             *启用熵编码同步 (WPP) (-1: 自动, 0: 关闭, 1: 开启)*
+             *#======== Film grain analysis ================
+             *--fga [0]                    Experimental: Enable film grain analysis and generate FGC SEI message
+            实验性: 启用胶片颗粒分析并生成FGC SEI消息
+             */
+            libEnc.Set使用位深(10);
+
+            libEnc.Set固定内参(new string[] { "PerceptQPA=0","fga=1" });//"SIMD=AVX512","SameCQPTablesForAllChroma=0", "CabacZeroWordPaddingEnabled=0"
+            /*-qpa, --PerceptQPA [0] Enable perceptually motivated QP adaptation, XPSNR based (0:off, 1:on)
+            启用基于感知的 QP 自适应，基于 XPSNR(0:关闭, 1:开启)
+            --SameCQPTablesForAllChroma [1]：0：Cb、Cr 和联合 Cb-Cr 分量使用不同的量化参数表，1（默认）：所有三个色度分量使用相同的量化参数表
+            --CabacZeroWordPaddingEnabled [1]：为码流添加符合标准的上下文自适应二进制算术编码（CABAC）零字填充（0：不添加，1：按需添加）
+            "SIMD=AVX512",
+            */
+
+            libEnc.Noise去除参数 = new USHORT内参带显示(key: "MCTF=1:MCTFSpeed={0}", str最小提示: "质量最佳", str最大提示: "速度最快", str摘要: ".mctf", b默启: true, min: 0, max: 4, use: 0) { str关闭 = "MCTF=0" };
+
+            libEnc.GOP跃秒 = new SHORT内参(key: "RefreshSec={0}", min: 1, max: short.MaxValue, def: 1);
+            libEnc.GOP跃帧 = new INT内参(key: "IntraPeriod={0}", min: 1, max: int.MaxValue, def: 0);
+            libEnc._arr帧率CRF偏移 = new short[,] { { 230, 8 }, { 170, 7 }, { 115, 6 }, { 88, 5 }, { 58, 4 }, { 48, 3 }, { 38, 2 }, { 28, 1 } };
+            libEnc.Add所有预设("slower+ (特慢+小参)",dic显示_VVenC预设);
+
+            libEnc.str画质参考 = "vvenc slower qp 加胶片颗粒合成 画质范围参考↓\r\n蓝光原盘：QP=11\r\n视觉无损：QP=17(准原盘)\r\n超清：\tQP=21\r\n高清：\tQP=23（推荐）\r\n标清：\tQP=27\r\n低清：\tQP=32(默认)";
+
+            dic_编码库_初始设置.Add("🎞颗粒 h266 @VVenC-QP", libEnc);
         }
         static void add_libaom_av1( ) {
             LibEnc libEnc = new LibEnc(code: "av1", value编码库: "libaom-av1", key预设: "-cpu-used", key编码器传参: "-aom-params"

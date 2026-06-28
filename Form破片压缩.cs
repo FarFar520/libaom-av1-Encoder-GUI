@@ -337,7 +337,7 @@ namespace 破片压缩器 {
                     } else {
                         while (video正在转码文件.b协同切片尝试回调( )) {
                             for (bool hasNext = true; hasNext;) {
-                                while (!转码队列.b允许入队) {
+                                while (转码队列.b队列满) {
                                     try { 转码队列.autoReset入队.WaitOne( ); } catch { }//先等待，再入队，多机协同转码时避免空占文件等待入队
                                     if (b取一片缓存判断缓存低) autoReset切片.Set( );//编码速度非常快+切片碎时，短时间内重复判断切片数量存在读盘性能损耗。
                                 }
@@ -562,7 +562,6 @@ namespace 破片压缩器 {
             转码队列.i物理核心数 = NumberOfCores;
             转码队列.i逻辑核心数 = NumberOfLogicalProcessors;
             add日志($"( {Encoding_Node.str主机名称} ) {NumberOfProcessors}处理器 {NumberOfCores}核心 {NumberOfLogicalProcessors}线程 [{Encoding_Node.cpuId}] {Encoding_Node.SerialNumber}");
-
 
             if (NumberOfLogicalProcessors <= 64) {//超过64核心，长整数溢出
                 转码队列.arr_单核指针 = new IntPtr[NumberOfLogicalProcessors];
@@ -1223,14 +1222,12 @@ namespace 破片压缩器 {
 
             label_CRF.Text = crfText;
 
-
-
             numericUpDown_CRF.DecimalPlaces = libEnc选中.CRF参数.i小数位;
             numericUpDown_CRF.Maximum = (decimal)libEnc选中.CRF参数.my_max;
             numericUpDown_CRF.Minimum = (decimal)libEnc选中.CRF参数.my_min;
             crf上次 = numericUpDown_CRF.Value = (decimal)libEnc选中.CRF参数.my_value;
 
-            textBox日志.Text = libEnc选中.str画质参考;
+            textBox日志.Text = "\r\n【源视频转为mkv格式，分段帧定位较准确！】\r\n\r\n"+ libEnc选中.str画质参考;
 
             if (libEnc选中.i默认线程数 == 1) {
                 checkBox多线程.Checked = false;

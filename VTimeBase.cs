@@ -47,7 +47,7 @@ namespace 破片压缩器 {
         public AutoResetEvent event计算 = new AutoResetEvent(false);
         public AutoResetEvent reset再次获取 = new AutoResetEvent(false);
 
-        bool  b读取csv = false, b读取关键帧 = false, b读取转场 = false, b读取黑场 = false, b读取白场 = false, b正在计算 = true;
+        bool b读取csv = false, b读取关键帧 = false, b读取转场 = false, b读取黑场 = false, b读取白场 = false, b正在计算 = true;
 
         string path输出目录关键帧时间戳, path输出目录转场时间戳, path输出目录黑场时间戳, path输出目录白场时间戳;
 
@@ -250,7 +250,7 @@ namespace 破片压缩器 {
         }
         void fx检测转场( ) {
             path输出目录转场时间戳 = di输出目录.FullName + $"\\检测镜头({scene:F3}).info";
-            b读取转场 = is成功读取(ref list转场, "转场", path输出目录转场时间戳, ref span扫转场进度,false);
+            b读取转场 = is成功读取(ref list转场, "转场", path输出目录转场时间戳, ref span扫转场进度, false);
             if (!b读取转场) {
                 string path视频同目录转场时间戳 = $"{fi输入视频.DirectoryName}\\检测镜头({scene:F3}).{fi输入视频.Name}.info";//info是整理后的文件
                 b读取转场 = is成功读取(ref list转场, "转场", path视频同目录转场时间戳, ref span扫转场进度, true);
@@ -268,12 +268,12 @@ namespace 破片压缩器 {
         void fx读取黑场Info(bool b需要扫描) {
             int x黑度 = 98, x像素黑阈 = 32;
             path输出目录黑场时间戳 = di输出目录.FullName + $"\\检测黑场({x黑度},{x像素黑阈}).info";
-            b读取黑场 = is成功读取(ref list黑场, "黑场", path输出目录黑场时间戳, ref span扫黑场进度,false);
+            b读取黑场 = is成功读取(ref list黑场, "黑场", path输出目录黑场时间戳, ref span扫黑场进度, false);
             if (!b读取黑场) {
                 string path视频同目录黑场时间戳 = $"{fi输入视频.DirectoryName}\\检测黑场({x黑度},{x像素黑阈}).{fi输入视频.Name}.info";
                 b读取黑场 = is成功读取(ref list黑场, "黑场", path视频同目录黑场时间戳, ref span扫黑场进度, true);
                 if (!b读取黑场) {
-                     path视频同目录黑场时间戳 = $"{fi输入视频.DirectoryName}\\检测黑场({x黑度},{x像素黑阈}).{fi输入视频.Name}.log";
+                    path视频同目录黑场时间戳 = $"{fi输入视频.DirectoryName}\\检测黑场({x黑度},{x像素黑阈}).{fi输入视频.Name}.log";
                     b读取黑场 = is成功读取(ref list黑场, "黑场", path视频同目录黑场时间戳, ref span扫黑场进度, true);
 
                     if (b需要扫描 && !b读取黑场 && th扫黑场 == null) {
@@ -287,7 +287,7 @@ namespace 破片压缩器 {
         void fx读取白场Info( ) {
             int x白度 = 98, x像素白阈 = 250;
             path输出目录白场时间戳 = di输出目录.FullName + $"\\检测白场({x白度},{x像素白阈}).info";
-            b读取白场 = is成功读取(ref list白场, "白场", path输出目录白场时间戳, ref span扫白场进度,false);
+            b读取白场 = is成功读取(ref list白场, "白场", path输出目录白场时间戳, ref span扫白场进度, false);
             if (!b读取白场) {
                 string path视频同目录白场时间戳 = $"{fi输入视频.DirectoryName}\\检测白场({x白度},{x像素白阈}).{fi输入视频.Name}.info";
                 b读取白场 = is成功读取(ref list白场, "白场", path视频同目录白场时间戳, ref span扫黑场进度, true);
@@ -305,11 +305,11 @@ namespace 破片压缩器 {
         }
         void fx读取关键帧( ) {
             TimeSpan span = TimeSpan.Zero;
-            b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path输出目录关键帧时间戳, ref span,false);
+            b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path输出目录关键帧时间戳, ref span, false);
             if (!b读取关键帧) {
                 string path视频同目录关键帧时间戳 = $"{fi输入视频.DirectoryName}\\关键帧时间戳_{fi输入视频.Name}.info";
-                b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span,true);
-                
+                b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span, true);
+
                 if (!b读取关键帧) {
                     path视频同目录关键帧时间戳 = $"{fi输入视频.DirectoryName}\\关键帧时间戳_{fi输入视频.Name}.log";
                     b读取关键帧 = is成功读取(ref list关键帧, "关键帧", path视频同目录关键帧时间戳, ref span, true);
@@ -542,7 +542,7 @@ namespace 破片压缩器 {
                     }
                 }
                 if (dic_分段_偏移.Count - count > 0) {
-                    if (转码队列.b允许入队) {
+                    if (!转码队列.b技能单线程) {//正在编码则任务满时减少频繁写入字幕文件。
                         fx分割字幕( );
                         fx保存有序无缓转码csv(b完成: false, b时长降序: false);
                     }
@@ -554,6 +554,7 @@ namespace 破片压缩器 {
                 dic_分段_偏移.TryAdd(span结尾.i分段号, span结尾);
             }
 
+            fx分割字幕( );
             fx保存有序无缓转码csv(b完成: true, b时长降序: false);
         }
 
@@ -612,12 +613,12 @@ namespace 破片压缩器 {
                 f后6组 += sec分段 * 6;//每轮
                 if (f后6组 > Duration) f后6组 = Duration;
                 if (index黑场 < list黑场.Count && list黑场[index黑场] <= f后6组) {
-                    list分段秒.Add(list黑场[index黑场]);//黑场添加优先级高于场景转换，编码后易于切割视频
+                    if (list黑场[index黑场] > list分段秒.Last( )) list分段秒.Add(list黑场[index黑场]);//黑场添加优先级高于场景转换，编码后易于切割视频
                     for (++index黑场; index黑场 < list黑场.Count && list黑场[index黑场] < f后6组; index黑场++) {//步时长6图组内寻找下一黑场。
                         if (list黑场[index黑场] - list分段秒.Last( ) > sec分段 * 3) {//两个黑场之间超过3个图组尝试寻找插入转场。
                             fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, list黑场[index黑场] - sec分割至少, ref index转场, ref list分段秒);
                         }
-                        list分段秒.Add(list黑场[index黑场]);//黑场添加优先级高于场景转换，编码后易于切割视频
+                        if (list黑场[index黑场] > list分段秒.Last( )) list分段秒.Add(list黑场[index黑场]);//黑场添加优先级高于场景转换，编码后易于切割视频
                     }
                 } else if (index转场 < list转场.Count && list转场[index转场] <= f后6组) { //时段内无黑场，可能有转场
                     fx查找区间镜头切换(list分段秒.Last( ) + sec分割至少, f后6组, ref index转场, ref list分段秒);//每次后移6组
@@ -625,9 +626,25 @@ namespace 破片压缩器 {
             } while (f后6组 < Duration);//分段结束
             if (Duration加一帧 > list分段秒.Last( )) list分段秒.Add(Duration加一帧);
 
-            list分段秒.Distinct( );
-            list分段秒.Sort( );
-            fx匹配关键帧(ref index关键帧, ref list分段秒);
+            //list分段秒 = list分段秒.Distinct( ).OrderBy(x => x).ToList( );
+            List<double> list升序分段秒 = new List<double>( ) { 0 };
+            foreach (double d in list分段秒) {
+                if (d > list升序分段秒.Last( )) {
+                    list升序分段秒.Add(d);
+                } else if (d < list升序分段秒.Last( )) {//算法中有重复增加的分段秒，BUG未排除。
+                    for (int i = list升序分段秒.Count - 2; i >= 0; i--) {
+                        if (d > list升序分段秒[i]) {
+                            list升序分段秒.Insert(i + 1, d);
+                            break;
+                        } else if (d == list升序分段秒[i]) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+
+            fx匹配关键帧(ref index关键帧, ref list升序分段秒);
             fx保存有序无缓转码csv(b完成: true, b时长降序: true);
         }
 
@@ -891,7 +908,7 @@ namespace 破片压缩器 {
             return StartInfo;
         }
 
-        bool is成功读取(ref SynchronizedCollection<double> list, string type, string path, ref TimeSpan span,bool b外部生成) {
+        bool is成功读取(ref SynchronizedCollection<double> list, string type, string path, ref TimeSpan span, bool b外部生成) {
             if (File.Exists(path)) {
                 string[] lines;
                 try { lines = File.ReadAllLines(path); } catch { lines = null; }

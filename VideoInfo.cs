@@ -128,6 +128,24 @@ namespace 破片压缩器 {
             }
         }
 
+        public bool isMatch日时分秒(string text, out TimeSpan timeSpan) {
+            Match match = regex日时分秒.Match(text);
+            if (match.Success) {
+                double.TryParse(match.Groups["Sec"].Value, out double Sec);
+                if (int.TryParse(match.Groups["Day"].Value, out int day)) Sec += day + 86400;
+                if (int.TryParse(match.Groups["Hour"].Value, out int hour)) Sec += hour * 3600;
+                if (int.TryParse(match.Groups["Min"].Value, out int min)) Sec += min * 60;
+                if (float.TryParse("0." + match.Groups["MS"].Value, out float ms)) Sec += ms;//ASS毫秒单位保留两位数字，整除100
+                if (Sec > 0) {
+                    timeSpan = TimeSpan.FromSeconds(Sec);
+                    return true;
+                }
+            }
+
+            timeSpan = TimeSpan.Zero;
+            return false;
+        }
+
         public string get音轨code {
             get {
                 for (int i = 0; i < list音频轨.Count; i++) {
@@ -259,6 +277,10 @@ namespace 破片压缩器 {
                         list字幕轨.Add(i轨道号);
                     } else {
                         list其它轨.Add(i轨道号);
+                    }
+                }else if (line.StartsWith("Duration:")){
+                    if (isMatch日时分秒(line, out TimeSpan timeSpan) && timeSpan > time视频时长) {
+                        time视频时长 = timeSpan;
                     }
                 }
             }

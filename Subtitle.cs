@@ -20,11 +20,13 @@ namespace 破片压缩器 {
             if (fileBytes.Length == 3) {
                 if ((fileBytes[0] == 34 && fileBytes[1] == 232 && fileBytes[2] == 167) ||
                     (fileBytes[0] == 239 && fileBytes[1] == 187 && fileBytes[2] == 191) ||
-                    (fileBytes[0] == 229 && fileBytes[1] == 186 && fileBytes[2] == 143)
-                    ) {
+                    (fileBytes[0] == 229 && fileBytes[1] == 186 && fileBytes[2] == 143)) {
                     encoding = Encoding.UTF8;
-                } else if (fileBytes[0] == 34 && fileBytes[1] == 202 && fileBytes[2] == 211) {
+
+                } else if ((fileBytes[0] == 34 && fileBytes[1] == 202 && fileBytes[2] == 211) ||
+                    (fileBytes[0] == 0xD0 && fileBytes[1] == 0xF2 && fileBytes[2] == 0xBA)) {
                     encoding = Encoding.GetEncoding("GB2312");
+
                 } else if ((fileBytes[0] == 255 && fileBytes[1] == 254 && fileBytes[2] == 34) ||
                         (fileBytes[0] == 254 && fileBytes[1] == 255 && fileBytes[2] == 0)) {
                     encoding = Encoding.UTF32;
@@ -32,7 +34,6 @@ namespace 破片压缩器 {
             }
             return encoding;
         }
-
 
         public static double match日时分秒_to_秒(string text) {
             Match match = regex日时分秒.Match(text);

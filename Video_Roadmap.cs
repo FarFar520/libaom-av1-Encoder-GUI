@@ -565,7 +565,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             string commamd = $"-hide_banner -loglevel info -i \"{fi输入视频.FullName}\" -an -sn -vf \"select='eq(pict_type,I)',select='gt(scene,{f检测阈值:F3})',showinfo\" -f null -";//快速分割方案，以关键帧差异去判断切割点位。
             //string commamd = $"-loglevel info -i \"{fi输入视频.FullName}\" -an -sn -vf \"select='gt(scene,{f检测阈值})',showinfo\" -f null -";//固定帧率硬件压制资源切割点几乎不在关键帧上。
 
-            if (!转码队列.b允许入队) commamd = EXE.ffmpeg单线程 + " " + commamd;//CPU资源被占满后，扫描以单线程运行减少损耗。
+            if (转码队列.b技能单线程) commamd = EXE.ffmpeg单线程 + " " + commamd;//CPU资源被占满后，扫描以单线程运行减少损耗。
 
             builder.AppendLine( ).AppendLine("检测关键帧场景切换：").AppendLine(commamd);
 
@@ -1098,7 +1098,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
             }
 
             StringBuilder builder = new StringBuilder( );
-            if (!转码队列.b允许入队) builder.Append(EXE.ffmpeg单线程);
+            if (转码队列.b技能单线程) builder.Append(EXE.ffmpeg单线程);
             builder.Append(" -i \"").Append(fiMKA.FullName).Append('"');
             builder.Append(" -vn -map 0:a -c:a libopus -vbr on -compression_level 10").Append(info.OUT.ar);//-vn不处理视频， -map 0:a 转码全部音轨
             if (!_b硬字幕 && info.list字幕轨.Count > 0) builder.Append(" -map 0:s -c:s copy");
@@ -1261,7 +1261,7 @@ Chooses between cfr and vfr depending on muxer capabilities. This is the default
         void fx扫描黑边(float ss, float t, ref uint count_Crop, ref Dictionary<string, int> dicCropdetect, ref StringBuilder builder) {
             string commamd = $"-hide_banner -ss {ss} -i \"{fi输入视频.Name}\" -t {t} -vf cropdetect=round=2 -f null -an /dev/null";
 
-            bool b单线程 = !转码队列.b允许入队;
+            bool b单线程 = 转码队列.b技能单线程;
             if (b单线程) commamd = EXE.ffmpeg单线程 + " " + commamd;//CPU资源被占满后，以单线程运行减少损耗。
 
             转码队列.process黑边 = new External_Process(ffmpeg, commamd, fi输入视频);

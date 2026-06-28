@@ -39,7 +39,7 @@ namespace 破片压缩器 {
 
         public static SynchronizedCollection<VTimeBase> list扫分段 = new SynchronizedCollection<VTimeBase>( );
 
-        public static bool b允许入队 => list.Count < i多进程数量;
+        public static bool b技能单线程 => i多进程数量 > 0 && list.Count >= i多进程数量;
         public static bool b队列满 => list.Count >= i多进程数量;
 
         public static bool b缓存余量充足 {
@@ -53,6 +53,7 @@ namespace 破片压缩器 {
         }
 
         public static bool ffmpeg直接入队(External_Process p) {
+            while (i多进程数量 == 0) Form破片压缩.autoReset刷新输出.Set( );//设置0任务时强行等待。
             if (p.async_FFmpeg编码( )) {
                 lock (obj增删排锁) {
                     list.Add(p);
@@ -122,7 +123,7 @@ namespace 破片压缩器 {
                         double avgKbps = totalFileKbit / totalVideoSeconds;
                         double avgFps = (ul累计完成帧 + encodingFrames) * 1000.0f / stopwatch.ElapsedMilliseconds;
 
-                        strPast = $"  已压[{ul累计完成帧}帧÷{totalVideoSeconds:F0}秒={avg_vfr2tbr:F2}(tbr)]  平均编码效率[{avgFps:F5}fps @ {avgKbps:F0}Kbps]";
+                        strPast = $"  已压[{ul累计完成帧}帧÷{totalVideoSeconds:F0}秒={avg_vfr2tbr:F3}(tbr)]  平均编码效率[{avgFps:F5}fps @ {avgKbps:F0}Kbps]";
                     }
                 }
             }

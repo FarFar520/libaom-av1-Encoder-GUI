@@ -716,9 +716,10 @@ namespace 破片压缩器 {
                 p.StartInfo.RedirectStandardError = false;
                 p.StartInfo.RedirectStandardOutput = true;
                 try { p.Start( ); } catch { return false; }
-                if (double.TryParse(p.StandardOutput.ReadToEnd( ), out sec)) {
-                    return true;
-                }
+                while (!p.StandardOutput.EndOfStream)
+                    if (double.TryParse(p.StandardOutput.ReadLine( ), out sec)) {
+                        return true;
+                    }
                 return false;
             }
         }
